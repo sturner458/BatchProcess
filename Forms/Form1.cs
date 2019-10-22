@@ -26,7 +26,7 @@ namespace BatchProcess {
             DialogResult ret;
             string myFolder;
 
-            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\BatchProcess\\Photos\\Camera Calibration";
+            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos";
             ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;
             myFolder = myDlg.SelectedPath;
@@ -350,7 +350,7 @@ namespace BatchProcess {
                 }
             }
             for (i = 0; i < 17; i++) {
-                param.dist_factor[i] = byteSwapDouble(br.ReadDouble());
+                if (br.PeekChar() != -1) param.dist_factor[i] = byteSwapDouble(br.ReadDouble());
             }
             br.Close();
             sr.Close();
@@ -404,7 +404,7 @@ namespace BatchProcess {
             DialogResult ret;
             string myFolder;
 
-            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\BatchProcess\\Photos\\Camera Calibration";
+            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos";
             ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;
             myFolder = myDlg.SelectedPath;
@@ -421,7 +421,7 @@ namespace BatchProcess {
                 }
             }
 
-            mdlEmguCalibration.InitCalibration("C:\\Temp\\Calib.dat", 7, 5, 30.0f, nImages);
+            mdlEmguCalibration.InitCalibration("C:\\Temp\\Calib.dat", 17, 13, 20.0f, nImages);
 
             foreach (string myFile in Directory.GetFiles(myFolder)) {
                 if (!(myFile.ToLower().EndsWith(".png") || myFile.ToLower().EndsWith(".jpg"))) continue;
@@ -450,13 +450,14 @@ namespace BatchProcess {
             myFile = myDlg.FileName;
 
             //myDlg.InitialDirectory = "C:\\Customer\\Stannah\\PhotoGrammetry\\BatchProcess\\Photos\\iPad Chessboard From Camera App";
-            myDlg.InitialDirectory = "C:\\Customer\\Stannah\\PhotoGrammetry\\BatchProcess\\Photos";
+            myDlg.InitialDirectory = "C:\\Customer\\Stannah\\PhotoGrammetry\\Photos";
             myDlg.Filter = "Image Files (*.jpg;*.png)|*.jpg;*.png";
             ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;
             myImageFile = myDlg.FileName;
 
             mdlEmguCalibration.Undistort(myFile, myImageFile);
+            // mdlEmguCalibration.UndistortSimple(myFile, myImageFile);
         }
 
         private void btnDetect_Click(object sender, EventArgs e)
@@ -480,6 +481,22 @@ namespace BatchProcess {
             myImageFile = myDlg.FileName;
 
             mdlEmguDetection.DoDetection(myFile, myImageFile);
+        }
+
+        private void btnDetectCircles_Click(object sender, EventArgs e) {
+            //mdlEmguDetection.DrawMarkers();
+
+            OpenFileDialog myDlg = new OpenFileDialog();
+            DialogResult ret;
+            string myImageFile;
+
+            myDlg.InitialDirectory = "C:\\Customer\\Stannah\\PhotoGrammetry\\BatchProcess\\Photos\\iPad 1";
+            myDlg.Filter = "Image Files (*.jpg;*.png)|*.jpg;*.png";
+            ret = myDlg.ShowDialog();
+            if (ret != DialogResult.OK) return;
+            myImageFile = myDlg.FileName;
+
+            mdlEmguDetection.DetectEllipses(myImageFile);
         }
     }
 

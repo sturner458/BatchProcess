@@ -46,13 +46,13 @@ namespace BatchProcess {
             //byte[] byteArray = ImageToByteArray(myImage);
 
             var cornerPoints = new Emgu.CV.Util.VectorOfPointF();
-            var image = new Image<Emgu.CV.Structure.Gray, byte>(myFile);
+            var image = new Image<Gray, byte>(myFile);
             mImageSize = image.Size;
 
             res = CvInvoke.FindChessboardCorners(image, mBoardSize, cornerPoints);
 
             if (res) {
-                CvInvoke.CornerSubPix(image, cornerPoints, new Size(11, 11), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(30, 0.1));
+                CvInvoke.CornerSubPix(image, cornerPoints, new Size(5, 5), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100, 0.1));
 
                 allCornerPoints.Add(cornerPoints.ToArray());
                 capturedImageNum = capturedImageNum + 1;
@@ -61,8 +61,29 @@ namespace BatchProcess {
                 //foreach (PointF cornerPoint in cornerPoints.ToArray()) {
                 //    System.Diagnostics.Debug.WriteLine(cornerPoint.X + ", " + cornerPoint.Y);
                 //}
+                System.Diagnostics.Debug.WriteLine("Processed Image " + capturedImageNum);
+            } else {
+                System.Diagnostics.Debug.WriteLine("Failed To Process Image " + capturedImageNum);
             }
 
+        }
+
+        private static Image<Gray, byte> RGBA2Grayscale(Image<Rgba, byte> imageIn) {
+            Image<Gray, byte> grayImage = new Image<Gray, byte>(new Size(imageIn.Width, imageIn.Height));
+            int bmpStride = imageIn.Width * 4;
+
+            //Convert the pixel to it's luminance using the formula:
+            // L = .299*R + .587*G + .114*B
+            //Note that ic is the input column and oc is the output column
+            for (int r = 0; r < imageIn.Height; r++) {
+                for (int c = 0; c < imageIn.Width; c += 1) {
+                    grayImage.Data[r, c, 0] = (byte)(int)
+                        (0.299f * imageIn.Data[r, c, 0] +
+                         0.587f * imageIn.Data[r, c, 1] +
+                         0.114f * imageIn.Data[r, c, 2]);
+                }
+            }
+            return grayImage;
         }
 
         public static void CalibrateCamera(bool saveResult = false)
@@ -84,10 +105,110 @@ namespace BatchProcess {
                 }
                 objectPoints.Add(objectPointList.ToArray());
             }
-            
+
+            // double error = CvInvoke.CalibrateCamera(objectPoints.ToArray(), allCornerPoints.ToArray(), mImageSize, cameraMatrix, distortionCoeffs,
+            //    Emgu.CV.CvEnum.CalibType.FixK3, new Emgu.CV.Structure.MCvTermCriteria(30, 0.1), out rvecs, out tvecs);
+
             double error = CvInvoke.CalibrateCamera(objectPoints.ToArray(), allCornerPoints.ToArray(), mImageSize, cameraMatrix, distortionCoeffs,
-                Emgu.CV.CvEnum.CalibType.FixK3, 
-                new Emgu.CV.Structure.MCvTermCriteria(30, 0.1), out rvecs, out tvecs);
+                Emgu.CV.CvEnum.CalibType.RationalModel, new Emgu.CV.Structure.MCvTermCriteria(30, 0.01), out rvecs, out tvecs);
+
+            double[] cameraArray = new double[9];
+            Marshal.Copy(cameraMatrix.DataPointer, cameraArray, 0, 9);
+            double[] distCoeffArray = new double[8];
+            Marshal.Copy(distortionCoeffs.DataPointer, distCoeffArray, 0, 8);
+
+            double[][] rvecArray = new double[capturedImageNum][];
+            double[][] tvecArray = new double[capturedImageNum][];
+            for (i = 0; i < capturedImageNum; i ++) {
+                rvecArray[i] = new double[3];
+                Marshal.Copy(rvecs[i].DataPointer, rvecArray[i], 0, 3);
+                tvecArray[i] = new double[3];
+                Marshal.Copy(tvecs[i].DataPointer, tvecArray[i], 0, 3);
+            }
+
+            param.xsize = mImageSize.Width;
+            param.ysize = mImageSize.Height;
+            param.dist_function_version = 5;
+
+            for (j = 0; j < 3; j++) {
+                for (i = 0; i < 3; i++) {
+                    param.mat[j, i] = cameraArray[j * 3 + i];
+                }
+                param.mat[j, 3] = 0.0;
+            }
+
+            param.dist_factor[0] = distCoeffArray[0];     /* k1  */
+            param.dist_factor[1] = distCoeffArray[1];     /* k2  */
+            param.dist_factor[2] = distCoeffArray[2];     /* p1  */
+            param.dist_factor[3] = distCoeffArray[3];     /* p2  */
+            param.dist_factor[4] = distCoeffArray[4];     /* k3  */
+            param.dist_factor[5] = distCoeffArray[5];     /* k4  */
+            param.dist_factor[6] = distCoeffArray[6];     /* k6  */
+            param.dist_factor[7] = distCoeffArray[7];     /* k6  */
+            param.dist_factor[8] = 0;                     /* s1  */
+            param.dist_factor[9] = 0;                     /* s2  */
+            param.dist_factor[10] = 0;                    /* s3  */
+            param.dist_factor[11] = 0;                    /* s4  */
+            param.dist_factor[12] = param.mat[0, 0];      /* fx  */
+            param.dist_factor[13] = param.mat[1, 1];      /* fy  */
+            param.dist_factor[14] = param.mat[0, 2];      /* x6  */
+            param.dist_factor[15] = param.mat[1, 2];      /* cy  */
+            param.dist_factor[16] = 1.0;                  /* s   */
+
+            double s = getSizeFactor(param.dist_factor, param.xsize, param.ysize, param.dist_function_version);
+            param.mat[0, 0] /= s;
+            param.mat[0, 1] /= s;
+            param.mat[1, 0] /= s;
+            param.mat[1, 1] /= s;
+            param.dist_factor[16] = s;
+
+            if (saveResult) {
+                saveParam(_outputPath, param);
+            }
+                
+            double totErr = 0;
+            double[] results = new double[capturedImageNum];
+
+            for (k = 0; k < capturedImageNum; k++) {
+                var objectPoints2 = new Emgu.CV.Util.VectorOfPoint3D32F(objectPoints[k]);
+                var imagePoints2 = new Emgu.CV.Util.VectorOfPointF();
+                Emgu.CV.CvInvoke.ProjectPoints(objectPoints2, rvecs[k], tvecs[k], cameraMatrix, distortionCoeffs, imagePoints2);
+                var imagePoints = new Emgu.CV.Util.VectorOfPointF(allCornerPoints[k]);
+                double err = Emgu.CV.CvInvoke.Norm(imagePoints, imagePoints2, Emgu.CV.CvEnum.NormType.L2);
+
+                int n = allCornerPoints[k].Length;
+                results[k] = (float)Sqrt(err * err / n);
+                System.Diagnostics.Debug.Print(results[k].ToString());
+                totErr += err * err;
+            }
+            totErr = Sqrt(totErr / (mBoardSize.Width * mBoardSize.Height * capturedImageNum));
+            System.Diagnostics.Debug.Print(totErr.ToString());
+        }
+
+        public static void CalibrateCameraSimple(bool saveResult = false) {
+            Mat cameraMatrix = new Mat(3, 3, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
+            Mat distortionCoeffs = new Mat(8, 1, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
+            Mat[] rvecs, tvecs;
+            int i, j, k;
+            ARParam param = new ARParam();
+            List<Emgu.CV.Structure.MCvPoint3D32f> objectPointList;
+            List<Emgu.CV.Structure.MCvPoint3D32f[]> objectPoints = new List<Emgu.CV.Structure.MCvPoint3D32f[]>();
+
+            for (k = 0; k < capturedImageNum; k++) {
+                objectPointList = new List<Emgu.CV.Structure.MCvPoint3D32f>();
+                for (i = 0; i < mBoardSize.Height; i++) {
+                    for (j = 0; j < mBoardSize.Width; j++) {
+                        objectPointList.Add(new Emgu.CV.Structure.MCvPoint3D32f(j * mSquareSize, i * mSquareSize, 0));
+                    }
+                }
+                objectPoints.Add(objectPointList.ToArray());
+            }
+
+            // double error = CvInvoke.CalibrateCamera(objectPoints.ToArray(), allCornerPoints.ToArray(), mImageSize, cameraMatrix, distortionCoeffs,
+            //    Emgu.CV.CvEnum.CalibType.FixK3, new Emgu.CV.Structure.MCvTermCriteria(30, 0.1), out rvecs, out tvecs);
+
+            double error = CvInvoke.CalibrateCamera(objectPoints.ToArray(), allCornerPoints.ToArray(), mImageSize, cameraMatrix, distortionCoeffs,
+                Emgu.CV.CvEnum.CalibType.FixK3, new Emgu.CV.Structure.MCvTermCriteria(100, 0.0000001), out rvecs, out tvecs);
 
             double[] cameraArray = new double[9];
             Marshal.Copy(cameraMatrix.DataPointer, cameraArray, 0, 9);
@@ -96,7 +217,7 @@ namespace BatchProcess {
 
             double[][] rvecArray = new double[capturedImageNum][];
             double[][] tvecArray = new double[capturedImageNum][];
-            for (i = 0; i < capturedImageNum; i ++) {
+            for (i = 0; i < capturedImageNum; i++) {
                 rvecArray[i] = new double[3];
                 Marshal.Copy(rvecs[i].DataPointer, rvecArray[i], 0, 3);
                 tvecArray[i] = new double[3];
@@ -132,29 +253,29 @@ namespace BatchProcess {
             param.dist_factor[8] = s;
 
             if (saveResult) {
-                saveParam(_outputPath, param);
+                saveParamSimple(_outputPath, param);
 
-            //    string cornerFile = "C:\\Temp\\CornersOpenCV.txt";
-            //    if (File.Exists(cornerFile)) {
-            //        try {
-            //            File.Delete(cornerFile);
-            //        } catch (Exception ex) {
-            //            string str = ex.ToString();
-            //        }
-            //    }
+                //    string cornerFile = "C:\\Temp\\CornersOpenCV.txt";
+                //    if (File.Exists(cornerFile)) {
+                //        try {
+                //            File.Delete(cornerFile);
+                //        } catch (Exception ex) {
+                //            string str = ex.ToString();
+                //        }
+                //    }
 
-            //    StreamWriter sw = new StreamWriter(cornerFile);
-            //    int l = 0;
-            //    for (k = 0; k < capturedImageNum; k++) {
-            //        l = 0;
-            //        for (i = 0; i < mBoardSize.Height; i++) {
-            //            for (j = 0; j < mBoardSize.Width; j++) {
-            //                sw.WriteLine(allCornerPoints2[k][l].X.ToString() + '\t' + allCornerPoints2[k][l].Y.ToString());
-            //                l++;
-            //            }
-            //        }
-            //    }
-            //    sw.Close();
+                //    StreamWriter sw = new StreamWriter(cornerFile);
+                //    int l = 0;
+                //    for (k = 0; k < capturedImageNum; k++) {
+                //        l = 0;
+                //        for (i = 0; i < mBoardSize.Height; i++) {
+                //            for (j = 0; j < mBoardSize.Width; j++) {
+                //                sw.WriteLine(allCornerPoints2[k][l].X.ToString() + '\t' + allCornerPoints2[k][l].Y.ToString());
+                //                l++;
+                //            }
+                //        }
+                //    }
+                //    sw.Close();
             }
 
             double totErr = 0;
@@ -169,6 +290,7 @@ namespace BatchProcess {
 
                 int n = allCornerPoints[k].Length;
                 results[k] = (float)Sqrt(err * err / n);
+                System.Diagnostics.Debug.Print(results[k].ToString());
                 totErr += err * err;
             }
             totErr = Sqrt(totErr / (mBoardSize.Width * mBoardSize.Height * capturedImageNum));
@@ -177,6 +299,43 @@ namespace BatchProcess {
 
         static void saveParam(string myFile, ARParam param)
         {
+            if (File.Exists(myFile)) {
+                try {
+                    File.Delete(myFile);
+                } catch (Exception ex) {
+                    string s = ex.ToString();
+                }
+            }
+
+            FileStream sw = File.Open(myFile, FileMode.CreateNew, FileAccess.Write);
+            BinaryWriter bw = new BinaryWriter(sw);
+
+            bw.Write(byteSwapInt(param.xsize));
+            bw.Write(byteSwapInt(param.ysize));
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 4; j++) {
+                    bw.Write(byteSwapDouble(param.mat[i, j]));
+                }
+            }
+            for (int i = 0; i < 17; i++) {
+                bw.Write(byteSwapDouble(param.dist_factor[i]));
+            }
+            bw.Close();
+            sw.Close();
+
+            System.Diagnostics.Debug.Print("Filename\t" + System.IO.Path.GetFileName(myFile));
+            System.Diagnostics.Debug.Print("xSize\t" + param.xsize.ToString());
+            System.Diagnostics.Debug.Print("ySize\t" + param.ysize.ToString());
+            System.Diagnostics.Debug.Print("Mat[3][4]\t" + param.mat[0, 0].ToString() + "\t" + param.mat[0, 1].ToString() + "\t" + param.mat[0, 2].ToString() + "\t" + param.mat[0, 3].ToString());
+            System.Diagnostics.Debug.Print("\t" + param.mat[1, 0].ToString() + "\t" + param.mat[1, 1].ToString() + "\t" + param.mat[1, 2].ToString() + "\t" + param.mat[1, 3].ToString());
+            System.Diagnostics.Debug.Print("\t" + param.mat[2, 0].ToString() + "\t" + param.mat[2, 1].ToString() + "\t" + param.mat[2, 2].ToString() + "\t" + param.mat[2, 3].ToString());
+            for (int i = 0; i < 17; i++) {
+                System.Diagnostics.Debug.Print("dist_factor[" + i.ToString() + "]\t" + param.dist_factor[i].ToString());
+            }
+            
+        }
+
+        static void saveParamSimple(string myFile, ARParam param) {
             if (File.Exists(myFile)) {
                 try {
                     File.Delete(myFile);
@@ -210,123 +369,132 @@ namespace BatchProcess {
             for (int i = 0; i < 9; i++) {
                 System.Diagnostics.Debug.Print("dist_factor[" + i.ToString() + "]\t" + param.dist_factor[i].ToString());
             }
-            
+
         }
 
-        static double getSizeFactor(double[] dist_factor, int xsize, int ysize, int dist_function_version)
-        {
-            double ox, oy, ix = 0.0, iy = 0.0;
+        static double getSizeFactor( double[] dist_factor,  int xsize,  int ysize,  int dist_function_version) {
+            double ox, oy, ix, iy;
             double olen, ilen;
             double sf, sf1;
+            double cx, cy;
 
-            sf = 100.0;
+            if (dist_function_version == 5) {
+                cx = dist_factor[14];
+                cy = dist_factor[15];
+            } else if (dist_function_version == 4) {
+                cx = dist_factor[6];
+                cy = dist_factor[7];
+            } else {
+                return 1;
+            }
 
-            ox = 0.0;
-            oy = dist_factor[7];
-            olen = dist_factor[6];
+            sf = 100.0f;
+            ox = 0.0f;
+            oy = cy;
+            olen = cx;
             arParamObserv2Ideal(dist_factor, ox, oy, out ix, out iy, dist_function_version);
-            ilen = dist_factor[6] - ix;
-            if (ilen > 0) {
+            ilen = cx - ix;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
 
             ox = xsize;
-            oy = dist_factor[7];
-            olen = xsize - dist_factor[6];
+            oy = cy;
+            olen = xsize - cx;
             arParamObserv2Ideal(dist_factor, ox, oy, out ix, out iy, dist_function_version);
-            ilen = ix - dist_factor[6];
-            if (ilen > 0) {
+            ilen = ix - cx;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
 
-            ox = dist_factor[6];
+            ox = cx;
             oy = 0.0;
-            olen = dist_factor[7];
+            olen = cy;
             arParamObserv2Ideal(dist_factor, ox, oy, out ix, out iy, dist_function_version);
-            ilen = dist_factor[7] - iy;
-            if (ilen > 0) {
+            ilen = cy - iy;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
 
-            ox = dist_factor[6];
+            ox = cx;
             oy = ysize;
-            olen = ysize - dist_factor[7];
+            olen = ysize - cy;
             arParamObserv2Ideal(dist_factor, ox, oy, out ix, out iy, dist_function_version);
-            ilen = iy - dist_factor[7];
-            if (ilen > 0) {
+            ilen = iy - cy;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
 
 
-            ox = 0.0;
-            oy = 0.0;
+            ox = 0.0f;
+            oy = 0.0f;
             arParamObserv2Ideal(dist_factor, ox, oy, out ix, out iy, dist_function_version);
-            ilen = dist_factor[6] - ix;
-            olen = dist_factor[6];
-            if (ilen > 0) {
+            ilen = cx - ix;
+            olen = cx;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
-            ilen = dist_factor[7] - iy;
-            olen = dist_factor[7];
-            if (ilen > 0) {
+            ilen = cy - iy;
+            olen = cy;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
 
             ox = xsize;
-            oy = 0.0;
+            oy = 0.0f;
             arParamObserv2Ideal(dist_factor, ox, oy, out ix, out iy, dist_function_version);
-            ilen = ix - dist_factor[6];
-            olen = xsize - dist_factor[6];
-            if (ilen > 0) {
+            ilen = ix - cx;
+            olen = xsize - cx;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
-            ilen = dist_factor[7] - iy;
-            olen = dist_factor[7];
-            if (ilen > 0) {
+            ilen = cy - iy;
+            olen = cy;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
 
-            ox = 0.0;
+            ox = 0.0f;
             oy = ysize;
             arParamObserv2Ideal(dist_factor, ox, oy, out ix, out iy, dist_function_version);
-            ilen = dist_factor[6] - ix;
-            olen = dist_factor[6];
-            if (ilen > 0) {
+            ilen = cx - ix;
+            olen = cx;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
-            ilen = iy - dist_factor[7];
-            olen = ysize - dist_factor[7];
-            if (ilen > 0) {
+            ilen = iy - cy;
+            olen = ysize - cy;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
 
             ox = xsize;
             oy = ysize;
             arParamObserv2Ideal(dist_factor, ox, oy, out ix, out iy, dist_function_version);
-            ilen = ix - dist_factor[6];
-            olen = xsize - dist_factor[6];
-            if (ilen > 0) {
+            ilen = ix - cx;
+            olen = xsize - cx;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
-            ilen = iy - dist_factor[7];
-            olen = ysize - dist_factor[7];
-            if (ilen > 0) {
+            ilen = iy - cy;
+            olen = ysize - cy;
+            if (ilen > 0.0f) {
                 sf1 = ilen / olen;
-                if (sf1 < sf) sf = sf1;
+                if (sf1<sf) sf = sf1;
             }
 
-            if (sf == 100.0) sf = 1.0;
+            if (sf == 100.0f) sf = 1.0f;
 
             return sf;
         }
@@ -726,9 +894,10 @@ namespace BatchProcess {
         public static void Undistort(string myFile, string myImageFile)
         {
             int i, j;
+            var grayImage = new Image<Gray, byte>(myImageFile);
             Mat myImage = Emgu.CV.CvInvoke.Imread(myImageFile, Emgu.CV.CvEnum.ImreadModes.Color);
 
-            DrawCornersOnImage(myImage, Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Distorted.jpg", out Emgu.CV.Util.VectorOfPointF cornerPoints);
+            DrawCornersOnImage(myImage, grayImage, Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Distorted.jpg", out Emgu.CV.Util.VectorOfPointF cornerPoints);
 
             FileStream sr = File.Open(myFile, FileMode.Open, FileAccess.Read);
             BinaryReader br = new BinaryReader(sr);
@@ -784,21 +953,89 @@ namespace BatchProcess {
             Marshal.Copy(distCoeffArray, 0, distortionCoeffs.DataPointer, nFactors);
             CalculateProjectionErrorsForImage(myImage, cameraMatrix, distortionCoeffs, param);
             CvInvoke.Undistort(myImage, outImage, cameraMatrix, distortionCoeffs);
+            var image = outImage.ToImage<Emgu.CV.Structure.Rgba, byte>();
+            grayImage = RGBA2Grayscale(image);
 
-            DrawCornersOnImage(outImage, Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Undistorted.jpg", out cornerPoints);
+            DrawCornersOnImage(outImage, grayImage, Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Undistorted.jpg", out cornerPoints);
         }
 
-        static void DrawCornersOnImage(Mat image, string outFileName, out Emgu.CV.Util.VectorOfPointF cornerPoints, Emgu.CV.Util.VectorOfPointF cornersToDraw = null) {
+        public static void UndistortSimple(string myFile, string myImageFile) {
+            int i, j;
+            var grayImage = new Image<Gray, byte>(myImageFile);
+            Mat myImage = Emgu.CV.CvInvoke.Imread(myImageFile, Emgu.CV.CvEnum.ImreadModes.Color);
+
+            DrawCornersOnImage(myImage, grayImage, Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Distorted.jpg", out Emgu.CV.Util.VectorOfPointF cornerPoints);
+
+            FileStream sr = File.Open(myFile, FileMode.Open, FileAccess.Read);
+            BinaryReader br = new BinaryReader(sr);
+
+            ARParam param = new ARParam();
+            param.xsize = byteSwapInt(br.ReadInt32());
+            param.ysize = byteSwapInt(br.ReadInt32());
+            for (i = 0; i < 3; i++) {
+                for (j = 0; j < 4; j++) {
+                    param.mat[i, j] = byteSwapDouble(br.ReadDouble());
+                }
+            }
+            for (i = 0; i < 9; i++) {
+                param.dist_factor[i] = byteSwapDouble(br.ReadDouble());
+            }
+            br.Close();
+            sr.Close();
+
+            double s = param.dist_factor[8];
+            param.mat[0, 0] *= s;
+            param.mat[0, 1] *= s;
+            param.mat[1, 0] *= s;
+            param.mat[1, 1] *= s;
+            param.dist_factor[4] /= s;
+            param.dist_factor[5] /= s;
+            param.dist_factor[6] /= s;
+            param.dist_factor[7] /= s;
+            param.dist_factor[8] = 1.0;
+            param.dist_function_version = 4;
+
+            //Emgu.CV.Util.VectorOfPointF newCornerPoints = new Emgu.CV.Util.VectorOfPointF();
+            //for (i = 0; i < cornerPoints.Size; i++) {
+            //    arParamObserv2Ideal(param.dist_factor, cornerPoints[i].X, cornerPoints[i].Y, out double ix, out double iy, 5);
+            //    newCornerPoints.Push(new PointF[] { new PointF((float)ix, (float)iy) });
+            //    //newCornerPoints.Push(new PointF[] { cornerPoints[i] });
+            //}
+
+            Mat outImage = myImage.Clone();
+            Mat cameraMatrix = new Mat(3, 3, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
+            int nFactors = 4;
+            Mat distortionCoeffs = new Mat(nFactors, 1, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
+            double[] cameraArray = new double[9];
+            for (j = 0; j < 3; j++) {
+                for (i = 0; i < 3; i++) {
+                    cameraArray[j * 3 + i] = param.mat[j, i];
+                }
+            }
+            double[] distCoeffArray = new double[nFactors];
+            for (i = 0; i < nFactors; i++) {
+                distCoeffArray[i] = param.dist_factor[i];
+            }
+            Marshal.Copy(cameraArray, 0, cameraMatrix.DataPointer, 9);
+            Marshal.Copy(distCoeffArray, 0, distortionCoeffs.DataPointer, nFactors);
+            CalculateProjectionErrorsForImage(myImage, cameraMatrix, distortionCoeffs, param);
+            CvInvoke.Undistort(myImage, outImage, cameraMatrix, distortionCoeffs);
+            var image = outImage.ToImage<Emgu.CV.Structure.Rgba, byte>();
+            grayImage = RGBA2Grayscale(image);
+
+            DrawCornersOnImage(outImage, grayImage, Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Undistorted.jpg", out cornerPoints);
+        }
+
+        static void DrawCornersOnImage(Mat image, Image<Gray, byte> grayImage, string outFileName, out Emgu.CV.Util.VectorOfPointF cornerPoints, Emgu.CV.Util.VectorOfPointF cornersToDraw = null) {
             bool res;
 
             Mat imageCopy = image.Clone();
             cornerPoints = new Emgu.CV.Util.VectorOfPointF();
             mBoardSize = new Size(13, 17);
-            var greyImage = image.ToImage<Emgu.CV.Structure.Gray, byte>();
-            res = CvInvoke.FindChessboardCorners(greyImage, mBoardSize, cornerPoints);
+            res = CvInvoke.FindChessboardCorners(grayImage, mBoardSize, cornerPoints);
 
             if (res) {
-                CvInvoke.CornerSubPix(greyImage, cornerPoints, new Size(11, 11), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(30, 0.1));
+                CvInvoke.CornerSubPix(grayImage, cornerPoints, new Size(5, 5), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100, 0.1));
                 for (int i = 0; i < 17; i++) {
                     CvInvoke.Line(imageCopy, new Point((int)cornerPoints[i * 13].X, (int)cornerPoints[i * 13].Y), new Point((int)cornerPoints[i * 13 + 12].X, (int)cornerPoints[i * 13 + 12].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 1);
                 }
@@ -827,7 +1064,7 @@ namespace BatchProcess {
 
             mBoardSize = new Size(13, 17);
             mSquareSize = 20;
-            var greyImage = image.ToImage<Emgu.CV.Structure.Gray, byte>();
+            var greyImage = imageCopy.ToImage<Emgu.CV.Structure.Gray, byte>();
             bool res = CvInvoke.FindChessboardCorners(greyImage, mBoardSize, cornerPoints);
 
             List<MCvPoint3D32f> objectPointList;
@@ -850,7 +1087,7 @@ namespace BatchProcess {
 
             double totErr = 0;
             if (res) {
-                CvInvoke.CornerSubPix(greyImage, cornerPoints, new Size(11, 11), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(30, 0.1));
+                CvInvoke.CornerSubPix(greyImage, cornerPoints, new Size(5, 5), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100, 0.1));
                 CvInvoke.SolvePnP(objectPoints, cornerPoints.ToArray(), cameraMatrix, distortionCoeffs, rvec, tvec);
                 CvInvoke.Rodrigues(rvec, rotationMatrix);
 
@@ -935,7 +1172,7 @@ namespace BatchProcess {
                 }
             }
             totErr = Math.Sqrt(totErr / (mBoardSize.Width * mBoardSize.Height));
-            System.Diagnostics.Debug.Print(totErr.ToString("0.000"));
+            System.Diagnostics.Debug.Print("Total Projection Error: " + totErr.ToString("0.000"));
             xlRange = (Microsoft.Office.Interop.Excel.Range)xlSheet.Cells[1, 6];
             xlRange.Value = "Projection Error:";
             xlRange = (Microsoft.Office.Interop.Excel.Range)xlSheet.Cells[2, 6];
@@ -980,8 +1217,8 @@ namespace BatchProcess {
             xlLegend.Clear();
             xlChart.SetSourceData(xlRange);
             xlRange = xlSheet.Range["F20"];
-            xlShape.Top = (float)xlRange.Top;
-            xlShape.Left = (float)xlRange.Left;
+            xlShape.Top = (float)((double)xlRange.Top);
+            xlShape.Left = (float)((double)xlRange.Left);
             xlRange = xlSheet.Range["F3"];
             xlRange.Select();
 

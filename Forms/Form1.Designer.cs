@@ -130,7 +130,7 @@
             this.btnDetect.TabIndex = 8;
             this.btnDetect.Text = "Detect Markers";
             this.btnDetect.UseVisualStyleBackColor = true;
-            this.btnDetect.Click += new System.EventHandler(this.btnDetect_Click);
+            this.btnDetect.Click += new System.EventHandler(this.btnDetectCircles_Click);
             // 
             // Form1
             // 

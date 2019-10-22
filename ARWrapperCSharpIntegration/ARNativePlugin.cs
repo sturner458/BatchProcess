@@ -338,6 +338,9 @@ public class ARNativePlugin
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     internal static extern float arwCalibChessboardCorners(string file_name, IntPtr results);
 
+    [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    internal static extern float arwCalibChessboardCornersSimple(string file_name, IntPtr results);
+
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     internal static extern void arwCleanupChessboardCorners();
 

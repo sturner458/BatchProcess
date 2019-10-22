@@ -11,6 +11,7 @@ using static BatchProcess.mdlGlobals;
 using System.Runtime.InteropServices;
 using System.IO;
 using static System.Math;
+using Emgu.CV.Structure;
 
 namespace BatchProcess {
     public static class mdlEmguDetection {
@@ -132,6 +133,183 @@ namespace BatchProcess {
                 }
             }
         }
-        
+
+        public static void DetectEllipses(string myFile) {
+            var contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+            // var heirarchy = new Emgu.CV.Util.VectorOfInt();
+            Mat heirarchy = null;
+            var grayImage = new Image<Gray, byte>(myFile);
+            Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
+            var grayImageCopy = grayImage.Clone();
+            var res = CvInvoke.Threshold(grayImage, grayImageCopy, 170, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
+
+            CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-threshold" + Path.GetExtension(myFile), grayImageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
+
+            grayImageCopy._Not();
+            
+            // var edges = grayImage.Clone();
+            //CvInvoke.Canny(grayImage, edges, 80, 120);
+            //CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-copy" + Path.GetExtension(myFile), edges, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
+
+            CvInvoke.FindContours(grayImageCopy, contours, heirarchy, Emgu.CV.CvEnum.RetrType.Ccomp, Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
+            // var circles = CvInvoke.HoughCircles(grayImage, Emgu.CV.CvEnum.HoughType.Gradient, 1, grayImage.Rows / 16);
+            if (contours.Size > 0) {
+
+                double largestArea = 0;
+                var centerPoints = new Emgu.CV.Util.VectorOfPointF();
+                for (int i = 0; i < contours.Size; i++) {
+                    var contour = contours[i];
+                    if (contour.Size > 4) {
+                        var rect = CvInvoke.FitEllipse(contour);
+                        var area = rect.Size.Width * rect.Size.Height;
+                        var width = rect.Size.Width > rect.Size.Height ? rect.Size.Width : rect.Size.Height;
+                        var height = rect.Size.Width > rect.Size.Height ? rect.Size.Height : rect.Size.Width;
+                        if (area > 1000 && width / height < 3) {
+                            var averageDist = AverageDistanceToEllipse(contour, rect);
+                            var furthestDist = FurthestDistanceToEllipse(contour, rect);
+                            if (averageDist < 1.5 && furthestDist < 4) {
+                                if (area > largestArea) largestArea = area;
+                                centerPoints.Push(new PointF[] { rect.Center });
+                                DrawContoursOnImage(imageCopy, contours[i]);
+                                // CvInvoke.Ellipse(imageCopy, rect, new Bgr(System.Drawing.Color.Red).MCvScalar);
+                                CvInvoke.Line(imageCopy, new Point((int)rect.GetVertices()[0].X, (int)rect.GetVertices()[0].Y), new Point((int)rect.GetVertices()[1].X, (int)rect.GetVertices()[1].Y), new Bgr(System.Drawing.Color.Red).MCvScalar);
+                                CvInvoke.Line(imageCopy, new Point((int)rect.GetVertices()[1].X, (int)rect.GetVertices()[1].Y), new Point((int)rect.GetVertices()[2].X, (int)rect.GetVertices()[2].Y), new Bgr(System.Drawing.Color.Red).MCvScalar);
+                                CvInvoke.Line(imageCopy, new Point((int)rect.GetVertices()[2].X, (int)rect.GetVertices()[2].Y), new Point((int)rect.GetVertices()[3].X, (int)rect.GetVertices()[3].Y), new Bgr(System.Drawing.Color.Red).MCvScalar);
+                                CvInvoke.Line(imageCopy, new Point((int)rect.GetVertices()[3].X, (int)rect.GetVertices()[3].Y), new Point((int)rect.GetVertices()[0].X, (int)rect.GetVertices()[0].Y), new Bgr(System.Drawing.Color.Red).MCvScalar);
+                            }
+                        }
+                    }
+                }
+
+                CvInvoke.CornerSubPix(grayImage, centerPoints, new Size(11, 11), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100, 0.1));
+                DrawCornersOnImage(imageCopy, centerPoints);
+                CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-copy" + Path.GetExtension(myFile), imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
+            }
+        }
+
+        static void DrawCornersOnImage(Mat image, Emgu.CV.Util.VectorOfPointF cornerPoints) {
+            for (int i = 0; i < cornerPoints.Size; i++) {
+                CvInvoke.Line(image, new Point((int)cornerPoints[i].X, (int)cornerPoints[i].Y), new Point((int)cornerPoints[i].X, (int)cornerPoints[i].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 4);
+            }
+        }
+
+        private static double AverageDistanceToEllipse(Emgu.CV.Util.VectorOfPoint contour, RotatedRect rect) {
+            var n = contour.Size;
+            var dist = 0d;
+            for (int i = 0; i < n; i++) {
+                dist = dist + DistanceToEllipse(new clsPoint(contour[i].X, contour[i].Y), rect);
+            }
+            return dist / n;
+        }
+
+        private static double FurthestDistanceToEllipse(Emgu.CV.Util.VectorOfPoint contour, RotatedRect rect) {
+            var n = contour.Size;
+            var dist = 0d;
+            for (int i = 0; i < n; i++) {
+                var d = DistanceToEllipse(new clsPoint(contour[i].X, contour[i].Y), rect);
+                if (d > dist) dist = d;
+            }
+            return dist;
+        }
+
+        private static double DistanceToEllipse(clsPoint pt, RotatedRect rect) {
+            var c = rect.Center;
+            var a = rect.Angle * PI / 180f;
+            pt.Move(-c.X, -c.Y);
+            pt.Rotate(-a);
+            var pt2 = NearestPointOnEllipse(pt, rect.Size.Width / 2, rect.Size.Height / 2);
+            return pt.Dist(pt2);
+        }
+
+        public static void DetectBlobEllipses(string myFile) {
+            var grayImage = new Image<Gray, byte>(myFile);
+            Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
+            grayImage._Not();
+
+            // Set our filtering parameters 
+            // Initialize parameter settiing using cv2.SimpleBlobDetector 
+            var paramsx = new Emgu.CV.Features2D.SimpleBlobDetectorParams();
+
+            // Set Area filtering parameters 
+            paramsx.FilterByArea = true;
+            paramsx.MinArea = 100;
+
+            // Set Circularity filtering parameters 
+            paramsx.FilterByCircularity = true;
+            paramsx.MinCircularity = 0.9f;
+
+            // Set Convexity filtering parameters 
+            paramsx.FilterByConvexity = true;
+            paramsx.MinConvexity = 0.2f;
+
+            // Set inertia filtering parameters 
+            paramsx.FilterByInertia = true;
+            paramsx.MinInertiaRatio = 0.01f;
+
+            // Create a detector with the parameters 
+            var detector = new Emgu.CV.Features2D.SimpleBlobDetector(paramsx);
+
+            // Detect blobs 
+            var keypoints = detector.Detect(grayImage);
+            var keyPoints = new Emgu.CV.Util.VectorOfKeyPoint(keypoints);
+
+            // Draw blobs on our image as red circles 
+            var blank = imageCopy.Clone();
+            Emgu.CV.Features2D.Features2DToolbox.DrawKeypoints(imageCopy, keyPoints, blank, new Bgr(System.Drawing.Color.Red), Emgu.CV.Features2D.Features2DToolbox.KeypointDrawType.DrawRichKeypoints);
+
+            var number_of_blobs = keyPoints.Size;
+            CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-copy" + Path.GetExtension(myFile), imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
+        }
+
+        static void DrawContoursOnImage(Mat imageCopy, Emgu.CV.Util.VectorOfPoint cornerPoints) {
+            for (int i = 0; i < cornerPoints.Size - 1; i++) {
+                CvInvoke.Line(imageCopy, new Point(cornerPoints[i].X, cornerPoints[i].Y), new Point(cornerPoints[i + 1].X, cornerPoints[i + 1].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 1);
+            }
+            CvInvoke.Line(imageCopy, new Point(cornerPoints[cornerPoints.Size - 1].X, cornerPoints[cornerPoints.Size - 1].Y), new Point(cornerPoints[0].X, cornerPoints[0].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 1);
+        }
+
+        public static clsPoint NearestPointOnEllipse(clsPoint point, double semiMajor, double semiMinor) {
+            double px = Math.Abs(point.x);
+            double py = Math.Abs(point.y);
+
+            double a = semiMajor;
+            double b = semiMinor;
+
+            double tx = 0.70710678118;
+            double ty = 0.70710678118;
+
+            double x, y, ex, ey, rx, ry, qx, qy, r, q, t = 0;
+
+            for (int i = 0; i < 3; ++i) {
+                x = a * tx;
+                y = b * ty;
+
+                ex = (a * a - b * b) * (tx * tx * tx) / a;
+                ey = (b * b - a * a) * (ty * ty * ty) / b;
+
+                rx = x - ex;
+                ry = y - ey;
+
+                qx = px - ex;
+                qy = py - ey;
+
+                r = Math.Sqrt(rx * rx + ry * ry);
+                q = Math.Sqrt(qy * qy + qx * qx);
+
+                tx = Math.Min(1, Math.Max(0, (qx * r / q + ex) / a));
+                ty = Math.Min(1, Math.Max(0, (qy * r / q + ey) / b));
+
+                t = Math.Sqrt(tx * tx + ty * ty);
+
+                tx /= t;
+                ty /= t;
+            }
+
+            return new clsPoint {
+                x = (float)(a * (point.x < 0 ? -tx : tx)),
+                y = (float)(b * (point.y < 0 ? -ty : ty))
+            };
+        }
     }
 }
+

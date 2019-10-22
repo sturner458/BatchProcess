@@ -174,7 +174,7 @@ namespace BatchProcess {
             byte[] byteArray = new byte[bytes];
 
             PixelFormat pfIn = b.PixelFormat;
-            int bytesPerPixel = 3;
+            int bytesPerPixel = 4;
             //Get the number of bytes per pixel
             switch (pfIn) {
                 case PixelFormat.Format24bppRgb: bytesPerPixel = 3; break;
@@ -186,13 +186,16 @@ namespace BatchProcess {
             //Convert the pixel to it's luminance using the formula:
             // L = .299*R + .587*G + .114*B
             //Note that ic is the input column and oc is the output column
+            //
+            // IMPORTANT!!! Loading images this way gets them in BGRA format!
+            //
             for (int r = 0; r < b.Height; r++) {
                 int ic = 0;
                 for (int c = 0; c < b.Width; c += 1) {
                     byteArray[r * b.Width + c] = (byte)(int)
-                        (0.299f * rgbValues[r * bmpStride + ic] +
+                        (0.299f * rgbValues[r * bmpStride + ic + 2] +
                          0.587f * rgbValues[r * bmpStride + ic + 1] +
-                         0.114f * rgbValues[r * bmpStride + ic + 2]);
+                         0.114f * rgbValues[r * bmpStride + ic]);
                     ic = ic + bytesPerPixel;
                 }
             }

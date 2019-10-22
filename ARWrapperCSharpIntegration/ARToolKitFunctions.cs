@@ -265,7 +265,8 @@ public class ARToolKitFunctions
     public bool arwInitialiseAR() {
 
         string dllDir = "";
-        dllDir += Environment.GetEnvironmentVariable("ARTOOLKIT5_ROOT64");
+        dllDir = Environment.GetEnvironmentVariable("ARTOOLKIT5_ROOT64");
+        if (string.IsNullOrEmpty(dllDir)) dllDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
         if (dllDir.Equals("")) {
             throw new System.Exception("ARToolKitCSharpIntegration.ARToolKitFunctions.arwInitialiseAR(): ARTOOLKIT5_ROOT64 not set. Please set ARTOOLKIT5_ROOT64 in your environment variables to the path where you installed ARToolKit to.");
         } else {
@@ -837,7 +838,8 @@ public class ARToolKitFunctions
     public bool arwInitChessboardCorners(int nHoriztonal, int nVertical, float spacing, int xSize, int ySize, int xSizeLowRes, int ySizeLowRes, int pixelFormat, int calibImageNum) {
 
         string dllDir = "";
-        dllDir += Environment.GetEnvironmentVariable("ARTOOLKIT5_ROOT64");
+        dllDir = Environment.GetEnvironmentVariable("ARTOOLKIT5_ROOT64");
+        if (string.IsNullOrEmpty(dllDir))  dllDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
         if (dllDir.Equals("")) {
             throw new System.Exception("ARToolKitCSharpIntegration.ARToolKitFunctions.arwInitialiseAR(): ARTOOLKIT5_ROOT64 not set. Please set ARTOOLKIT5_ROOT64 in your environment variables to the path where you installed ARToolKit to.");
         } else {
@@ -882,6 +884,16 @@ public class ARToolKitFunctions
         GCHandle handle = GCHandle.Alloc(projectErrorResults, GCHandleType.Pinned);
         IntPtr address = handle.AddrOfPinnedObject();
         float averageProjectionError = ARNativePlugin.arwCalibChessboardCorners(file_name, address);
+        handle.Free();
+        return averageProjectionError;
+    }
+
+    // Uses 4 calibration factors
+    public float arwCalibChessboardCornersSimple(int numImages, string file_name, out float[] projectErrorResults) {
+        projectErrorResults = new float[numImages];
+        GCHandle handle = GCHandle.Alloc(projectErrorResults, GCHandleType.Pinned);
+        IntPtr address = handle.AddrOfPinnedObject();
+        float averageProjectionError = ARNativePlugin.arwCalibChessboardCornersSimple(file_name, address);
         handle.Free();
         return averageProjectionError;
     }
