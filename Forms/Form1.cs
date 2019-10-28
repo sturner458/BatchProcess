@@ -61,7 +61,7 @@ namespace BatchProcess {
             StreamWriter sw = new StreamWriter(cornerFile);
             foreach (string myFile in Directory.GetFiles(myFolder)) {
                 if (!(myFile.ToLower().EndsWith(".png") || myFile.ToLower().EndsWith(".jpg"))) continue;
-                byte[] imageBytes = ImageToGrayscaleByteArray(Image.FromFile(myFile));
+                byte[] imageBytes = ImageToGrayscaleByteArray((Bitmap)Image.FromFile(myFile));
 
                 int result = ARToolKitFunctions.Instance.arwFindChessboardCorners(corners, out cornerCount, imageBytes, false);
 
@@ -141,7 +141,7 @@ namespace BatchProcess {
             
             foreach (string myFile in myFiles) {
                 if (myFile.ToLower().EndsWith(".jpg")) {
-                    byte[] imageBytes = ImageToByteArray(Image.FromFile(myFolder + "\\" + myFile));
+                    byte[] imageBytes = ImageToByteArray((Bitmap)Image.FromFile(myFolder + "\\" + myFile));
                     nFiles = nFiles + 1;
                     lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
                     Application.DoEvents();
@@ -496,7 +496,7 @@ namespace BatchProcess {
             if (ret != DialogResult.OK) return;
             myImageFile = myDlg.FileName;
 
-            mdlEmguDetection.DetectEllipses(myImageFile);
+            mdlEmguDetection.DetectDatums(myImageFile);
         }
     }
 

@@ -70,7 +70,6 @@ namespace BatchProcess {
 
         private static Image<Gray, byte> RGBA2Grayscale(Image<Rgba, byte> imageIn) {
             Image<Gray, byte> grayImage = new Image<Gray, byte>(new Size(imageIn.Width, imageIn.Height));
-            int bmpStride = imageIn.Width * 4;
 
             //Convert the pixel to it's luminance using the formula:
             // L = .299*R + .587*G + .114*B
@@ -78,9 +77,9 @@ namespace BatchProcess {
             for (int r = 0; r < imageIn.Height; r++) {
                 for (int c = 0; c < imageIn.Width; c += 1) {
                     grayImage.Data[r, c, 0] = (byte)(int)
-                        (0.299f * imageIn.Data[r, c, 0] +
+                        (0.299f * imageIn.Data[r, c, 2] +
                          0.587f * imageIn.Data[r, c, 1] +
-                         0.114f * imageIn.Data[r, c, 2]);
+                         0.114f * imageIn.Data[r, c, 0]);
                 }
             }
             return grayImage;
@@ -897,7 +896,7 @@ namespace BatchProcess {
             var grayImage = new Image<Gray, byte>(myImageFile);
             Mat myImage = Emgu.CV.CvInvoke.Imread(myImageFile, Emgu.CV.CvEnum.ImreadModes.Color);
 
-            DrawCornersOnImage(myImage, grayImage, Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Distorted.jpg", out Emgu.CV.Util.VectorOfPointF cornerPoints);
+            DrawCornersOnImage(myImage, grayImage, Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Distorted.png", out Emgu.CV.Util.VectorOfPointF cornerPoints);
 
             FileStream sr = File.Open(myFile, FileMode.Open, FileAccess.Read);
             BinaryReader br = new BinaryReader(sr);
@@ -954,9 +953,12 @@ namespace BatchProcess {
             CalculateProjectionErrorsForImage(myImage, cameraMatrix, distortionCoeffs, param);
             CvInvoke.Undistort(myImage, outImage, cameraMatrix, distortionCoeffs);
             var image = outImage.ToImage<Emgu.CV.Structure.Rgba, byte>();
-            grayImage = RGBA2Grayscale(image);
+            var newFileName = Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Undistorted.png";
+            CvInvoke.Imwrite(newFileName, image, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 5));
+            grayImage = new Image<Gray, byte>(newFileName);
+            // grayImage = RGBA2Grayscale(image);
 
-            DrawCornersOnImage(outImage, grayImage, Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Undistorted.jpg", out cornerPoints);
+            DrawCornersOnImage(outImage, grayImage, newFileName, out cornerPoints);
         }
 
         public static void UndistortSimple(string myFile, string myImageFile) {
@@ -1050,7 +1052,7 @@ namespace BatchProcess {
                 }
             }
 
-            CvInvoke.Imwrite(outFileName, imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
+            CvInvoke.Imwrite(outFileName, imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 5));
         }
 
         static double CalculateProjectionErrorsForImage(Mat image ,Mat cameraMatrix, Mat distortionCoeffs, ARParam param) {

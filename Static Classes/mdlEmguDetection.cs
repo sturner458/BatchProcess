@@ -12,9 +12,14 @@ using System.Runtime.InteropServices;
 using System.IO;
 using static System.Math;
 using Emgu.CV.Structure;
+using static BatchProcess.mdlRecognise;
+using System.Drawing.Imaging;
+using OpenTK;
 
 namespace BatchProcess {
     public static class mdlEmguDetection {
+
+        static Logger myLogger;
 
         public static void DrawMarkers()
         {
@@ -134,29 +139,20 @@ namespace BatchProcess {
             }
         }
 
-        public static void DetectEllipses(string myFile) {
+        public static Emgu.CV.Util.VectorOfPointF DetectEllipses(Image<Gray, byte> grayImage, Mat imageCopy) {
+            var centerPoints = new Emgu.CV.Util.VectorOfPointF();
             var contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
-            // var heirarchy = new Emgu.CV.Util.VectorOfInt();
             Mat heirarchy = null;
-            var grayImage = new Image<Gray, byte>(myFile);
-            Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
             var grayImageCopy = grayImage.Clone();
             var res = CvInvoke.Threshold(grayImage, grayImageCopy, 170, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
-
-            CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-threshold" + Path.GetExtension(myFile), grayImageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
-
+            //CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-threshold" + Path.GetExtension(myFile), grayImageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
             grayImageCopy._Not();
-            
-            // var edges = grayImage.Clone();
-            //CvInvoke.Canny(grayImage, edges, 80, 120);
-            //CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-copy" + Path.GetExtension(myFile), edges, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
 
             CvInvoke.FindContours(grayImageCopy, contours, heirarchy, Emgu.CV.CvEnum.RetrType.Ccomp, Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
             // var circles = CvInvoke.HoughCircles(grayImage, Emgu.CV.CvEnum.HoughType.Gradient, 1, grayImage.Rows / 16);
             if (contours.Size > 0) {
 
                 double largestArea = 0;
-                var centerPoints = new Emgu.CV.Util.VectorOfPointF();
                 for (int i = 0; i < contours.Size; i++) {
                     var contour = contours[i];
                     if (contour.Size > 4) {
@@ -180,16 +176,136 @@ namespace BatchProcess {
                         }
                     }
                 }
+            }
 
+            return centerPoints;
+        }
+
+        public static void DetectDatums(string myFile) {
+            var grayImage = new Image<Gray, byte>(myFile);
+            Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
+            byte[] grayImageBytes = new byte[grayImage.Data.Length];
+            Buffer.BlockCopy(grayImage.Data, 0, grayImageBytes, 0, grayImage.Data.Length);
+            myVideoWidth = grayImage.Width;
+            myVideoHeight = grayImage.Height;
+
+            //Detect the AR Marker first
+
+            // Initialise AR
+            string myCameraFile = "data\\calib.dat";
+            // string myVConf = "-module=Image -preset=photo -format=BGRA";
+            string myVConf = "-module=Dummy -width=" + myVideoWidth + " -height=" + myVideoHeight + " -format=BGR";
+            ARToolKitFunctions.Instance.arwInitialiseAR();
+            ARToolKitFunctions.Instance.arwInitARToolKit(myVConf, myCameraFile, myVConf, myCameraFile, myNear, myFar, myVideoWidth, myVideoHeight, grayImage.Width, myVideoHeight);
+            string artkVersion = ARToolKitFunctions.Instance.arwGetARToolKitVersion();
+            string pixelFormat = string.Empty;
+            ARToolKitFunctions.Instance.arwSetLogLevel(0);
+            myLogger = new Logger();
+
+            ARToolKitFunctions.Instance.arwSetPatternDetectionMode(AR_MATRIX_CODE_DETECTION);
+            ARToolKitFunctions.Instance.arwSetMatrixCodeType((int)AR_MATRIX_CODE_TYPE.AR_MATRIX_CODE_4x4);
+            ARToolKitFunctions.Instance.arwSetVideoThreshold(50);
+            ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
+            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(true, false);
+            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(false, true);
+
+            var markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;1;80;", true);
+            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayImageBytes, false);
+            float[] mv = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            float[] pv = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] vp = new int[4] { 0, 0, myVideoWidth, myVideoHeight };
+            retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv, false);
+            ARToolKitFunctions.Instance.arwGetProjectionMatrix(10, 30, pv, false);
+            OpenTK.Matrix4 proj = new OpenTK.Matrix4(pv[0], pv[1], pv[2], pv[3], pv[4], pv[5], pv[6], pv[7], pv[8], pv[9], pv[10], pv[11], pv[12], pv[13], pv[14], pv[15]);
+            OpenTK.Matrix4 model = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
+            
+            //var centerPoints = DetectEllipses(grayImage, imageCopy);
+            Emgu.CV.Util.VectorOfPointF centerPoints = new Emgu.CV.Util.VectorOfPointF();
+            GetCenterPointForDatum(new clsPoint(-55, 30), proj, model, vp, grayImage, ref centerPoints);
+            GetCenterPointForDatum(new clsPoint(-55, -30), proj, model, vp, grayImage, ref centerPoints);
+            GetCenterPointForDatum(new clsPoint(55, 30), proj, model, vp, grayImage, ref centerPoints);
+            GetCenterPointForDatum(new clsPoint(55, -30), proj, model, vp, grayImage, ref centerPoints);
+
+            if (centerPoints.Size == 4) {
                 CvInvoke.CornerSubPix(grayImage, centerPoints, new Size(11, 11), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100, 0.1));
                 DrawCornersOnImage(imageCopy, centerPoints);
-                CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-copy" + Path.GetExtension(myFile), imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
+                CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-copy" + Path.GetExtension(myFile), imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
             }
+        }
+
+        private static void GetCenterPointForDatum(clsPoint pt, Matrix4 proj, Matrix4 model, int[] vp, Image<Gray, byte> grayImage, ref Emgu.CV.Util.VectorOfPointF centerPoints) {
+            var cpt = gluProject(proj, model, vp, pt.Point3d(0)).Point2D();
+            var d = GetSquareForDatum(pt, proj, model, vp);
+            if (d < 20) return;
+            if (cpt.x - d < 0 || cpt.x + d > vp[2] || cpt.y - d < 0 || cpt.y + d > vp[3]) return;
+            var region = new Mat(grayImage.Mat, new Rectangle((int)cpt.x - d, (int)cpt.y - d, 2 * d, 2 * d));
+            var binaryRegion = region.Clone();
+            double otsuThreshold = CvInvoke.Threshold(region, binaryRegion, 0.0, 255.0, Emgu.CV.CvEnum.ThresholdType.Otsu);
+            int nonzero = CvInvoke.CountNonZero(binaryRegion);
+            var square = 4 * (float)d * d;
+            if (nonzero > square *0.4f && nonzero < square * 0.6f) {
+                centerPoints.Push(new PointF[] { new PointF((float)cpt.X, (float)cpt.Y) } );
+            }
+        }
+
+        private static clsPoint3d gluProject(Matrix4 projection, Matrix4 modelview, int[] vp, clsPoint3d p1) {
+            Vector4 vec;
+
+            vec.X = (float)p1.X;
+            vec.Y = (float)p1.Y;
+            vec.Z = (float)p1.Z;
+            vec.W = 1.0f;
+
+            Vector4.Transform(ref vec, ref modelview, out vec);
+            Vector4.Transform(ref vec, ref projection, out vec);
+
+            if (vec.W > float.Epsilon || vec.W < float.Epsilon) {
+                vec.X /= vec.W;
+                vec.Y /= vec.W;
+                vec.Z /= vec.W;
+            }
+
+            return new clsPoint3d(vp[0] + (1.0f + vec.X) * vp[2] / 2.0f, vp[3] -  (vp[1] + (1.0f + vec.Y) * vp[3] / 2.0f), (1.0f + vec.Z) / 2.0f);
+        }
+
+        static int GetSquareForDatum(clsPoint pt, OpenTK.Matrix4 proj, OpenTK.Matrix4 model, int[] vp) {
+            var cpt = gluProject(proj, model, vp, pt.Point3d(0)).Point2D();
+            var pt1 = gluProject(proj, model, vp, new clsPoint3d(pt.x - 10, pt.y - 10, 0)).Point2D();
+            var pt2 = gluProject(proj, model, vp, new clsPoint3d(pt.x + 10, pt.y - 10, 0)).Point2D();
+            var pt3 = gluProject(proj, model, vp, new clsPoint3d(pt.x + 10, pt.y + 10, 0)).Point2D();
+            var pt4 = gluProject(proj, model, vp, new clsPoint3d(pt.x - 10, pt.y + 10, 0)).Point2D();
+            var l1 = new clsLine(pt1, pt2);
+            var l2 = new clsLine(pt2, pt3);
+            var l3 = new clsLine(pt3, pt4);
+            var l4 = new clsLine(pt4, pt1);
+
+            double d = 100;
+            var l = new clsLine(cpt, new clsPoint(cpt.x - 1, cpt.y - 1));
+            var p1 = l.Intersect(l1);
+            if (p1 != null && p1.Dist(cpt) < d) d = p1.Dist(cpt);
+            p1 = l.Intersect(l2);
+            if (p1 != null && p1.Dist(cpt) < d) d = p1.Dist(cpt);
+            p1 = l.Intersect(l3);
+            if (p1 != null && p1.Dist(cpt) < d) d = p1.Dist(cpt);
+            p1 = l.Intersect(l4);
+            if (p1 != null && p1.Dist(cpt) < d) d = p1.Dist(cpt);
+
+            l = new clsLine(cpt, new clsPoint(cpt.x + 1, cpt.y - 1));
+            p1 = l.Intersect(l1);
+            if (p1 != null && p1.Dist(cpt) < d) d = p1.Dist(cpt);
+            p1 = l.Intersect(l2);
+            if (p1 != null && p1.Dist(cpt) < d) d = p1.Dist(cpt);
+            p1 = l.Intersect(l3);
+            if (p1 != null && p1.Dist(cpt) < d) d = p1.Dist(cpt);
+            p1 = l.Intersect(l4);
+            if (p1 != null && p1.Dist(cpt) < d) d = p1.Dist(cpt);
+
+            return (int)(d / Sqrt(2.0));
         }
 
         static void DrawCornersOnImage(Mat image, Emgu.CV.Util.VectorOfPointF cornerPoints) {
             for (int i = 0; i < cornerPoints.Size; i++) {
-                CvInvoke.Line(image, new Point((int)cornerPoints[i].X, (int)cornerPoints[i].Y), new Point((int)cornerPoints[i].X, (int)cornerPoints[i].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 4);
+                CvInvoke.Line(image, new Point((int)cornerPoints[i].X, (int)cornerPoints[i].Y), new Point((int)cornerPoints[i].X, (int)cornerPoints[i].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 1);
             }
         }
 
@@ -224,7 +340,12 @@ namespace BatchProcess {
         public static void DetectBlobEllipses(string myFile) {
             var grayImage = new Image<Gray, byte>(myFile);
             Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
-            grayImage._Not();
+            //grayImage._Not();
+
+            var grayImageCopy = grayImage.Clone();
+            var res = CvInvoke.Threshold(grayImage, grayImageCopy, 170, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
+            CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-threshold" + Path.GetExtension(myFile), grayImageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
+            //grayImageCopy._Not();
 
             // Set our filtering parameters 
             // Initialize parameter settiing using cv2.SimpleBlobDetector 
@@ -232,25 +353,25 @@ namespace BatchProcess {
 
             // Set Area filtering parameters 
             paramsx.FilterByArea = true;
-            paramsx.MinArea = 100;
+            paramsx.MinArea = 1000;
 
             // Set Circularity filtering parameters 
-            paramsx.FilterByCircularity = true;
+            paramsx.FilterByCircularity = false;
             paramsx.MinCircularity = 0.9f;
 
             // Set Convexity filtering parameters 
-            paramsx.FilterByConvexity = true;
+            paramsx.FilterByConvexity = false;
             paramsx.MinConvexity = 0.2f;
 
             // Set inertia filtering parameters 
-            paramsx.FilterByInertia = true;
+            paramsx.FilterByInertia = false;
             paramsx.MinInertiaRatio = 0.01f;
 
             // Create a detector with the parameters 
             var detector = new Emgu.CV.Features2D.SimpleBlobDetector(paramsx);
 
             // Detect blobs 
-            var keypoints = detector.Detect(grayImage);
+            var keypoints = detector.Detect(grayImageCopy);
             var keyPoints = new Emgu.CV.Util.VectorOfKeyPoint(keypoints);
 
             // Draw blobs on our image as red circles 
@@ -258,7 +379,7 @@ namespace BatchProcess {
             Emgu.CV.Features2D.Features2DToolbox.DrawKeypoints(imageCopy, keyPoints, blank, new Bgr(System.Drawing.Color.Red), Emgu.CV.Features2D.Features2DToolbox.KeypointDrawType.DrawRichKeypoints);
 
             var number_of_blobs = keyPoints.Size;
-            CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-copy" + Path.GetExtension(myFile), imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
+            CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-copy" + Path.GetExtension(myFile), blank, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
         }
 
         static void DrawContoursOnImage(Mat imageCopy, Emgu.CV.Util.VectorOfPoint cornerPoints) {

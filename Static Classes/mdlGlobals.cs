@@ -51,9 +51,8 @@ namespace BatchProcess {
             return source.Substring(0, Min(i, source.Length));
         }
 
-        public static byte[] ImageToByteArray(System.Drawing.Image imageIn)
+        public static byte[] ImageToByteArray(Bitmap b)
         {
-            Bitmap b = new Bitmap(imageIn);
             Rectangle rect = new Rectangle(0, 0, b.Width, b.Height);
             BitmapData bmpData = b.LockBits(rect, ImageLockMode.ReadWrite, b.PixelFormat);
 
@@ -70,8 +69,7 @@ namespace BatchProcess {
         /// <summary>
         /// Converts a bitmap into an 8-bit grayscale bitmap
         /// </summary>
-        public static Bitmap ColorToGrayscale(Bitmap bmp)
-        {
+        public static Bitmap ColorToGrayscale(Bitmap bmp) {
             int w = bmp.Width,
                 h = bmp.Height,
                 r, ic, oc, bmpStride, outputStride, bytesPerPixel;
@@ -133,9 +131,8 @@ namespace BatchProcess {
                                 (0.299f * bmpPtr[r * bmpStride + ic] +
                                  0.587f * bmpPtr[r * bmpStride + ic + 1] +
                                  0.114f * bmpPtr[r * bmpStride + ic + 2]);
-                }
-                else //bytesPerPixel == 4
-                {
+                } else //bytesPerPixel == 4
+                  {
                     //Convert the pixel to it's luminance using the formula:
                     // L = alpha * (.299*R + .587*G + .114*B)
                     //Note that ic is the input column and oc is the output column
@@ -156,8 +153,7 @@ namespace BatchProcess {
             return output;
         }
 
-        public static byte[] ImageToGrayscaleByteArray(System.Drawing.Image imageIn) {
-            Bitmap b = new Bitmap(imageIn);
+        public static byte[] ImageToGrayscaleByteArray(Bitmap b) {
             Rectangle rect = new Rectangle(0, 0, b.Width, b.Height);
             BitmapData bmpData = b.LockBits(rect, ImageLockMode.ReadWrite, b.PixelFormat);
             var bmpStride = bmpData.Stride;
@@ -233,24 +229,25 @@ namespace BatchProcess {
             }
         }
 
-        public static Bitmap MakeGrayscale3(Bitmap original)
+        public static byte[] MakeGrayscaleByteArray(Bitmap original)
         {
             //create a blank bitmap the same size as original
-            Bitmap newBitmap = new Bitmap(original.Width, original.Height,PixelFormat.Format8bppIndexed);
+            //Bitmap newBitmap = new Bitmap(original.Width, original.Height, PixelFormat.Format8bppIndexed);
+            Bitmap newBitmap = new Bitmap(original.Width, original.Height);
 
             //get a graphics object from the new image
             Graphics g = Graphics.FromImage(newBitmap);
 
             //create the grayscale ColorMatrix
             ColorMatrix colorMatrix = new ColorMatrix(
-               new float[][]
-               {
-         new float[] {.3f, .3f, .3f, 0, 0},
-         new float[] {.59f, .59f, .59f, 0, 0},
-         new float[] {.11f, .11f, .11f, 0, 0},
-         new float[] {0, 0, 0, 1, 0},
-         new float[] {0, 0, 0, 0, 1}
-               });
+                new float[][]
+                {
+                    new float[] {.3f, .3f, .3f, 0, 0},
+                    new float[] {.59f, .59f, .59f, 0, 0},
+                    new float[] {.11f, .11f, .11f, 0, 0},
+                    new float[] {0, 0, 0, 1, 0},
+                    new float[] {0, 0, 0, 0, 1}
+                });
 
             //create some image attributes
             ImageAttributes attributes = new ImageAttributes();
@@ -265,7 +262,19 @@ namespace BatchProcess {
 
             //dispose the Graphics object
             g.Dispose();
-            return newBitmap;
+
+            Rectangle rect = new Rectangle(0, 0, newBitmap.Width, newBitmap.Height);
+            BitmapData bmpData = newBitmap.LockBits(rect, ImageLockMode.ReadWrite, newBitmap.PixelFormat);
+            var bmpStride = bmpData.Stride;
+
+            int bytes = Abs(bmpData.Stride) * newBitmap.Height;
+            byte[] rgbValues = new byte[bytes];
+
+            // Copy the RGB values into the array.
+            Marshal.Copy(bmpData.Scan0, rgbValues, 0, bytes);
+
+            newBitmap.UnlockBits(bmpData);
+            return rgbValues;
         }
 
         public static int byteSwapInt(int from)
