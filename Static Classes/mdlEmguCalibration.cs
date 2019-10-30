@@ -543,7 +543,7 @@ namespace BatchProcess {
         //    return 0;
         //}
 
-        static int arParamObserv2Ideal(double[] dist_factor, double ox, double oy, out double ix, out double iy, int dist_function_version)
+        public static int arParamObserv2Ideal(double[] dist_factor, double ix, double iy, out double ox, out double oy, int dist_function_version)
         {
             // ----------------------------------------
             if (dist_function_version == 5) {
@@ -572,8 +572,8 @@ namespace BatchProcess {
                 cy = dist_factor[15];
                 s  = dist_factor[16];
         
-                x0 = x = (ox - cx)/fx;
-                y0 = y = (oy - cy)/fy;
+                x0 = x = (ix - cx)/fx;
+                y0 = y = (iy - cy)/fy;
         
                 for (i = 0; i<PD_LOOP2; i++) {
                     double r2 = x * x + y * y;
@@ -584,8 +584,8 @@ namespace BatchProcess {
                     y = (y0 - deltaY)*icdist;
                 }
 
-                ix = x * fx / s + cx;
-                iy = y * fy / s + cy;
+                ox = x * fx / s + cx;
+                oy = y * fy / s + cy;
         
                 return 0;
         
@@ -608,8 +608,8 @@ namespace BatchProcess {
                 cy = dist_factor[7];
                 s  = dist_factor[8];
         
-                x0 = x = (ox - cx)/fx;
-                y0 = y = (oy - cy)/fy;
+                x0 = x = (ix - cx)/fx;
+                y0 = y = (iy - cy)/fy;
         
                 for (i = 0; i<PD_LOOP2; i++) {
                     if (x == 0.0 && y == 0.0) break;
@@ -622,11 +622,11 @@ namespace BatchProcess {
                 }
 
 
-                ix = x * fx / s + cx;
-                iy = y * fy / s + cy;
+                ox = x * fx / s + cx;
+                oy = y * fy / s + cy;
 
-                ix = x * fx / s + cx;
-                iy = y * fy / s + cy;
+                ox = x * fx / s + cx;
+                oy = y * fy / s + cy;
         
                 return 0;
         
@@ -637,8 +637,8 @@ namespace BatchProcess {
                 int i;
 
                 ar = dist_factor[3];
-                px = (ox - dist_factor[0]) / ar;
-                py =  oy - dist_factor[1];
+                px = (ix - dist_factor[0]) / ar;
+                py =  iy - dist_factor[1];
                 p1 = dist_factor[4]/100000000.0;
                 p2 = dist_factor[5]/100000000.0/100000.0;
                 z02 = px * px + py * py;
@@ -661,8 +661,8 @@ namespace BatchProcess {
                 }
 
 
-                ix = px / dist_factor[2] + dist_factor[0];
-                iy = py / dist_factor[2] + dist_factor[1];
+                ox = px / dist_factor[2] + dist_factor[0];
+                oy = py / dist_factor[2] + dist_factor[1];
         
                 return 0;
         
@@ -672,8 +672,8 @@ namespace BatchProcess {
                 double z02, z0, p1, p2, q, z, px, py;
                 int i;
 
-                px = ox - dist_factor[0];
-                py = oy - dist_factor[1];
+                px = ix - dist_factor[0];
+                py = iy - dist_factor[1];
                 p1 = dist_factor[3]/100000000.0;
                 p2 = dist_factor[4]/100000000.0/100000.0;
                 z02 = px* px+ py* py;
@@ -696,8 +696,8 @@ namespace BatchProcess {
                 }
 
 
-                ix = px / dist_factor[2] + dist_factor[0];
-                iy = py / dist_factor[2] + dist_factor[1];
+                ox = px / dist_factor[2] + dist_factor[0];
+                oy = py / dist_factor[2] + dist_factor[1];
         
                 return 0;
         
@@ -707,8 +707,8 @@ namespace BatchProcess {
                 double z02, z0, p, q, z, px, py;
                 int i;
 
-                px = ox - dist_factor[0];
-                py = oy - dist_factor[1];
+                px = ix - dist_factor[0];
+                py = iy - dist_factor[1];
                 p = dist_factor[3]/100000000.0;
                 z02 = px * px + py * py;
                 q = z0 = Math.Sqrt(px * px + py* py);
@@ -730,16 +730,16 @@ namespace BatchProcess {
                 }
 
 
-                ix = px / dist_factor[2] + dist_factor[0];
-                iy = py / dist_factor[2] + dist_factor[1];
+                ox = px / dist_factor[2] + dist_factor[0];
+                oy = py / dist_factor[2] + dist_factor[1];
         
                 return 0;
         
                 // ----------------------------------------
             } else {
 
-                ix = 0;
-                iy = 0;
+                ox = 0;
+                oy = 0;
                 return -1;
         
             }
@@ -769,7 +769,7 @@ namespace BatchProcess {
         //}
 
 
-        static int arParamIdeal2Observ(double[] dist_factor, double ix, double iy, ref double ox, ref double oy, int dist_function_version)
+        public static int arParamIdeal2Observ(double[] dist_factor, double ix, double iy, out double ox, out double oy, int dist_function_version)
         {
             // ----------------------------------------
             if (dist_function_version == 5) {
@@ -885,6 +885,8 @@ namespace BatchProcess {
                 return 0;
                 // ----------------------------------------
             } else {
+                ox = 0;
+                oy = 0;
                 return -1;
             }
         }
@@ -898,34 +900,7 @@ namespace BatchProcess {
 
             DrawCornersOnImage(myImage, grayImage, Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Distorted.png", out Emgu.CV.Util.VectorOfPointF cornerPoints);
 
-            FileStream sr = File.Open(myFile, FileMode.Open, FileAccess.Read);
-            BinaryReader br = new BinaryReader(sr);
-
-            ARParam param = new ARParam();
-            param.xsize = byteSwapInt(br.ReadInt32());
-            param.ysize = byteSwapInt(br.ReadInt32());
-            for (i = 0; i < 3; i++) {
-                for (j = 0; j < 4; j++) {
-                    param.mat[i, j] = byteSwapDouble(br.ReadDouble());
-                }
-            }
-            for (i = 0; i < 17; i++) {
-                param.dist_factor[i] = byteSwapDouble(br.ReadDouble());
-            }
-            br.Close();
-            sr.Close();
-
-            double s = param.dist_factor[16];
-            param.mat[0, 0] *= s;
-            param.mat[0, 1] *= s;
-            param.mat[1, 0] *= s;
-            param.mat[1, 1] *= s;
-            param.dist_factor[12] /= s;
-            param.dist_factor[13] /= s;
-            param.dist_factor[14] /= s;
-            param.dist_factor[15] /= s;
-            param.dist_factor[16] = 1.0;
-            param.dist_function_version = 5;
+            ARParam param = LoadCameraFromFile(myFile);
 
             //Emgu.CV.Util.VectorOfPointF newCornerPoints = new Emgu.CV.Util.VectorOfPointF();
             //for (i = 0; i < cornerPoints.Size; i++) {
@@ -959,6 +934,39 @@ namespace BatchProcess {
             // grayImage = RGBA2Grayscale(image);
 
             DrawCornersOnImage(outImage, grayImage, newFileName, out cornerPoints);
+        }
+
+        public static ARParam LoadCameraFromFile(string myFile) {
+            FileStream sr = File.Open(myFile, FileMode.Open, FileAccess.Read);
+            BinaryReader br = new BinaryReader(sr);
+
+            ARParam param = new ARParam();
+            param.xsize = byteSwapInt(br.ReadInt32());
+            param.ysize = byteSwapInt(br.ReadInt32());
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 4; j++) {
+                    param.mat[i, j] = byteSwapDouble(br.ReadDouble());
+                }
+            }
+            for (int i = 0; i < 17; i++) {
+                param.dist_factor[i] = byteSwapDouble(br.ReadDouble());
+            }
+            br.Close();
+            sr.Close();
+
+            double s = param.dist_factor[16];
+            param.mat[0, 0] *= s;
+            param.mat[0, 1] *= s;
+            param.mat[1, 0] *= s;
+            param.mat[1, 1] *= s;
+            //param.dist_factor[12] /= s;
+            //param.dist_factor[13] /= s;
+            //param.dist_factor[14] /= s;
+            //param.dist_factor[15] /= s;
+            //param.dist_factor[16] = 1.0;
+            param.dist_function_version = 5;
+
+            return param;
         }
 
         public static void UndistortSimple(string myFile, string myImageFile) {
@@ -1144,8 +1152,7 @@ namespace BatchProcess {
                         if (h == 0.0) continue;
                         double sx = hx / h;
                         double sy = hy / h;
-                        double ox = 0, oy = 0;
-                        arParamIdeal2Observ(param.dist_factor, sx, sy, ref ox, ref oy, param.dist_function_version);
+                        arParamIdeal2Observ(param.dist_factor, sx, sy, out double ox, out double oy, param.dist_function_version);
                         sx = cornerPoints[i * mBoardSize.Width + j].X;
                         sy = cornerPoints[i * mBoardSize.Width + j].Y;
                         System.Diagnostics.Debug.Print((ox - sx).ToString("0.000") + "\t" + (oy - sy).ToString("0.000"));

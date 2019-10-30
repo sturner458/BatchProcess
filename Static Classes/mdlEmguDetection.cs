@@ -15,6 +15,7 @@ using Emgu.CV.Structure;
 using static BatchProcess.mdlRecognise;
 using System.Drawing.Imaging;
 using OpenTK;
+using static BatchProcess.mdlEmguCalibration;
 
 namespace BatchProcess {
     public static class mdlEmguDetection {
@@ -189,10 +190,15 @@ namespace BatchProcess {
             myVideoWidth = grayImage.Width;
             myVideoHeight = grayImage.Height;
 
+            //var thresh = grayImage.Clone();
+            //double otsuThreshold = CvInvoke.Threshold(grayImage, thresh, 0.0, 255.0, Emgu.CV.CvEnum.ThresholdType.Otsu);
+            //CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-threshold" + Path.GetExtension(myFile), thresh, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
+
             //Detect the AR Marker first
 
             // Initialise AR
             string myCameraFile = "data\\calib.dat";
+            var arParams = LoadCameraFromFile(myCameraFile);
             // string myVConf = "-module=Image -preset=photo -format=BGRA";
             string myVConf = "-module=Dummy -width=" + myVideoWidth + " -height=" + myVideoHeight + " -format=BGR";
             ARToolKitFunctions.Instance.arwInitialiseAR();
@@ -221,10 +227,10 @@ namespace BatchProcess {
             
             //var centerPoints = DetectEllipses(grayImage, imageCopy);
             Emgu.CV.Util.VectorOfPointF centerPoints = new Emgu.CV.Util.VectorOfPointF();
-            GetCenterPointForDatum(new clsPoint(-55, 30), proj, model, vp, grayImage, ref centerPoints);
-            GetCenterPointForDatum(new clsPoint(-55, -30), proj, model, vp, grayImage, ref centerPoints);
-            GetCenterPointForDatum(new clsPoint(55, 30), proj, model, vp, grayImage, ref centerPoints);
-            GetCenterPointForDatum(new clsPoint(55, -30), proj, model, vp, grayImage, ref centerPoints);
+            GetCenterPointForDatum(new clsPoint(-55, 30), proj, model, vp, arParams, grayImage, ref centerPoints);
+            GetCenterPointForDatum(new clsPoint(-55, -30), proj, model, vp, arParams, grayImage, ref centerPoints);
+            GetCenterPointForDatum(new clsPoint(55, 30), proj, model, vp, arParams, grayImage, ref centerPoints);
+            GetCenterPointForDatum(new clsPoint(55, -30), proj, model, vp, arParams, grayImage, ref centerPoints);
 
             if (centerPoints.Size == 4) {
                 CvInvoke.CornerSubPix(grayImage, centerPoints, new Size(11, 11), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100, 0.1));
@@ -233,22 +239,24 @@ namespace BatchProcess {
             }
         }
 
-        private static void GetCenterPointForDatum(clsPoint pt, Matrix4 proj, Matrix4 model, int[] vp, Image<Gray, byte> grayImage, ref Emgu.CV.Util.VectorOfPointF centerPoints) {
-            var cpt = gluProject(proj, model, vp, pt.Point3d(0)).Point2D();
-            var d = GetSquareForDatum(pt, proj, model, vp);
-            if (d < 20) return;
-            if (cpt.x - d < 0 || cpt.x + d > vp[2] || cpt.y - d < 0 || cpt.y + d > vp[3]) return;
-            var region = new Mat(grayImage.Mat, new Rectangle((int)cpt.x - d, (int)cpt.y - d, 2 * d, 2 * d));
+        private static void GetCenterPointForDatum(clsPoint pt, Matrix4 proj, Matrix4 model, int[] vp, ARParam arParams, Image<Gray, byte> grayImage, ref Emgu.CV.Util.VectorOfPointF centerPoints) {
+            var cpt = ModelToImageSpace(proj, model, vp, arParams, pt.Point3d(0));
+            var halfSquare = GetSquareForDatum(pt, proj, model, vp, arParams);
+            if (halfSquare < 20) return;
+            if (cpt.x - halfSquare < 0 || cpt.x + halfSquare > vp[2] || cpt.y - halfSquare < 0 || cpt.y + halfSquare > vp[3]) return;
+
+            var rect = new Rectangle((int)cpt.x - halfSquare, (int)cpt.y - halfSquare, 2 * halfSquare, 2 * halfSquare);
+            var region = new Mat(grayImage.Mat, rect);
             var binaryRegion = region.Clone();
             double otsuThreshold = CvInvoke.Threshold(region, binaryRegion, 0.0, 255.0, Emgu.CV.CvEnum.ThresholdType.Otsu);
             int nonzero = CvInvoke.CountNonZero(binaryRegion);
-            var square = 4 * (float)d * d;
-            if (nonzero > square *0.4f && nonzero < square * 0.6f) {
+            var square = 4 * halfSquare * halfSquare;
+            if (nonzero > square *0.333f && nonzero < square * 0.666f) {
                 centerPoints.Push(new PointF[] { new PointF((float)cpt.X, (float)cpt.Y) } );
             }
         }
 
-        private static clsPoint3d gluProject(Matrix4 projection, Matrix4 modelview, int[] vp, clsPoint3d p1) {
+        private static clsPoint ModelToImageSpace(Matrix4 projection, Matrix4 modelview, int[] vp, ARParam arParams, clsPoint3d p1) {
             Vector4 vec;
 
             vec.X = (float)p1.X;
@@ -259,21 +267,23 @@ namespace BatchProcess {
             Vector4.Transform(ref vec, ref modelview, out vec);
             Vector4.Transform(ref vec, ref projection, out vec);
 
-            if (vec.W > float.Epsilon || vec.W < float.Epsilon) {
+            if (vec.W > float.Epsilon || vec.W < -float.Epsilon) {
                 vec.X /= vec.W;
                 vec.Y /= vec.W;
                 vec.Z /= vec.W;
             }
 
-            return new clsPoint3d(vp[0] + (1.0f + vec.X) * vp[2] / 2.0f, vp[3] -  (vp[1] + (1.0f + vec.Y) * vp[3] / 2.0f), (1.0f + vec.Z) / 2.0f);
+            var p3d = new clsPoint3d(vp[0] + (1.0f + vec.X) * vp[2] / 2.0f, vp[3] -  (vp[1] + (1.0f + vec.Y) * vp[3] / 2.0f), (1.0f + vec.Z) / 2.0f);
+            arParamIdeal2Observ(arParams.dist_factor, p3d.X, p3d.Y, out double ox, out double oy, arParams.dist_function_version);
+            return new clsPoint(ox, oy);
         }
 
-        static int GetSquareForDatum(clsPoint pt, OpenTK.Matrix4 proj, OpenTK.Matrix4 model, int[] vp) {
-            var cpt = gluProject(proj, model, vp, pt.Point3d(0)).Point2D();
-            var pt1 = gluProject(proj, model, vp, new clsPoint3d(pt.x - 10, pt.y - 10, 0)).Point2D();
-            var pt2 = gluProject(proj, model, vp, new clsPoint3d(pt.x + 10, pt.y - 10, 0)).Point2D();
-            var pt3 = gluProject(proj, model, vp, new clsPoint3d(pt.x + 10, pt.y + 10, 0)).Point2D();
-            var pt4 = gluProject(proj, model, vp, new clsPoint3d(pt.x - 10, pt.y + 10, 0)).Point2D();
+        static int GetSquareForDatum(clsPoint pt, OpenTK.Matrix4 proj, OpenTK.Matrix4 model, int[] vp, ARParam arParams) {
+            var cpt = ModelToImageSpace(proj, model, vp, arParams, pt.Point3d(0));
+            var pt1 = ModelToImageSpace(proj, model, vp, arParams, new clsPoint3d(pt.x - 8, pt.y - 8, 0));
+            var pt2 = ModelToImageSpace(proj, model, vp, arParams, new clsPoint3d(pt.x + 8, pt.y - 8, 0));
+            var pt3 = ModelToImageSpace(proj, model, vp, arParams, new clsPoint3d(pt.x + 8, pt.y + 8, 0));
+            var pt4 = ModelToImageSpace(proj, model, vp, arParams, new clsPoint3d(pt.x - 8, pt.y + 8, 0));
             var l1 = new clsLine(pt1, pt2);
             var l2 = new clsLine(pt2, pt3);
             var l3 = new clsLine(pt3, pt4);

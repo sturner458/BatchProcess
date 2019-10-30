@@ -84,9 +84,9 @@ namespace BatchProcess {
         //	cv::LevMarqSparse lv;
         //lv.bundleAdjust(points_true, imagePoints, visibility, cameraMatrix, R_true, T_true, distCoeffs, criteria);
 
-    }
+        }
 
-        public static void LoadCameraFromFile(string myCalibFile, out Mat cameraMatrix, out Mat distortionCoeffs)
+        private static void LoadCameraFromFile(string myCalibFile, out Mat cameraMatrix, out Mat distortionCoeffs)
         {
             int i, j;
 
