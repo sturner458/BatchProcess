@@ -323,7 +323,7 @@ public class ARNativePlugin
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwUpdateARToolKit(IntPtr imageBytes, bool lowRes);
+    internal static extern bool arwUpdateARToolKit(IntPtr imageBytes, bool lowRes, bool doDatums);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     internal static extern bool arwInitChessboardCorners(int nHorizontal, int nVertical, float patternSpacing, int calibImageNum, int xsize, int ysize, int xsizeLowRes, int ysizeLowRes);

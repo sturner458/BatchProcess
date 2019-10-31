@@ -902,11 +902,11 @@ public class ARToolKitFunctions
         ARNativePlugin.arwCleanupChessboardCorners();
     }
 
-    public bool arwUpdateARToolKit(byte[] imageBytes, bool lowRes) {
+    public bool arwUpdateARToolKit(byte[] imageBytes, bool lowRes, bool doDatums) {
         bool ok = false;
         GCHandle handle = GCHandle.Alloc(imageBytes, GCHandleType.Pinned);
         IntPtr address = handle.AddrOfPinnedObject();
-        ok = ARNativePlugin.arwUpdateARToolKit(address, lowRes);
+        ok = ARNativePlugin.arwUpdateARToolKit(address, lowRes, doDatums);
         handle.Free();
         return ok;
     }

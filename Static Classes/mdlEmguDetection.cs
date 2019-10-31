@@ -184,6 +184,8 @@ namespace BatchProcess {
 
         public static void DetectDatums(string myFile) {
             var grayImage = new Image<Gray, byte>(myFile);
+            //CheckConnectedComponents(grayImage.Mat);
+
             Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
             byte[] grayImageBytes = new byte[grayImage.Data.Length];
             Buffer.BlockCopy(grayImage.Data, 0, grayImageBytes, 0, grayImage.Data.Length);
@@ -212,11 +214,11 @@ namespace BatchProcess {
             ARToolKitFunctions.Instance.arwSetMatrixCodeType((int)AR_MATRIX_CODE_TYPE.AR_MATRIX_CODE_4x4);
             ARToolKitFunctions.Instance.arwSetVideoThreshold(50);
             ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
-            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(true, false);
+            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(false, false);
             ARToolKitFunctions.Instance.arwSetCornerRefinementMode(false, true);
 
             var markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;1;80;", true);
-            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayImageBytes, false);
+            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayImageBytes, false, true);
             float[] mv = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             float[] pv = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             int[] vp = new int[4] { 0, 0, myVideoWidth, myVideoHeight };
@@ -232,7 +234,14 @@ namespace BatchProcess {
             GetCenterPointForDatum(new clsPoint(55, 30), proj, model, vp, arParams, grayImage, ref centerPoints);
             GetCenterPointForDatum(new clsPoint(55, -30), proj, model, vp, arParams, grayImage, ref centerPoints);
 
-            if (centerPoints.Size == 4) {
+            var pt = new clsPoint[4];
+            pt[0] = ModelToImageSpace(proj, model, vp, arParams, new clsPoint(-40, -40).Point3d(0));
+            pt[1] = ModelToImageSpace(proj, model, vp, arParams, new clsPoint(40, -40).Point3d(0));
+            pt[2] = ModelToImageSpace(proj, model, vp, arParams, new clsPoint(40, 40).Point3d(0));
+            pt[3] = ModelToImageSpace(proj, model, vp, arParams, new clsPoint(-40, 40).Point3d(0));
+            centerPoints.Push(pt.Select(p => new PointF((float)p.x, (float)p.y)).ToArray());
+
+            if (centerPoints.Size == 8) {
                 CvInvoke.CornerSubPix(grayImage, centerPoints, new Size(11, 11), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100, 0.1));
                 DrawCornersOnImage(imageCopy, centerPoints);
                 CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-copy" + Path.GetExtension(myFile), imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
@@ -441,6 +450,50 @@ namespace BatchProcess {
                 y = (float)(b * (point.y < 0 ? -ty : ty))
             };
         }
+
+        static bool CheckConnectedComponents(Mat grayImage) {
+            // Threshold using Otsu bi-modal (black&white) assumption
+            Mat binaryImage = grayImage.Clone();
+            double otsuThreshold = CvInvoke.Threshold(grayImage, binaryImage, 0.0, 255.0, Emgu.CV.CvEnum.ThresholdType.Otsu | Emgu.CV.CvEnum.ThresholdType.Binary);
+
+            // dilate to connect two squares
+            Mat kernel = new Mat();
+            CvInvoke.Dilate(binaryImage, binaryImage, kernel, new Point(-1, -1), 1, Emgu.CV.CvEnum.BorderType.Constant, CvInvoke.MorphologyDefaultBorderValue);
+
+            CvInvoke.Imwrite("C:\\Temp\\Dilate.png", binaryImage, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
+
+            // compute number of labels (should be 2: 0 for background, 1 for white)
+            Mat labelRegion = new Mat(new System.Drawing.Size(binaryImage.Width, binaryImage.Height), Emgu.CV.CvEnum.DepthType.Cv32S, 1);
+            Mat statistics = new Mat();
+            Mat centroids = new Mat();
+            var numberOfLabels = CvInvoke.ConnectedComponentsWithStats(binaryImage, labelRegion, statistics, centroids, Emgu.CV.CvEnum.LineType.EightConnected, Emgu.CV.CvEnum.DepthType.Cv32S);
+
+            Console.WriteLine(" - Number of labels: %d\n", numberOfLabels);
+
+            if (numberOfLabels != 2) return false;
+
+            // compute centers of background and foreground (should also be close to image center)
+            Emgu.CV.Util.VectorOfPoint imageCentre = new Emgu.CV.Util.VectorOfPoint( new Point [] { new Point((int)(grayImage.Cols / 2.0f), (int)(grayImage.Rows / 2.0f)) });
+            Emgu.CV.Util.VectorOfPointF blackCenter = new Emgu.CV.Util.VectorOfPointF(new PointF[] { new PointF((float)centroids.GetDoubleValue(0, 0), (float)centroids.GetDoubleValue(0, 1)) } );
+            Emgu.CV.Util.VectorOfPointF whiteCenter = new Emgu.CV.Util.VectorOfPointF(new PointF[] { new PointF((float)centroids.GetDoubleValue(1, 0), (float)centroids.GetDoubleValue(1, 1)) });
+
+            var blackCentroidDistance = CvInvoke.Norm(blackCenter, imageCentre, Emgu.CV.CvEnum.NormType.L2);
+            var whiteCentroidDistance = CvInvoke.Norm(whiteCenter, imageCentre, Emgu.CV.CvEnum.NormType.L2);
+
+            for (var label = 0; label < numberOfLabels; label++) {
+                Console.WriteLine(" - [%d] centroid at (%.1lf,%.1lf)\n", label, (float)centroids.GetDoubleValue(label, 0), (float)centroids.GetDoubleValue(label, 1));
+            }
+
+            return numberOfLabels == 2 && blackCentroidDistance < 10.0 && whiteCentroidDistance < 10.0;
+        }
+
+        static double GetDoubleValue(this Mat mat, int row, int col) {
+            var value = new double[1];
+            Marshal.Copy(mat.DataPointer + (row * mat.Cols + col) * mat.ElementSize, value, 0, 1);
+            return value[0];
+        }
+
     }
+
 }
 
