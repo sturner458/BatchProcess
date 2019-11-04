@@ -44,7 +44,7 @@ namespace BatchProcess {
             }
 
             // ARToolKitFunctions.Instance.arwInitialiseAR();
-            ARToolKitFunctions.Instance.arwInitChessboardCorners(17, 13, 20, 3264, 2448, 640, 480, 3, 20);
+            ARToolKitFunctions.Instance.arwInitChessboardCorners(17, 13, 20, 3264, 2448, 20);
 
             float[] corners = new float[442];
             int cornerCount;
@@ -63,7 +63,7 @@ namespace BatchProcess {
                 if (!(myFile.ToLower().EndsWith(".png") || myFile.ToLower().EndsWith(".jpg"))) continue;
                 byte[] imageBytes = ImageToGrayscaleByteArray((Bitmap)Image.FromFile(myFile));
 
-                int result = ARToolKitFunctions.Instance.arwFindChessboardCorners(corners, out cornerCount, imageBytes, false);
+                int result = ARToolKitFunctions.Instance.arwFindChessboardCorners(corners, out cornerCount, imageBytes);
 
                 int l = 0;
                 for (int i = 0; i < 17; i++) {
@@ -102,7 +102,7 @@ namespace BatchProcess {
             List<string> myFiles = new List<string>();
             int nFiles = 0;
 
-            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\BatchProcess\\Photos\\14112017";
+            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\14112017";
             ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;
             myFolder = myDlg.SelectedPath;

@@ -315,8 +315,8 @@ public class ARToolKitFunctions
     /// arwGetError should  always  be  called  in  a  loop,  until  it  returns
     /// AR_ERROR_NONE, if all error flags are to be reset.
     /// </remarks>
-    public int arwGetError(bool lowRes) {
-        return ARNativePlugin.arwGetError(lowRes);
+    public int arwGetError() {
+        return ARNativePlugin.arwGetError();
     }
 
     /// <summary>
@@ -347,12 +347,11 @@ public class ARToolKitFunctions
         return ARNativePlugin.arwStartRunning(vconf, cparaName);
     }
 
-    public void arwInitARToolKit(string vconf, string cparaName, string vconfLowRes, string cparaNameLowRes, float nearPlane, float farPlane, int width, int height, int widthLowres, int heightLowRes) {
+    public void arwInitARToolKit(string vconf, string cparaName) {
 
         var result = File.Exists(cparaName);
-        var result2 = File.Exists(cparaNameLowRes);
 
-        ARNativePlugin.arwInitARToolKit(vconf, cparaName, vconfLowRes, cparaNameLowRes, nearPlane, farPlane, width, height, widthLowres, heightLowRes);
+        ARNativePlugin.arwInitARToolKit(vconf, cparaName);
     }
 
     //public void arwResetOpenGLContext() {
@@ -404,8 +403,8 @@ public class ARToolKitFunctions
     /// </summary>
     /// <param name="matrix">Float array to populate with OpenGL compatible projection matrix.</param>
     /// <returns>true if successful, false if an error occurred.</returns>
-    public bool arwGetProjectionMatrix(float nearPlane, float farPlane, float[] matrix, bool lowRes) {
-        return ARNativePlugin.arwGetProjectionMatrix(nearPlane, farPlane, matrix, lowRes);
+    public bool arwGetProjectionMatrix(float nearPlane, float farPlane, float[] matrix) {
+        return ARNativePlugin.arwGetProjectionMatrix(nearPlane, farPlane, matrix);
     }
 
     /// <summary>
@@ -519,12 +518,12 @@ public class ARToolKitFunctions
         return ok;
     }
 
-    public bool arwUpdateTexture32([In, Out]Color32[] colors32, bool lowRes) {
+    public bool arwUpdateTexture32([In, Out]Color32[] colors32) {
         bool ok = false;
         //int[] myBytes = new int[colors32.Length];
         GCHandle handle = GCHandle.Alloc(colors32, GCHandleType.Pinned);
         IntPtr address = handle.AddrOfPinnedObject();
-        ok = ARNativePlugin.arwUpdateTexture32(address, lowRes);
+        ok = ARNativePlugin.arwUpdateTexture32(address);
         handle.Free();
         return ok;
     }
@@ -580,30 +579,27 @@ public class ARToolKitFunctions
     }
 
     public bool arwGetTrackableOptionBool(int markerID, int option) {
-        return ARNativePlugin.arwGetTrackableOptionBool(markerID, option, false);
+        return ARNativePlugin.arwGetTrackableOptionBool(markerID, option);
     }
 
     public void arwSetTrackableOptionBool(int markerID, int option, bool value) {
-        ARNativePlugin.arwSetTrackableOptionBool(markerID, option, value, false);
-        ARNativePlugin.arwSetTrackableOptionBool(markerID, option, value, true);
+        ARNativePlugin.arwSetTrackableOptionBool(markerID, option, value);
     }
 
     public int arwGetTrackableOptionInt(int markerID, int option) {
-        return ARNativePlugin.arwGetTrackableOptionInt(markerID, option, false);
+        return ARNativePlugin.arwGetTrackableOptionInt(markerID, option);
     }
 
     public void arwSetTrackableOptionInt(int markerID, int option, int value) {
-        ARNativePlugin.arwSetTrackableOptionInt(markerID, option, value, false);
-        ARNativePlugin.arwSetTrackableOptionInt(markerID, option, value, true);
+        ARNativePlugin.arwSetTrackableOptionInt(markerID, option, value);
     }
 
     public float arwGetTrackableOptionFloat(int markerID, int option) {
-        return ARNativePlugin.arwGetTrackableOptionFloat(markerID, option, false);
+        return ARNativePlugin.arwGetTrackableOptionFloat(markerID, option);
     }
 
-    public void arwSetTrackableOptionFloat(int markerID, int option, float value, bool avoidLowRes = false) {
-        ARNativePlugin.arwSetTrackableOptionFloat(markerID, option, value, false);
-        if (!avoidLowRes) ARNativePlugin.arwSetTrackableOptionFloat(markerID, option, value, true);
+    public void arwSetTrackableOptionFloat(int markerID, int option, float value) {
+        ARNativePlugin.arwSetTrackableOptionFloat(markerID, option, value);
     }
 
     /// <summary>
@@ -614,8 +610,7 @@ public class ARToolKitFunctions
     /// <param name="debug">true to enable debug mode, false to disable debug mode.</param>
     /// <seealso cref="arwGetVideoDebugMode"/>
     public void arwSetVideoDebugMode(bool debug) {
-        ARNativePlugin.arwSetTrackerOptionBool(ARW_TRACKER_OPTION_SQUARE_DEBUG_MODE, debug, false);
-        ARNativePlugin.arwSetTrackerOptionBool(ARW_TRACKER_OPTION_SQUARE_DEBUG_MODE, debug, true);
+        ARNativePlugin.arwSetTrackerOptionBool(ARW_TRACKER_OPTION_SQUARE_DEBUG_MODE, debug);
     }
 
     /// <summary>
@@ -624,7 +619,7 @@ public class ARToolKitFunctions
     /// <returns>true when debug mode is enabled, false when debug mode is disabled.</returns>
     /// <seealso cref="arwSetVideoDebugMode"/>
     public bool arwGetVideoDebugMode() {
-        return ARNativePlugin.arwGetTrackerOptionBool(ARW_TRACKER_OPTION_SQUARE_DEBUG_MODE, false);
+        return ARNativePlugin.arwGetTrackerOptionBool(ARW_TRACKER_OPTION_SQUARE_DEBUG_MODE);
     }
 
     /// <summary>
@@ -632,8 +627,8 @@ public class ARToolKitFunctions
     /// </summary>
     /// <param name="mode">true to enable corner refinement, false to disable corner refinement.</param>
     /// <seealso cref="arwGetCornerRefinementMode"/>
-    public void arwSetCornerRefinementMode(bool mode, bool lowRes) {
-        ARNativePlugin.arwSetTrackerOptionBool(ARW_TRACKER_OPTION_2D_CORNER_REFINEMENT, mode, lowRes);
+    public void arwSetCornerRefinementMode(bool mode) {
+        ARNativePlugin.arwSetTrackerOptionBool(ARW_TRACKER_OPTION_2D_CORNER_REFINEMENT, mode);
     }
 
     /// <summary>
@@ -641,36 +636,33 @@ public class ARToolKitFunctions
     /// </summary>
     /// <returns>true when corner refinement is enabled, false when corner refinement is disabled.</returns>
     /// <seealso cref="arwSetCornerRefinementMode"/>
-    public bool arwGetCornerRefinementMode(bool lowRes) {
-        return ARNativePlugin.arwGetTrackerOptionBool(ARW_TRACKER_OPTION_2D_CORNER_REFINEMENT, lowRes);
+    public bool arwGetCornerRefinementMode() {
+        return ARNativePlugin.arwGetTrackerOptionBool(ARW_TRACKER_OPTION_2D_CORNER_REFINEMENT);
     }
 
     public void arwSetVideoThreshold(int threshold) {
         System.Diagnostics.Debug.Print(((int)(threshold * 255.0 / 100.0)).ToString());
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_THRESHOLD, (int)(threshold * 255.0 / 100.0), false);
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_THRESHOLD, (int)(threshold * 255.0 / 100.0), true);
+        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_THRESHOLD, (int)(threshold * 255.0 / 100.0));
     }
 
     public int arwGetVideoThreshold() {
-        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_THRESHOLD, false);
+        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_THRESHOLD);
     }
 
     public void arwSetVideoThresholdMode(int mode) {
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_THRESHOLD_MODE, mode, false);
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_THRESHOLD_MODE, mode, true);
+        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_THRESHOLD_MODE, mode);
     }
 
     public int arwGetVideoThresholdMode() {
-        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_THRESHOLD_MODE, false);
+        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_THRESHOLD_MODE);
     }
 
     public void arwSetLabelingMode(int mode) {
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_LABELING_MODE, mode, false);
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_LABELING_MODE, mode, true);
+        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_LABELING_MODE, mode);
     }
 
     public int arwGetLabelingMode() {
-        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_LABELING_MODE, false);
+        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_LABELING_MODE);
     }
 
     /**
@@ -678,21 +670,19 @@ public class ARToolKitFunctions
                 If you have a marker with 10cm width and set border to 0.5 you state that you have a border of 5cm meaning 2.5cm on each side.
     **/
     public void arwSetBorderSize(float size) {
-        ARNativePlugin.arwSetTrackerOptionFloat(ARW_TRACKER_OPTION_SQUARE_BORDER_SIZE, size, false);
-        ARNativePlugin.arwSetTrackerOptionFloat(ARW_TRACKER_OPTION_SQUARE_BORDER_SIZE, size, true);
+        ARNativePlugin.arwSetTrackerOptionFloat(ARW_TRACKER_OPTION_SQUARE_BORDER_SIZE, size);
     }
 
     public float arwGetBorderSize() {
-        return ARNativePlugin.arwGetTrackerOptionFloat(ARW_TRACKER_OPTION_SQUARE_BORDER_SIZE, false);
+        return ARNativePlugin.arwGetTrackerOptionFloat(ARW_TRACKER_OPTION_SQUARE_BORDER_SIZE);
     }
 
     public void arwSetPatternDetectionMode(int mode) {
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_PATTERN_DETECTION_MODE, mode, false);
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_PATTERN_DETECTION_MODE, mode, true);
+        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_PATTERN_DETECTION_MODE, mode);
     }
 
     public int arwGetPatternDetectionMode() {
-        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_PATTERN_DETECTION_MODE, false);
+        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_PATTERN_DETECTION_MODE);
     }
 
     public void arwSetMarkerExtractionMode(int mode) {
@@ -705,30 +695,27 @@ public class ARToolKitFunctions
     }
 
     public void arwSetMatrixCodeType(int type) {
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_MATRIX_CODE_TYPE, type, false);
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_MATRIX_CODE_TYPE, type, true);
+        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_MATRIX_CODE_TYPE, type);
     }
 
     public int arwGetMatrixCodeType() {
-        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_MATRIX_CODE_TYPE, false);
+        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_MATRIX_CODE_TYPE);
     }
 
     public void arwSetImageProcMode(int mode) {
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_IMAGE_PROC_MODE, mode, false);
-        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_IMAGE_PROC_MODE, mode, true);
+        ARNativePlugin.arwSetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_IMAGE_PROC_MODE, mode);
     }
 
     public int arwGetImageProcMode() {
-        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_IMAGE_PROC_MODE, false);
+        return ARNativePlugin.arwGetTrackerOptionInt(ARW_TRACKER_OPTION_SQUARE_IMAGE_PROC_MODE);
     }
 
     public void arwSetNFTMultiMode(bool on) {
-        ARNativePlugin.arwSetTrackerOptionBool(ARW_TRACKER_OPTION_NFT_MULTIMODE, on, false);
-        ARNativePlugin.arwSetTrackerOptionBool(ARW_TRACKER_OPTION_NFT_MULTIMODE, on, true);
+        ARNativePlugin.arwSetTrackerOptionBool(ARW_TRACKER_OPTION_NFT_MULTIMODE, on);
     }
 
     public bool arwGetNFTMultiMode() {
-        return ARNativePlugin.arwGetTrackerOptionBool(ARW_TRACKER_OPTION_NFT_MULTIMODE, false);
+        return ARNativePlugin.arwGetTrackerOptionBool(ARW_TRACKER_OPTION_NFT_MULTIMODE);
     }
 
     /// <summary>
@@ -741,8 +728,8 @@ public class ARToolKitFunctions
     /// multi;data/multi/marker.dat
     /// nft;data/nft/pinball</param>
     /// <returns> marker id for further usage</returns>
-    public int arwAddMarker(string cfg, bool avoidLowRes = false, int overrideUID = -1) {
-        return ARNativePlugin.arwAddTrackable(cfg, avoidLowRes, overrideUID);
+    public int arwAddMarker(string cfg) {
+        return ARNativePlugin.arwAddTrackable(cfg);
     }
 
     public bool arwRemoveMarker(int markerID) {
@@ -754,13 +741,13 @@ public class ARToolKitFunctions
     }
 
 
-    //public bool arwQueryMarkerVisibility(int markerID, bool lowRes) {
-    //    return ARNativePlugin.arwQueryMarkerVisibility(markerID, lowRes);
+    //public bool arwQueryMarkerVisibility(int markerID) {
+    //    return ARNativePlugin.arwQueryMarkerVisibility(markerID);
     //    return false;
     //}
 
-    public bool arwQueryMarkerTransformation(int markerID, float[] matrix, bool lowRes) {
-        return ARNativePlugin.arwQueryTrackableVisibilityAndTransformation(markerID, matrix, lowRes);
+    public bool arwQueryMarkerTransformation(int markerID, float[] matrix) {
+        return ARNativePlugin.arwQueryTrackableVisibilityAndTransformation(markerID, matrix);
     }
 
     public bool arwQueryTrackableMapperTransformation(int gMapUID, int trackableUID, float[] matrix) {
@@ -835,7 +822,7 @@ public class ARToolKitFunctions
         return false;
     }
 
-    public bool arwInitChessboardCorners(int nHoriztonal, int nVertical, float spacing, int xSize, int ySize, int xSizeLowRes, int ySizeLowRes, int pixelFormat, int calibImageNum) {
+    public bool arwInitChessboardCorners(int nHoriztonal, int nVertical, float spacing, int xSize, int ySize, int calibImageNum) {
 
         string dllDir = "";
         dllDir = Environment.GetEnvironmentVariable("ARTOOLKIT5_ROOT64");
@@ -846,10 +833,10 @@ public class ARToolKitFunctions
             SetDllDirectory(dllDir + "\\");
         }
 
-        return ARNativePlugin.arwInitChessboardCorners(nHoriztonal, nVertical, spacing, calibImageNum, xSize, ySize, xSizeLowRes, ySizeLowRes);
+        return ARNativePlugin.arwInitChessboardCorners(nHoriztonal, nVertical, spacing, calibImageNum, xSize, ySize);
     }
 
-    public int arwFindChessboardCorners(float[] corners, out int corner_count, byte[] imageBytes, bool lowRes) {
+    public int arwFindChessboardCorners(float[] corners, out int corner_count, byte[] imageBytes) {
         int ok;
 
         GCHandle handle1 = GCHandle.Alloc(corners, GCHandleType.Pinned);
@@ -858,7 +845,7 @@ public class ARToolKitFunctions
         GCHandle handle2 = GCHandle.Alloc(imageBytes, GCHandleType.Pinned);
         IntPtr address2 = handle2.AddrOfPinnedObject();
 
-        ok = ARNativePlugin.arwFindChessboardCorners(address1, out corner_count, address2, lowRes);
+        ok = ARNativePlugin.arwFindChessboardCorners(address1, out corner_count, address2);
         handle1.Free();
         handle2.Free();
         return ok;
@@ -902,11 +889,11 @@ public class ARToolKitFunctions
         ARNativePlugin.arwCleanupChessboardCorners();
     }
 
-    public bool arwUpdateARToolKit(byte[] imageBytes, bool lowRes, bool doDatums) {
+    public bool arwUpdateARToolKit(byte[] imageBytes, bool doDatums) {
         bool ok = false;
         GCHandle handle = GCHandle.Alloc(imageBytes, GCHandleType.Pinned);
         IntPtr address = handle.AddrOfPinnedObject();
-        ok = ARNativePlugin.arwUpdateARToolKit(address, lowRes, doDatums);
+        ok = ARNativePlugin.arwUpdateARToolKit(address, doDatums);
         handle.Free();
         return ok;
     }
@@ -915,16 +902,16 @@ public class ARToolKitFunctions
         ARNativePlugin.arwCleanupARToolKit();
     }
 
-    public void arwConvertObserv2Ideal(float ox, float oy, out float ix, out float iy, bool lowRes) {
+    public void arwConvertObserv2Ideal(float ox, float oy, out float ix, out float iy) {
         ix = 0;
         iy = 0;
-        //ARNativePlugin.arwConvertObserv2Ideal(ox, oy, out ix, out iy, lowRes);
+        //ARNativePlugin.arwConvertObserv2Ideal(ox, oy, out ix, out iy);
     }
 
-    public void arwConvertIdeal2Observ(float ox, float oy, out float ix, out float iy, bool lowRes) {
+    public void arwConvertIdeal2Observ(float ox, float oy, out float ix, out float iy) {
         ix = 0;
         iy = 0;
-        //ARNativePlugin.arwConvertIdeal2Observ(ox, oy, out ix, out iy, lowRes);
+        //ARNativePlugin.arwConvertIdeal2Observ(ox, oy, out ix, out iy);
     }
 }
 

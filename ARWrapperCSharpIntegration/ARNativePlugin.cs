@@ -64,7 +64,7 @@ public class ARNativePlugin
     internal static extern bool arwGetARToolKitVersion([MarshalAs(UnmanagedType.LPStr)]StringBuilder buffer, int length);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern int arwGetError(bool lowRes);
+    internal static extern int arwGetError();
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
@@ -75,7 +75,7 @@ public class ARNativePlugin
     internal static extern bool arwStartRunning(string vconf, string cparaName);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-    internal static extern void arwInitARToolKit(string vconf, string cparaName, string vconfLowRes, string cparaNameLowRes, float nearPlane, float farPlane, int width, int height, int widthLowres, int heightLowRes);
+    internal static extern void arwInitARToolKit(string vconf, string cparaName);
 
     ////[DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     ////internal static extern void arwResetOpenGLContext();
@@ -101,7 +101,7 @@ public class ARNativePlugin
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwGetProjectionMatrix(float nearPlane, float farPlane, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] float[] matrix, bool lowRes);
+    internal static extern bool arwGetProjectionMatrix(float nearPlane, float farPlane, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] float[] matrix);
 
     //[DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     //[return: MarshalAs(UnmanagedType.I1)]
@@ -136,7 +136,7 @@ public class ARNativePlugin
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
     //public static extern bool arwUpdateTexture32([In, Out]Color32[] colors32);
-    internal static extern bool arwUpdateTexture32(IntPtr colors32, bool lowRes);
+    internal static extern bool arwUpdateTexture32(IntPtr colors32);
 
     //[DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     //[return: MarshalAs(UnmanagedType.I1)]
@@ -170,22 +170,22 @@ public class ARNativePlugin
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwGetTrackableOptionBool(int markerID, int option, bool lowRes);
+    internal static extern bool arwGetTrackableOptionBool(int markerID, int option);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void arwSetTrackableOptionBool(int markerID, int option, bool value, bool lowRes);
+    internal static extern void arwSetTrackableOptionBool(int markerID, int option, bool value);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern int arwGetTrackableOptionInt(int markerID, int option, bool lowRes);
+    internal static extern int arwGetTrackableOptionInt(int markerID, int option);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void arwSetTrackableOptionInt(int markerID, int option, int value, bool lowRes);
+    internal static extern void arwSetTrackableOptionInt(int markerID, int option, int value);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern float arwGetTrackableOptionFloat(int markerID, int option, bool lowRes);
+    internal static extern float arwGetTrackableOptionFloat(int markerID, int option);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void arwSetTrackableOptionFloat(int markerID, int option, float value, bool lowRes);
+    internal static extern void arwSetTrackableOptionFloat(int markerID, int option, float value);
 
     //[DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     //internal static extern void arwSetVideoDebugMode(bool debug);
@@ -250,26 +250,26 @@ public class ARNativePlugin
     //internal static extern bool arwGetNFTMultiMode();
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void arwSetTrackerOptionBool(int option, bool value, bool lowRes);
+    internal static extern void arwSetTrackerOptionBool(int option, bool value);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void arwSetTrackerOptionInt(int option, int value, bool lowRes);
+    internal static extern void arwSetTrackerOptionInt(int option, int value);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void arwSetTrackerOptionFloat(int option, float value, bool lowRes);
+    internal static extern void arwSetTrackerOptionFloat(int option, float value);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern bool arwGetTrackerOptionBool(int option, bool lowRes);
+    internal static extern bool arwGetTrackerOptionBool(int option);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern int arwGetTrackerOptionInt(int option, bool lowRes);
+    internal static extern int arwGetTrackerOptionInt(int option);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern float arwGetTrackerOptionFloat(int option, bool lowRes);
+    internal static extern float arwGetTrackerOptionFloat(int option);
 
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-    internal static extern int arwAddTrackable(string cfg, bool avoidLowRes, int overrideUID);
+    internal static extern int arwAddTrackable(string cfg);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
@@ -281,11 +281,11 @@ public class ARNativePlugin
 
     //[DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     //[return: MarshalAs(UnmanagedType.I1)]
-    //internal static extern bool arwQueryMarkerVisibility(int markerID, bool lowRes);
+    //internal static extern bool arwQueryMarkerVisibility(int markerID);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwQueryTrackableVisibilityAndTransformation(int markerID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] float[] matrix, bool lowRes);
+    internal static extern bool arwQueryTrackableVisibilityAndTransformation(int markerID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] float[] matrix);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
@@ -323,14 +323,14 @@ public class ARNativePlugin
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwUpdateARToolKit(IntPtr imageBytes, bool lowRes, bool doDatums);
+    internal static extern bool arwUpdateARToolKit(IntPtr imageBytes, bool doDatums);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern bool arwInitChessboardCorners(int nHorizontal, int nVertical, float patternSpacing, int calibImageNum, int xsize, int ysize, int xsizeLowRes, int ysizeLowRes);
+    internal static extern bool arwInitChessboardCorners(int nHorizontal, int nVertical, float patternSpacing, int calibImageNum, int xsize, int ysize);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern int arwFindChessboardCorners(IntPtr corners, out int corner_count, IntPtr imageBytes, bool lowRes = false);
-    //internal static extern int arwFindChessboardCorners([MarshalAs(UnmanagedType.LPArray, SizeConst = 70)] float[] corners, out int corner_count, IntPtr imageBytes, bool lowRes = false);
+    internal static extern int arwFindChessboardCorners(IntPtr corners, out int corner_count, IntPtr imageBytes);
+    //internal static extern int arwFindChessboardCorners([MarshalAs(UnmanagedType.LPArray, SizeConst = 70)] float[] corners, out int corner_count, IntPtr imageBytes);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int arwCaptureChessboardCorners(int n);
@@ -348,10 +348,10 @@ public class ARNativePlugin
     internal static extern void arwCleanupARToolKit();
 
     //[DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    //internal static extern int arwConvertObserv2Ideal(float ox, float oy, out float ix, out float iy, bool lowRes);
+    //internal static extern int arwConvertObserv2Ideal(float ox, float oy, out float ix, out float iy);
 
     //[DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    //internal static extern int arwConvertIdeal2Observ(float ox, float oy, out float ix, out float iy, bool lowRes);
+    //internal static extern int arwConvertIdeal2Observ(float ox, float oy, out float ix, out float iy);
 
 }
 
