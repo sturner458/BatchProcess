@@ -621,5 +621,6 @@ namespace BatchProcess
 				return Atan(DZ() / x);
             }
         }
+
     }
 }

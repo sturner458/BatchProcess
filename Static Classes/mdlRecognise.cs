@@ -34,58 +34,11 @@ namespace BatchProcess {
         public static int myVideoWidthHiRes;
         public static int myVideoHeightHiRes;
         public static int myVideoPixelSize;
-        public static List<float[]> myModelViewMatrixHiRes = new List<float[]>();
-        public static float[] myProjMatrixHiRes = new float[16];
-        public static byte[] myLastHiResImage;
-
-        //Processed markers
-        public static bool myGFVisibleHiRes = false;
-        public static bool myStepVisibleHiRes;
-        public static List<int> myMarkersSeenIDHiRes = new List<int>();
-        public static int myGFMultiMarkerIndexHiRes;
-        public static int myStepMultiMarkerIndexHiRes;
-
-        public static bool myLeftBulkheadVisibleHiRes = false;
-        public static int myLeftBulkheadMarkerIndexHiRes;
-        public static bool myRightBulkheadVisibleHiRes = false;
-        public static int myRightBulkheadMarkerIndexHiRes;
-
-        public static bool myDoorHingeLeftVisibleHiRes = false;
-        public static int myDoorHingeLeftIndexHiRes;
-        public static bool myDoorHingeRightVisibleHiRes = false;
-        public static int myDoorHingeRightIndexHiRes;
-
-        public static bool myDoorFrameLeftVisibleHiRes = false;
-        public static int myDoorFrameLeftIndexHiRes;
-        public static bool myDoorFrameRightVisibleHiRes = false;
-        public static int myDoorFrameRightIndexHiRes;
-
-        public static bool myObstruct1VisibleHiRes = false;
-        public static int myObstruct1IndexHiRes;
-        public static bool myObstruct2VisibleHiRes = false;
-        public static int myObstruct2IndexHiRes;
-        public static bool myObstruct3VisibleHiRes = false;
-        public static int myObstruct3IndexHiRes;
-        public static bool myObstruct4VisibleHiRes = false;
-        public static int myObstruct4IndexHiRes;
-
-        public static bool myWall1VisibleHiRes = false;
-        public static int myWall1IndexHiRes;
-        public static bool myWall2VisibleHiRes = false;
-        public static int myWall2IndexHiRes;
-        public static bool myWall3VisibleHiRes = false;
-        public static int myWall3IndexHiRes;
-        public static bool myWall4VisibleHiRes = false;
-        public static int myWall4IndexHiRes;
-
-        static List<int> myBulkheadMarkerIDs = new List<int>();
-        static List<int> myDoorMarkerIDs = new List<int>();
-        static List<int> myObstructMarkerIDs = new List<int>();
-        static List<int> myWallMarkerIDs = new List<int>();
-        static List<int> myAllFeatureMarkerIDs = new List<int>();
 
         private static List<clsMarkerPoint> _confirmedMarkerPoints = new List<clsMarkerPoint>();
         public static bool UseNewStyleMarkers = true;
+
+        public static RecognisedMarkers Data = new RecognisedMarkers(false);
 
         public static List<clsMarkerPoint> ConfirmedMarkers {
             get { return _confirmedMarkerPoints; }
@@ -94,44 +47,47 @@ namespace BatchProcess {
                 ConfirmedMarkersUpdated?.Invoke();
             }
         }
+        public static List<clsMarkerPoint> mySuspectedMarkers = new List<clsMarkerPoint>();
+        public static List<clsMarkerPoint> myBulkheadMarkers = new List<clsMarkerPoint>();
+        public static List<clsMarkerPoint> myDoorMarkers = new List<clsMarkerPoint>();
+        public static List<clsMarkerPoint> myObstructMarkers = new List<clsMarkerPoint>();
+        public static List<clsMarkerPoint> myWallMarkers = new List<clsMarkerPoint>();
+
+        //Bundle adjusted markers
+        public static List<clsMarkerPoint> ConfirmedMarkersAdj = new List<clsMarkerPoint>();
+        public static List<clsMarkerPoint> myBulkheadMarkersAdj = new List<clsMarkerPoint>();
+        public static List<clsMarkerPoint> myDoorMarkersAdj = new List<clsMarkerPoint>();
+        public static List<clsMarkerPoint> myObstructMarkersAdj = new List<clsMarkerPoint>();
+        public static List<clsMarkerPoint> myWallMarkersAdj = new List<clsMarkerPoint>();
+
         public delegate void BlankEventHandler();
         public static event BlankEventHandler ConfirmedMarkersUpdated;
 
         public static List<clsMarkerPoint> ConfirmedMarkersCopy = new List<clsMarkerPoint>();
 
-        public static List<int> myConfirmedMarkersSeenIDHiRes = new List<int>();
-        public static List<int> myConfirmedMarkersSeenIndexHiRes = new List<int>();
-        public static List<clsMarkerPoint> mySuspectedMarkers = new List<clsMarkerPoint>();
-        public static List<int> mySuspectedMarkersSeenIDHiRes = new List<int>();
-        public static List<int> mySuspectedMarkersSeenIndexHiRes = new List<int>();
-        public static List<clsMarkerPoint> myBulkheadMarkers = new List<clsMarkerPoint>();
-        public static List<clsMarkerPoint> myDoorMarkers = new List<clsMarkerPoint>();
-        public static List<int> myDoorMarkersSeenIDHiRes = new List<int>();
-        public static List<int> myDoorMarkersSeenIndexHiRes = new List<int>();
-        public static List<clsMarkerPoint> myObstructMarkers = new List<clsMarkerPoint>();
-        public static List<int> myObstructMarkersSeenIDHiRes = new List<int>();
-        public static List<int> myObstructMarkersSeenIndexHiRes = new List<int>();
-        public static List<clsMarkerPoint> myWallMarkers = new List<clsMarkerPoint>();
-        public static List<int> myWallMarkersSeenIDHiRes = new List<int>();
-        public static List<int> myWallMarkersSeenIndexHiRes = new List<int>();
-        public static int myGFMultiMarkerID = 80;
-        public static int myStepMultiMarkerID = 81;
-        public static int myLeftBulkheadMarkerID = 82;
-        public static int myRightBulkheadMarkerID = 83;
-        public static int myDoorHingeRightMarkerID = 84;
-        public static int myDoorFrameRightMarkerID = 85;
-        public static int myDoorHingeLeftMarkerID = 86;
-        public static int myDoorFrameLeftMarkerID = 87;
-        public static int myObstruct1MarkerID = 88;
-        public static int myObstruct2MarkerID = 89;
-        public static int myObstruct3MarkerID = 90;
-        public static int myObstruct4MarkerID = 91;
-        public static int myWall1MarkerID = 92;
-        public static int myWall2MarkerID = 93;
-        public static int myWall3MarkerID = 94;
-        public static int myWall4MarkerID = 95;
-        public static int myMapperMarkerID = 96;
-        public static int myMaximumMarkerID = 97; //Please keep this up to date
+        public static int myGFMarkerID = 100;
+        public static int myStepMarkerID = 101;
+        public static int myLeftBulkheadMarkerID = 102;
+        public static int myRightBulkheadMarkerID = 103;
+        public static int myDoorHingeRightMarkerID = 104;
+        public static int myDoorFrameRightMarkerID = 105;
+        public static int myDoorHingeLeftMarkerID = 106;
+        public static int myDoorFrameLeftMarkerID = 107;
+        public static int myObstruct1MarkerID = 108;
+        public static int myObstruct2MarkerID = 109;
+        public static int myObstruct3MarkerID = 110;
+        public static int myObstruct4MarkerID = 111;
+        public static int myWall1MarkerID = 112;
+        public static int myWall2MarkerID = 113;
+        public static int myWall3MarkerID = 114;
+        public static int myWall4MarkerID = 115;
+        public static int myMapperMarkerID = 116;
+        public static int myMaximumMarkerID = 117; //Please keep this up to date
+        static List<int> myBulkheadMarkerIDs = new List<int>();
+        static List<int> myDoorMarkerIDs = new List<int>();
+        static List<int> myObstructMarkerIDs = new List<int>();
+        static List<int> myWallMarkerIDs = new List<int>();
+        static List<int> myAllFeatureMarkerIDs = new List<int>();
 
         public static List<int> myMarkerIDs = new List<int>();
         public static clsMarkerPoint myGFMarker = new clsMarkerPoint();
@@ -321,411 +277,6 @@ namespace BatchProcess {
 
         #endregion
 
-        #region Properties
-
-        public static bool GetGFVisible()
-        {
-            return myGFVisibleHiRes;
-        }
-
-        public static void SetGFVisible( bool value)
-        {
-                myGFVisibleHiRes = value;
-        }
-
-        public static bool GetStepVisible()
-        {
-            return myStepVisibleHiRes;
-        }
-
-        public static void SetStepVisible( bool value)
-        {
-                myStepVisibleHiRes = value;
-        }
-
-        public static bool GetLeftBulkheadVisible()
-        {
-            return myLeftBulkheadVisibleHiRes;
-        }
-
-        public static void SetLeftBulkheadVisible( bool value)
-        {
-                myLeftBulkheadVisibleHiRes = value;
-        }
-
-        public static bool GetRightBulkheadVisible()
-        {
-            return myRightBulkheadVisibleHiRes;
-        }
-
-        public static void SetRightBulkheadVisible( bool value)
-        {
-                myRightBulkheadVisibleHiRes = value;
-        }
-
-        public static bool GetDoorHingeLeftVisible()
-        {
-            return myDoorHingeLeftVisibleHiRes;
-        }
-
-        public static void SetDoorHingeLeftVisible( bool value)
-        {
-                myDoorHingeLeftVisibleHiRes = value;
-        }
-
-        public static bool GetDoorHingeRightVisible()
-        {
-            return myDoorHingeRightVisibleHiRes;
-        }
-
-        public static void SetDoorHingeRightVisible( bool value)
-        {
-                myDoorHingeRightVisibleHiRes = value;
-        }
-
-        public static bool GetDoorFrameLeftVisible()
-        {
-            return myDoorFrameLeftVisibleHiRes;
-        }
-
-        public static void SetDoorFrameLeftVisible( bool value)
-        {
-                myDoorFrameLeftVisibleHiRes = value;
-        }
-
-        public static bool GetDoorFrameRightVisible()
-        {
-            return myDoorFrameRightVisibleHiRes;
-        }
-
-        public static void SetDoorFrameRightVisible( bool value)
-        {
-                myDoorFrameRightVisibleHiRes = value;
-        }
-
-        public static bool GetObstruct1Visible()
-        {
-            return myObstruct1VisibleHiRes;
-        }
-
-        public static void SetObstruct1Visible( bool value)
-        {
-                myObstruct1VisibleHiRes = value;
-        }
-
-        public static bool GetObstruct2Visible()
-        {
-            return myObstruct2VisibleHiRes;
-        }
-
-        public static void SetObstruct2Visible( bool value)
-        {
-                myObstruct2VisibleHiRes = value;
-        }
-
-        public static bool GetObstruct3Visible()
-        {
-            return myObstruct3VisibleHiRes;
-        }
-
-        public static void SetObstruct3Visible( bool value)
-        {
-                myObstruct3VisibleHiRes = value;
-        }
-
-        public static bool GetObstruct4Visible()
-        {
-            return myObstruct4VisibleHiRes;
-        }
-
-        public static void SetObstruct4Visible( bool value)
-        {
-                myObstruct4VisibleHiRes = value;
-        }
-
-        public static bool GetWall1Visible()
-        {
-            return myWall1VisibleHiRes;
-        }
-
-        public static void SetWall1Visible( bool value)
-        {
-                myWall1VisibleHiRes = value;
-        }
-
-        public static bool GetWall2Visible()
-        {
-            return myWall2VisibleHiRes;
-        }
-
-        public static void SetWall2Visible( bool value)
-        {
-                myWall2VisibleHiRes = value;
-        }
-
-        public static bool GetWall3Visible()
-        {
-            return myWall3VisibleHiRes;
-        }
-
-        public static void SetWall3Visible( bool value)
-        {
-                myWall3VisibleHiRes = value;
-        }
-
-        public static bool GetWall4Visible()
-        {
-            return myWall4VisibleHiRes;
-        }
-
-        public static void SetWall4Visible(bool value)
-        {
-                myWall4VisibleHiRes = value;
-        }
-
-        public static List<int> GetMarkersSeenID()
-        {
-            return myMarkersSeenIDHiRes;
-        }
-
-        public static void SetMarkersSeenID( List<int> value)
-        {
-                myMarkersSeenIDHiRes = value;
-        }
-
-        public static List<int> GetConfirmedMarkersSeenID()
-        {
-            return myConfirmedMarkersSeenIDHiRes;
-        }
-
-        public static List<int> GetSuspectedMarkersSeenID()
-        {
-            return mySuspectedMarkersSeenIDHiRes;
-        }
-
-        public static List<int> GetDoorMarkersSeenID()
-        {
-            return myDoorMarkersSeenIDHiRes;
-        }
-
-        public static List<int> GetObstructMarkersSeenID()
-        {
-            return myObstructMarkersSeenIDHiRes;
-        }
-
-        public static List<int> GetWallMarkersSeenID()
-        {
-            return myWallMarkersSeenIDHiRes;
-        }
-
-        public static int GetGFMultiMarkerIndex()
-        {
-            return myGFMultiMarkerIndexHiRes;
-        }
-
-        public static void SetGFMultiMarkerIndex( int value)
-        {
-                myGFMultiMarkerIndexHiRes = value;
-        }
-
-        public static int GetStepMultiMarkerIndex()
-        {
-            return myStepMultiMarkerIndexHiRes;
-        }
-
-        public static void SetStepMultiMarkerIndex( int value)
-        {
-                myStepMultiMarkerIndexHiRes = value;
-        }
-
-        public static int GetLeftBulkheadMarkerIndex()
-        {
-            return myLeftBulkheadMarkerIndexHiRes;
-        }
-
-        public static void SetLeftBulkheadMarkerIndex(int value)
-        {
-                myLeftBulkheadMarkerIndexHiRes = value;
-        }
-
-        public static int GetRightBulkheadMarkerIndex()
-        {
-            return myRightBulkheadMarkerIndexHiRes;
-        }
-
-        public static void SetRightBulkheadMarkerIndex( int value)
-        {
-                myRightBulkheadMarkerIndexHiRes = value;
-        }
-
-        public static int GetDoorHingeLeftIndex()
-        {
-            return myDoorHingeLeftIndexHiRes;
-        }
-
-        public static void SetDoorHingeLeftIndex( int value)
-        {
-                myDoorHingeLeftIndexHiRes = value;
-        }
-
-        public static int GetDoorHingeRightIndex()
-        {
-            return myDoorHingeRightIndexHiRes;
-        }
-
-        public static void SetDoorHingeRightIndex( int value)
-        {
-                myDoorHingeRightIndexHiRes = value;
-        }
-
-        public static int GetDoorFrameLeftIndex()
-        {
-            return myDoorFrameLeftIndexHiRes;
-        }
-
-        public static void SetDoorFrameLeftIndex( int value)
-        {
-                myDoorFrameLeftIndexHiRes = value;
-        }
-
-        public static int GetDoorFrameRightIndex()
-        {
-            return myDoorFrameRightIndexHiRes;
-        }
-
-        public static void SetDoorFrameRightIndex( int value)
-        {
-                myDoorFrameRightIndexHiRes = value;
-        }
-
-        public static int GetObstruct1Index()
-        {
-            return myObstruct1IndexHiRes;
-        }
-
-        public static void SetObstruct1Index( int value)
-        {
-                myObstruct1IndexHiRes = value;
-        }
-
-        public static int GetObstruct2Index()
-        {
-            return myObstruct2IndexHiRes;
-        }
-
-        public static void SetObstruct2Index( int value)
-        {
-                myObstruct2IndexHiRes = value;
-        }
-
-        public static int GetObstruct3Index()
-        {
-            return myObstruct3IndexHiRes;
-        }
-
-        public static void SetObstruct3Index( int value)
-        {
-                myObstruct3IndexHiRes = value;
-        }
-
-        public static int GetObstruct4Index()
-        {
-            return myObstruct4IndexHiRes;
-        }
-
-        public static void SetObstruct4Index( int value)
-        {
-                myObstruct4IndexHiRes = value;
-        }
-
-        public static int GetWall1Index()
-        {
-            return myWall1IndexHiRes;
-        }
-
-        public static void SetWall1Index( int value)
-        {
-                myWall1IndexHiRes = value;
-        }
-
-        public static int GetWall2Index()
-        {
-            return myWall2IndexHiRes;
-        }
-
-        public static void SetWall2Index( int value)
-        {
-                myWall2IndexHiRes = value;
-        }
-
-        public static int GetWall3Index()
-        {
-            return myWall3IndexHiRes;
-        }
-
-        public static void SetWall3Index( int value)
-        {
-                myWall3IndexHiRes = value;
-        }
-
-        public static int GetWall4Index()
-        {
-            return myWall4IndexHiRes;
-        }
-
-        public static void SetWall4Index( int value)
-        {
-                myWall4IndexHiRes = value;
-        }
-
-        public static List<int> GetConfirmedMarkersSeenIndex()
-        {
-            return myConfirmedMarkersSeenIndexHiRes;
-        }
-
-        public static List<int> GetSuspectedMarkersSeenIndex()
-        {
-            return mySuspectedMarkersSeenIndexHiRes;
-        }
-
-        public static List<int> GetDoorMarkersSeenIndex()
-        {
-            return myDoorMarkersSeenIndexHiRes;
-        }
-
-        public static List<int> GetObstructMarkersSeenIndex()
-        {
-            return myObstructMarkersSeenIndexHiRes;
-        }
-
-        public static List<int> GetWallMarkersSeenIndex()
-        {
-            return myWallMarkersSeenIndexHiRes;
-        }
-
-        public static List<float[]> GetModelViewMatrix()
-        {
-            return myModelViewMatrixHiRes;
-        }
-
-        public static void SetModelViewMatrix( List<float[]> value)
-        {
-                myModelViewMatrixHiRes = value;
-
-        }
-
-        public static float[] GetProjMatrix()
-        {
-            return myProjMatrixHiRes;
-        }
-
-        public static void SetProjMatrix( float[] value)
-        {
-                myProjMatrixHiRes = value;
-        }
-        
-        #endregion
-
         public static bool StartTracking(int hiResX, int hiResY)
         {
 
@@ -764,7 +315,7 @@ namespace BatchProcess {
 
             //mySuspectedMarkers.Clear()
             if (StepMarker.Confirmed == false) {
-                StepMarker = new clsMarkerPoint(myStepMultiMarkerID, myStepMultiMarkerID);
+                StepMarker = new clsMarkerPoint(myStepMarkerID, myStepMarkerID);
             }
 
             isTrackingEnabled = true;
@@ -794,27 +345,27 @@ namespace BatchProcess {
                 myMarkerIDs.Add(ARToolKitFunctions.Instance.arwAddMarker("multi;data/MarkerLarge" + i.ToString("00") + ".dat"));
                 //Path to markers is local
                 if (myMarkerIDs[myMarkerIDs.Count - 1] > -1) {
-                    ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 2);
+                    ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 1);
                     ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 0.75f);
                     ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
                     ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
                 }
             }
 
-            myGFMultiMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/GFMarker.dat");
-            if (myGFMultiMarkerID > -1) {
-                ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myGFMultiMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 4);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myGFMultiMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 0.75f);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myGFMultiMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myGFMultiMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
+            myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/GFMarker.dat");
+            if (myGFMarkerID > -1) {
+                ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 1);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 0.75f);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myGFMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
             }
 
-            myStepMultiMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/StepMarker.dat");
-            if (myStepMultiMarkerID > -1) {
-                ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myStepMultiMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 4);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myStepMultiMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 0.75f);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myStepMultiMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myStepMultiMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
+            myStepMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/StepMarker.dat");
+            if (myStepMarkerID > -1) {
+                ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 1);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 0.75f);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myStepMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
             }
 
             myLeftBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;249;80;");
@@ -835,10 +386,10 @@ namespace BatchProcess {
             myWall3MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;261;80;");
             myWall4MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;262;80;");
 
-            float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            bool b = ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myGFMultiMarkerID, 0, myMatrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
-            string sConfig = "multi_auto;" + barcodeID + ";" + ((int)width) + ";";
-            //string sConfig = "multi_auto;" + myGFMultiMarkerID + ";" + ((int)width) + ";";
+            //float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            //bool b = ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myGFMarkerID, 0, myMatrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+            //string sConfig = "multi_auto;" + barcodeID + ";" + ((int)width) + ";";
+            string sConfig = "multi_auto;" + myGFMarkerID + ";80;";
             myMapperMarkerID = ARToolKitFunctions.Instance.arwAddMarker(sConfig);
             ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
 
@@ -872,8 +423,8 @@ namespace BatchProcess {
             myMarkerIDs.Clear();
             DebugStringList.Clear();
 
-            myGFMultiMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;0;80;");
-            myStepMultiMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;1;80;");
+            myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;0;80;");
+            myStepMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;1;80;");
 
             for (i = 1; i <= 100; i++) {
                 myMarkerIDs.Add(ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (i + 1).ToString("00") + ";80"));
@@ -900,7 +451,7 @@ namespace BatchProcess {
             //float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             //bool b = ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myGFMultiMarkerID, 0, myMatrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
             //string sConfig = "multi_auto;" + barcodeID + ";" + ((int)width) + ";";
-            string sConfig = "multi_auto;" + myGFMultiMarkerID + ";80;";
+            string sConfig = "multi_auto;" + myGFMarkerID + ";80;";
             myMapperMarkerID = ARToolKitFunctions.Instance.arwAddMarker(sConfig);
             ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
 
@@ -927,297 +478,66 @@ namespace BatchProcess {
 
         public static void RecogniseMarkers(byte[] imageBytes)
         {
-            //int i, j;
-            //float[] myMatrix;
-            //clsPoint3d pt;
-            //bool retB;
 
-            //GetModelViewMatrix().Clear();
-            //GetMarkersSeenID().Clear();
-            //SetGFVisible(false);
-            //SetStepVisible(false);
-            //SetGFMultiMarkerIndex(-1);
-            //SetStepMultiMarkerIndex(-1);
-            //SetLeftBulkheadVisible(false);
-            //SetLeftBulkheadMarkerIndex(-1);
-            //SetRightBulkheadVisible(false);
-            //SetRightBulkheadMarkerIndex(-1);
+            //Data.Clear();
 
-            //SetDoorHingeLeftVisible(false);
-            //SetDoorHingeLeftIndex(-1);
-            //SetDoorHingeRightVisible(false);
-            //SetDoorHingeRightIndex(-1);
-            //SetDoorFrameLeftVisible(false);
-            //SetDoorFrameLeftIndex(-1);
-            //SetDoorFrameRightVisible(false);
-            //SetDoorFrameRightIndex(-1);
+            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(imageBytes, false);
+            ARToolKitFunctions.Instance.arwGetProjectionMatrix(myNear, myFar, Data.ProjMatrix);
 
-            //SetObstruct1Visible(false);
-            //SetObstruct1Index(-1);
-            //SetObstruct2Visible(false);
-            //SetObstruct2Index(-1);
-            //SetObstruct3Visible(false);
-            //SetObstruct3Index(-1);
-            //SetObstruct4Visible(false);
-            //SetObstruct4Index(-1);
-
-            //SetWall1Visible(false);
-            //SetWall1Index(-1);
-            //SetWall2Visible(false);
-            //SetWall2Index(-1);
-            //SetWall3Visible(false);
-            //SetWall3Index(-1);
-            //SetWall4Visible(false);
-            //SetWall4Index( -1);
-
-            ////ARToolKitFunctions.Instance.arwShowMessage("Hello");
-            //retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(imageBytes, 2); // 2 = AR_PIXEL_FORMAT_RGBA
-            //ARToolKitFunctions.Instance.arwGetProjectionMatrix(GetProjMatrix());
-
-            //for (i = 0; i <= myMarkerIDs.Count - 1; i++) {
-            //    if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myMarkerIDs[i])) {
-            //        myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            //        ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMarkerIDs[i], myMatrix);
-            //        pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //        if (pt.Length < 2000) {
-            //            GetMarkersSeenID().Add(myMarkerIDs[i]);
-            //            GetModelViewMatrix().Add(myMatrix);
-            //        }
-            //    }
+            //for (int i = 0; i <= myMarkerIDs.Count - 1; i++) {
+            //    DetectMarkerVisible(myMarkerIDs[i]);
             //}
 
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myStepMultiMarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            //DetectMarkerVisible(myStepMarkerID);
+            //DetectMarkerVisible(myGFMarkerID);
+            //DetectMarkerVisible(myLeftBulkheadMarkerID);
+            //DetectMarkerVisible(myRightBulkheadMarkerID);
+            //DetectMarkerVisible(myDoorHingeRightMarkerID);
+            //DetectMarkerVisible(myDoorFrameRightMarkerID);
+            //DetectMarkerVisible(myDoorHingeLeftMarkerID);
+            //DetectMarkerVisible(myDoorFrameLeftMarkerID);
+            //DetectMarkerVisible(myObstruct1MarkerID);
+            //DetectMarkerVisible(myObstruct2MarkerID);
+            //DetectMarkerVisible(myObstruct3MarkerID);
+            //DetectMarkerVisible(myObstruct4MarkerID);
+            //DetectMarkerVisible(myWall1MarkerID);
+            //DetectMarkerVisible(myWall2MarkerID);
+            //DetectMarkerVisible(myWall3MarkerID);
+            //DetectMarkerVisible(myWall4MarkerID);
 
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myStepMultiMarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetStepVisible(true);
-            //        GetMarkersSeenID().Add(myStepMultiMarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetStepMultiMarkerIndex(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
+            //ProcessMarkers();
+            //ProcessMarkers( true); //Running this twice, because we also want to store information about newly seen markers in relation to other newly seen markers.
 
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myGFMultiMarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myGFMultiMarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetGFVisible(true);
-            //        GetMarkersSeenID().Add(myGFMultiMarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetGFMultiMarkerIndex(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myLeftBulkheadMarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myLeftBulkheadMarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetLeftBulkheadVisible(true);
-            //        GetMarkersSeenID().Add(myLeftBulkheadMarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetLeftBulkheadMarkerIndex(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myRightBulkheadMarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myRightBulkheadMarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetRightBulkheadVisible(true);
-            //        GetMarkersSeenID().Add(myRightBulkheadMarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetRightBulkheadMarkerIndex(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myDoorHingeRightMarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myDoorHingeRightMarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetDoorHingeRightVisible(true);
-            //        GetMarkersSeenID().Add(myDoorHingeRightMarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetDoorHingeRightIndex(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myDoorFrameRightMarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myDoorFrameRightMarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetDoorFrameRightVisible(true);
-            //        GetMarkersSeenID().Add(myDoorFrameRightMarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetDoorFrameRightIndex(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myDoorHingeLeftMarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myDoorHingeLeftMarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetDoorHingeLeftVisible(true);
-            //        GetMarkersSeenID().Add(myDoorHingeLeftMarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetDoorHingeLeftIndex(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myDoorFrameLeftMarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myDoorFrameLeftMarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetDoorFrameLeftVisible(true);
-            //        GetMarkersSeenID().Add(myDoorFrameLeftMarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetDoorFrameLeftIndex(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myObstruct1MarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myObstruct1MarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetObstruct1Visible(true);
-            //        GetMarkersSeenID().Add(myObstruct1MarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetObstruct1Index(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myObstruct2MarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myObstruct2MarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetObstruct2Visible(true);
-            //        GetMarkersSeenID().Add(myObstruct2MarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetObstruct2Index(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myObstruct3MarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myObstruct3MarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetObstruct3Visible(true);
-            //        GetMarkersSeenID().Add(myObstruct3MarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetObstruct3Index(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myObstruct4MarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myObstruct4MarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetObstruct4Visible(true);
-            //        GetMarkersSeenID().Add(myObstruct4MarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetObstruct4Index(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myWall1MarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myWall1MarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetWall1Visible(true);
-            //        GetMarkersSeenID().Add(myWall1MarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetWall1Index(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myWall2MarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myWall2MarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetWall2Visible(true);
-            //        GetMarkersSeenID().Add(myWall2MarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetWall2Index(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myWall3MarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myWall3MarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetWall3Visible(true);
-            //        GetMarkersSeenID().Add(myWall3MarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetWall3Index(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //if (ARToolKitFunctions.Instance.arwQueryMarkerVisibility(myWall4MarkerID)) {
-            //    myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //    ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myWall4MarkerID, myMatrix);
-            //    pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
-            //    if (pt.Length < 2000) {
-            //        SetWall4Visible(true);
-            //        GetMarkersSeenID().Add(myWall4MarkerID);
-            //        GetModelViewMatrix().Add(myMatrix);
-            //        SetWall4Index(GetModelViewMatrix().Count - 1);
-            //    }
-            //}
-
-            //try {
-            //    ProcessMarkers();
-            //    ProcessMarkers(false, true);
-            //}
-            //catch (Exception ex) {
-            //    String s = ex.ToString();
-            //}
+            //Data.GetMarkersCopy();
 
         }
 
-        public static void ProcessMarkers(bool straightToCalcs = false, bool onlySuspectedMarkers = false)
-        {
-            int i, j, k, k1;
-            //clsPoint p2d1, p2d2, p2d1a, p2d2a, p2d;
-            //clsPoint3d p1, p2, p3, p4;
+        private static void DetectMarkerVisible(int myMarkerID) {
+
+            float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMarkerID, myMatrix)) {
+                clsPoint3d pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
+                if (pt.Length < 2000) {
+
+                    clsPoint3d myCameraPoint = PointFromInvMatrix(myMatrix);
+
+                    if (IsSameDbl(myCameraPoint.Length, 0) == false) {
+                        myCameraPoint.Normalise();
+                        double a1 = Abs(myCameraPoint.AngleToHorizontal) * 180 / PI;
+                        if ((a1 > 10 && a1 < 80) || myWallMarkerIDs.Contains(myMarkerID)) {
+                        // if ((a1 > 22 && a1 < 68) || myWallMarkerIDs.Contains(myMarkerID)) {
+                            Data.MarkersSeenID.Add(myMarkerID);
+                            Data.ModelViewMatrix.Add(myMatrix);
+                        }
+                    }
+
+                }
+            }
+        }
+
+        public static void ProcessMarkers(bool includeSuspectedMarkers = false) {
+            int i, j, k;
             int i1;
-            clsPoint3d pt1a;
-            clsPoint3d pt1b;
-            clsPoint3d pt1;
-            clsPoint3d pt2;
-            clsPoint3d pt3;
-            clsPoint3d pt6a;
-            clsPoint3d pt6b;
-            clsPoint3d myCameraPoint;
             clsMarkerPoint pt;
             int myMarkerID, mySeenFromMarkerID;
             List<int> mySuspectConfirmedID = new List<int>();
@@ -1225,248 +545,109 @@ namespace BatchProcess {
             bool myStepConfirmed;
             int myNumConfirmed;
             clsMarkerPoint myConfirmedMarker;
-            List<clsPoint3d> pts1 = new List<clsPoint3d>();
-            List<clsPoint3d> pts2 = new List<clsPoint3d>();
-            List<clsPoint3d> pts3 = new List<clsPoint3d>();
-            List<clsPoint3d> pts4 = new List<clsPoint3d>();
-            List<clsPoint3d> pts5 = new List<clsPoint3d>();
-            List<double> myDists = new List<double>();
-            List<clsPoint3d> pts = new List<clsPoint3d>();
+            List<clsPoint3d> myOriginPts = new List<clsPoint3d>();
+            List<clsPoint3d> myXAxisPts = new List<clsPoint3d>();
+            List<clsPoint3d> myYAxisPts = new List<clsPoint3d>();
             List<clsMarkerPoint> myHistoricMarkers = new List<clsMarkerPoint>();
+            List<int> mySeenFromMarkerIDs = new List<int>();
             string myErrorString = "";
             double a1 = 0, a2 = 0;
             clsPoint3d v1 = null, v2 = null, v3 = null, v4 = null;
             bool myMarkerConfirmed = false, b1 = false, b2 = false;
             bool mySuspectedMarkerAdded = false;
-            List<int> myProcessedMarkerIDs = new List<int>();
+            bool myHistoricMarkerUsed = false;
 
-            if (straightToCalcs) goto straightToCalcsStart;
-
-            mySaveSnapshot = false;
-            GetConfirmedMarkersSeenID().Clear();
-            GetConfirmedMarkersSeenIndex().Clear();
-            GetSuspectedMarkersSeenID().Clear();
-            GetSuspectedMarkersSeenIndex().Clear();
-            GetDoorMarkersSeenID().Clear();
-            GetDoorMarkersSeenIndex().Clear();
-            
-            if (GetGFVisible()) {
-                myCameraPoint = PointFromInvMatrix(GetGFMultiMarkerIndex());
-
-                if (IsSameDbl(myCameraPoint.Length, 0) == false) {
-                    myCameraPoint.Normalise();
-                    a1 = Abs(myCameraPoint.AngleToHorizontal) * 180 / Math.PI;
-                    if ((a1 < 45))
-                        SetGFVisible(false);
-                }
-            }
-
-            if (GetStepVisible()) {
-                myCameraPoint = PointFromInvMatrix(GetStepMultiMarkerIndex());
-                if (IsSameDbl(myCameraPoint.Length, 0) == false) {
-                    myCameraPoint.Normalise();
-                    a1 = Abs(myCameraPoint.AngleToHorizontal) * 180 / Math.PI;
-                    if ((a1 < 45))
-                        SetStepVisible(false);
-                }
-            }
-
-            if (GetMarkersSeenID().Count > 0) {
-                j = 0;
-                while (j <= GetMarkersSeenID().Count - 1) {
-                    myMarkerID = GetMarkersSeenID()[j];
-                    if (myMarkerID <= myGFMultiMarkerID || myMarkerID == myStepMultiMarkerID) {
-                        j = j + 1;
-                        continue;
-                    }
-
-                    myCameraPoint = PointFromInvMatrix(j);
-                    if (IsSameDbl(myCameraPoint.Length, 0) == false) {
-                        a1 = Abs(myCameraPoint.AngleToHorizontal) * 180 / Math.PI;
-                        if ((a1 < 45)) {
-                            GetMarkersSeenID().RemoveAt(j);
-                            GetModelViewMatrix().RemoveAt(j);
-                            if (j < GetGFMultiMarkerIndex()) SetGFMultiMarkerIndex(GetGFMultiMarkerIndex() - 1);
-                            if (j < GetStepMultiMarkerIndex()) SetStepMultiMarkerIndex(GetStepMultiMarkerIndex() - 1);
-                            if (j < GetLeftBulkheadMarkerIndex()) SetLeftBulkheadMarkerIndex(GetLeftBulkheadMarkerIndex() - 1);
-                            if (j < GetRightBulkheadMarkerIndex()) SetRightBulkheadMarkerIndex(GetRightBulkheadMarkerIndex() - 1);
-                            if (j < GetDoorHingeRightIndex()) SetDoorHingeRightIndex(GetDoorHingeRightIndex() - 1);
-                            if (j < GetDoorFrameRightIndex()) SetDoorFrameRightIndex(GetDoorFrameRightIndex() - 1);
-                            if (j < GetDoorHingeLeftIndex()) SetDoorHingeLeftIndex(GetDoorHingeLeftIndex() - 1);
-                            if (j < GetDoorFrameLeftIndex()) SetDoorFrameLeftIndex(GetDoorFrameLeftIndex() - 1);
-                            if (j < GetObstruct1Index()) SetObstruct1Index(GetObstruct1Index() - 1);
-                            if (j < GetObstruct2Index()) SetObstruct2Index(GetObstruct2Index() - 1);
-                            if (j < GetObstruct3Index()) SetObstruct3Index(GetObstruct3Index() - 1);
-                            if (j < GetObstruct4Index()) SetObstruct4Index(GetObstruct4Index() - 1);
-                            if (j < GetWall1Index()) SetWall1Index(GetWall1Index() - 1);
-                            if (j < GetWall2Index()) SetWall2Index(GetWall2Index() - 1);
-                            if (j < GetWall3Index()) SetWall3Index(GetWall3Index() - 1);
-                            if (j < GetWall4Index()) SetWall4Index(GetWall4Index() - 1);
-                            continue;
-                        }
-                    }
-                    j = j + 1;
-                }
-            }
-
-            if (onlySuspectedMarkers == false && GetMarkersSeenID().Count == 0 && GetStepVisible() == false && GetLeftBulkheadVisible() == false && GetRightBulkheadVisible() == false && GetDoorHingeRightVisible() == false && GetDoorFrameRightVisible() == false && GetDoorHingeLeftVisible() == false && GetDoorFrameLeftVisible() == false && GetObstruct1Visible() == false && GetObstruct2Visible() == false && GetObstruct3Visible() == false && GetObstruct4Visible() == false && GetWall1Visible() == false && GetWall2Visible() == false && GetWall3Visible() == false && GetWall4Visible() == false)
-                return;
-
-            for (i = 0; i <= ConfirmedMarkers.Count - 1; i++) {
-                j = ConfirmedMarkers[i].MarkerID;
-                if (GetMarkersSeenID().Contains(j)) {
-                    GetConfirmedMarkersSeenID().Add(j);
-                    GetConfirmedMarkersSeenIndex().Add(i);
-                }
+            if (!includeSuspectedMarkers) {
+                if (Data.MarkersSeenID.Count == 0 && Data.GetMarkerVisible(myStepMarkerID) == false &&
+                    Data.GetMarkerVisible(myLeftBulkheadMarkerID) == false && Data.GetMarkerVisible(myRightBulkheadMarkerID) == false &&
+                    Data.GetMarkerVisible(myDoorHingeRightMarkerID) == false && Data.GetMarkerVisible(myDoorFrameRightMarkerID) == false &&
+                    Data.GetMarkerVisible(myDoorHingeLeftMarkerID) == false && Data.GetMarkerVisible(myDoorFrameLeftMarkerID) == false &&
+                    Data.GetMarkerVisible(myObstruct1MarkerID) == false && Data.GetMarkerVisible(myObstruct2MarkerID) == false &&
+                    Data.GetMarkerVisible(myObstruct3MarkerID) == false && Data.GetMarkerVisible(myObstruct4MarkerID) == false &&
+                    Data.GetMarkerVisible(myWall1MarkerID) == false && Data.GetMarkerVisible(myWall2MarkerID) == false &&
+                    Data.GetMarkerVisible(myWall3MarkerID) == false && Data.GetMarkerVisible(myWall4MarkerID) == false)
+                    return;
             }
 
             mySuspectedMarkers.Sort(new SuspectedMarkerPointComparer());
 
-            for (i = 0; i <= mySuspectedMarkers.Count - 1; i++) {
-                j = mySuspectedMarkers[i].MarkerID;
-                if (GetMarkersSeenID().Contains(j)) {
-                    GetSuspectedMarkersSeenID().Add(j);
-                    GetSuspectedMarkersSeenIndex().Add(i);
-                }
-            }
-
-            for (i = myDoorMarkers.Count - 1; i >= 0; i--) {
-                j = myDoorMarkers[i].MarkerID;
-                if (GetMarkersSeenID().Contains(j) && GetDoorMarkersSeenID().Contains(j) == false) {
-                    GetDoorMarkersSeenID().Add(j);
-                    GetDoorMarkersSeenIndex().Add(i);
-                }
-            }
-
-            for (i = myDoorMarkers.Count - 1; i >= 0; i--) {
-                j = myDoorMarkers[i].MarkerID;
-                if (GetMarkersSeenID().Contains(j) && GetDoorMarkersSeenID().Contains(j) == false) {
-                    GetDoorMarkersSeenID().Add(j);
-                    GetDoorMarkersSeenIndex().Add(i);
-                }
-            }
-
-            for (i = myObstructMarkers.Count - 1; i >= 0; i--) {
-                j = myObstructMarkers[i].MarkerID;
-                if (GetMarkersSeenID().Contains(j) && GetObstructMarkersSeenID().Contains(j) == false) {
-                    GetObstructMarkersSeenID().Add(j);
-                    GetObstructMarkersSeenIndex().Add(i);
-                }
-            }
-
-            for (i = myWallMarkers.Count - 1; i >= 0; i--) {
-                j = myWallMarkers[i].MarkerID;
-                if (GetMarkersSeenID().Contains(j) && GetWallMarkersSeenID().Contains(j) == false) {
-                    GetWallMarkersSeenID().Add(j);
-                    GetWallMarkersSeenIndex().Add(i);
-                }
-            }
+            //if (AppPreferences.GTSAMBundleAdjustment) ARToolKitFunctions.Instance.arwListTrackables(myMapperMarkerID);
 
             //Take a measurement of the step marker
-            if (onlySuspectedMarkers == false && StepMarker.Confirmed == false && GetStepVisible()) {
-                j = GetStepMultiMarkerIndex();
+            if (includeSuspectedMarkers == false && StepMarker.Confirmed == false && Data.GetMarkerVisible(myStepMarkerID)) {
+                j = Data.GetMarkerIndex(myStepMarkerID);
 
-                if (GetGFVisible()) {
-                    pt1a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), j, GetGFMultiMarkerIndex(), 0);
-                    pt1b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), j, GetGFMultiMarkerIndex(), 1);
-                    pt1 = UnProjectProject(new clsPoint3d(0, 0, 0), j, GetGFMultiMarkerIndex());
-                    pt2 = UnProjectProject(new clsPoint3d(100, 0, 0), j, GetGFMultiMarkerIndex());
-                    pt3 = UnProjectProject(new clsPoint3d(0, 100, 0), j, GetGFMultiMarkerIndex());
-
-                    RelevelMarkerFromGF(ref pt1a, ref pt1b, ref pt1, ref pt2, ref pt3);
-
-                    pt6a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), j, j, 0);
-                    pt6b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), j, j, 1);
-
-                    myCameraPoint = PointFromInvMatrix(j);
-
-                    if (AddSuspectedMarker(myStepMultiMarkerID, myGFMultiMarkerID, pt1a, pt1b, pt1, pt2, pt3, pt6a, pt6b, myCameraPoint)) mySuspectedMarkerAdded = true;
+                if (Data.GetMarkerVisible(myGFMarkerID)) {
+                    if (AddSuspectedMarker(myStepMarkerID, j, myGFMarkerID, Data.GetMarkerIndex(myGFMarkerID))) mySuspectedMarkerAdded = true;
                 }
 
-                if (GetConfirmedMarkersSeenID().Count >= 1) {
-                    for (i = 0; i < GetConfirmedMarkersSeenID().Count; i++) {
-                        i1 = GetMarkersSeenID().IndexOf(GetConfirmedMarkersSeenID()[i]);
-
-                        pt1a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), j, i1, 0);
-                        pt1b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), j, i1, 1);
-                        pt1 = UnProjectProject(new clsPoint3d(0, 0, 0), j, i1);
-                        pt2 = UnProjectProject(new clsPoint3d(100, 0, 0), j, i1);
-                        pt3 = UnProjectProject(new clsPoint3d(0, 100, 0), j, i1);
-                        pt6a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), j, j, 0);
-                        pt6b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), j, j, 1);
-                        myCameraPoint = PointFromInvMatrix(j);
-
-                        if (AddSuspectedMarker(myStepMultiMarkerID, GetConfirmedMarkersSeenID()[i], pt1a, pt1b, pt1, pt2, pt3, pt6a, pt6b, myCameraPoint)) mySuspectedMarkerAdded = true;
+                for (i = 0; i < ConfirmedMarkers.Count; i++) {
+                    if (Data.GetMarkerVisible(ConfirmedMarkers[i].MarkerID)) {
+                        i1 = Data.GetMarkerIndex(ConfirmedMarkers[i].MarkerID);
+                        if (AddSuspectedMarker(myStepMarkerID, j, ConfirmedMarkers[i].MarkerID, i1)) mySuspectedMarkerAdded = true;
                     }
                 }
             }
 
 
             //Take a measurement of each of the other markers
-            for (j = 0; j <= GetMarkersSeenID().Count - 1; j++) {
-                myMarkerID = GetMarkersSeenID()[j];
+            for (j = 0; j <= Data.MarkersSeenID.Count - 1; j++) {
+                myMarkerID = Data.MarkersSeenID[j];
 
-                //Ignore confirmed markers, the GF marker and the step marker
-                if (GetConfirmedMarkersSeenID().Contains(myMarkerID)) continue;
-                if (myMarkerID == myGFMultiMarkerID) continue;
-                if (myMarkerID == myStepMultiMarkerID) continue;
+                if (myMarkerID == myGFMarkerID) continue; //Ignore the GF marker
+                if (ConfirmedMarkerIDs().Contains(myMarkerID)) continue; //Ignore confirmed markers
+                if (myMarkerID == myStepMarkerID) continue; //Ignore the step marker
 
-                if (CheckSuspectedMarker(myMarkerID, j, onlySuspectedMarkers)) mySuspectedMarkerAdded = true;
+                if (CheckSuspectedMarker(myMarkerID, j, includeSuspectedMarkers)) mySuspectedMarkerAdded = true;
             }
-
-
-            straightToCalcsStart:
 
             //Check if we can convert a suspected marker to a confirmed one
             for (i = 0; i <= mySuspectedMarkers.Count - 1; i++) {
+
+                //Avoid measuring obstructions when a confirmed one exists. Wait until the user clears them
+                if (SuspectedMarkerIsConfirmedObstruction(mySuspectedMarkers[i].MarkerID)) continue;
+
                 if (mySuspectedMarkers[i].Confirmed == false) {
-                    mySuspectedMarkers[i].SetEndPointBasedOnZVectors(straightToCalcs);
-                    if (mySuspectedMarkers[i].Points1a.Count > 550) {
-                        if (mySuspectedMarkers[i].MarkerID == myStepMultiMarkerID) {
+                    if (mySuspectedMarkers[i].OriginPoints.Count > 50) {
+
+                        if (mySuspectedMarkers[i].MarkerID == myStepMarkerID) {
                             DebugStringList.Add("Step Marker Reset.");
-                        }
-                        else if (mySuspectedMarkers[i].MarkerID == myLeftBulkheadMarkerID || mySuspectedMarkers[i].MarkerID == myRightBulkheadMarkerID) {
+                        } else if (myBulkheadMarkerIDs.Contains(mySuspectedMarkers[i].MarkerID)) {
                             DebugStringList.Add("Bulkhead Marker Reset.");
-                        }
-                        else if (mySuspectedMarkers[i].MarkerID == myDoorHingeRightMarkerID || mySuspectedMarkers[i].MarkerID == myDoorFrameRightMarkerID || mySuspectedMarkers[i].MarkerID == myDoorHingeLeftMarkerID || mySuspectedMarkers[i].MarkerID == myDoorFrameLeftMarkerID) {
+                        } else if (myDoorMarkerIDs.Contains(mySuspectedMarkers[i].MarkerID)) {
                             DebugStringList.Add("Door Marker Reset.");
-                        }
-                        else {
-                            DebugStringList.Add("Marker " + (mySuspectedMarkers[i].MarkerID + 1) + " Reset.");
+                        } else {
+                            DebugStringList.Add("Marker " + mySuspectedMarkers[i].NewMarkerID() + " Reset.");
                         }
                         mySuspectedMarkers[i].Clear();
-                    }
-                    else if (mySuspectedMarkers[i].Points1a.Count > 1 && mySuspectedMarkers[i].Origin.Length > myTol &&
-                        mySuspectedMarkers[i].OKToConfirm(ref myErrorString, ref v1, ref v2, ref v3, ref v4, ref b1, ref b2, ref a1, ref a2)) {
+                    } else if (mySuspectedMarkers[i].OriginPoints.Count > 1 && mySuspectedMarkers[i].Origin.Length > myTol &&
+                          mySuspectedMarkers[i].OKToConfirm(ref myErrorString, ref v1, ref v2, ref v3, ref v4, ref b1, ref b2, ref a1, ref a2)) {
 
 
-                        ////DEBUG:
-                        //if (mySuspectedMarkers[i].Points1a.Count > 1 && mySuspectedMarkers[i].Origin.Length > myTol &&
-                        //  mySuspectedMarkers[i].OKToConfirm(ref myErrorString, ref v1, ref v2, ref v3, ref v4, ref b1, ref b2, ref a1, ref a2)) {
-                        //    mySuspectedMarkers[i].SetEndPointBasedOnZVectors(straightToCalcs);
-                        //}
+                        //DEBUG:
+                        if (mySuspectedMarkers[i].OriginPoints.Count > 1 && mySuspectedMarkers[i].Origin.Length > myTol &&
+                          mySuspectedMarkers[i].OKToConfirm(ref myErrorString, ref v1, ref v2, ref v3, ref v4, ref b1, ref b2, ref a1, ref a2)) {
+                            mySuspectedMarkers[i].SetEndPointBasedOnZVectors();
+                        }
 
                         mySuspectedMarkers[i].Confirmed = true;
                         v1 = myVerticalVector.Copy();
                         v1.Normalise();
                         double a = Abs(Asin(mySuspectedMarkers[i].VZ.Cross(v1).Length)) * 180 / Math.PI;
 
-                        if (mySuspectedMarkers[i].MarkerID == myStepMultiMarkerID) {
+                        if (mySuspectedMarkers[i].MarkerID == myStepMarkerID) {
                             DebugStringList.Add(string.Format("Step Marker Confirmed. {0:0.0}° From Vertical.", a));
-                        }
-                        else if (mySuspectedMarkers[i].MarkerID == myLeftBulkheadMarkerID || mySuspectedMarkers[i].MarkerID == myRightBulkheadMarkerID) {
+                        } else if (myBulkheadMarkerIDs.Contains(mySuspectedMarkers[i].MarkerID)) {
                             DebugStringList.Add(string.Format("Bulkhead Marker Confirmed."));
-                        }
-                        else if (mySuspectedMarkers[i].MarkerID == myDoorHingeRightMarkerID || mySuspectedMarkers[i].MarkerID == myDoorFrameRightMarkerID || mySuspectedMarkers[i].MarkerID == myDoorHingeLeftMarkerID || mySuspectedMarkers[i].MarkerID == myDoorFrameLeftMarkerID) {
+                        } else if (myDoorMarkerIDs.Contains(mySuspectedMarkers[i].MarkerID)) {
                             DebugStringList.Add(string.Format("Door Marker Confirmed."));
-                        }
-                        else {
-                            DebugStringList.Add(string.Format("Marker {0:0} Confirmed. {1:0.0}° From Vertical.", mySuspectedMarkers[i].MarkerID + 1, a));
+                        } else {
+                            DebugStringList.Add(string.Format("Marker {0:0} Confirmed. {1:0.0}° From Vertical.", mySuspectedMarkers[i].NewMarkerID(), a));
                         }
                     }
                 }
             }
-            
+
             //Convert the "confirmed" suspects to Confirmed
             i = 0;
             while (i <= mySuspectedMarkers.Count - 1) {
@@ -1477,423 +658,421 @@ namespace BatchProcess {
 
                 myMarkerID = mySuspectedMarkers[i].MarkerID;
                 mySeenFromMarkerID = mySuspectedMarkers[i].SeenFromMarkerID;
-                if (myProcessedMarkerIDs.Contains(myMarkerID)) { i = i + 1; continue; }
-                myProcessedMarkerIDs.Add(myMarkerID);
                 myGFConfirmed = false;
                 myStepConfirmed = false;
                 myNumConfirmed = 0;
 
                 //Takes the average measurement from the other confirmed markers:
-                pts1.Clear();
-                pts2.Clear();
-                pts3.Clear();
-                pts4.Clear();
-                pts5.Clear();
-                myDists.Clear();
+                myOriginPts.Clear();
+                myXAxisPts.Clear();
+                myYAxisPts.Clear();
                 myHistoricMarkers.Clear();
+                mySeenFromMarkerIDs.Clear();
 
                 for (j = 0; j <= mySuspectedMarkers.Count - 1; j++) {
-                    //if (mySuspectedMarkers[j].Confirmed == false) continue;
-
                     if (mySuspectedMarkers[j].MarkerID == myMarkerID && mySuspectedMarkers[j].Origin.Length > myTol) {
-                        if (mySuspectedMarkers[j].SeenFromMarkerID == myGFMultiMarkerID) {
-                            pts1.Add(mySuspectedMarkers[j].Origin.Copy());
-                            pts2.Add(mySuspectedMarkers[j].XAxisPoint.Copy());
-                            pts3.Add(mySuspectedMarkers[j].YAxisPoint.Copy());
-                            pts4.Add(mySuspectedMarkers[j].ZAxisPoint.Copy());
-                            pts5.Add(mySuspectedMarkers[j].Point.Copy());
-                            myDists.Add(mySuspectedMarkers[j].Origin.Length);
+                        myHistoricMarkerUsed = false;
+                        if (mySuspectedMarkers[j].SeenFromMarkerID == myGFMarkerID) {
+                            clsPoint3d p1 = mySuspectedMarkers[j].Origin.Copy();
+                            RelevelPointFromGF(p1);
+                            myOriginPts.Add(p1);
+                            p1 = mySuspectedMarkers[j].XAxisPoint.Copy();
+                            RelevelPointFromGF(p1);
+                            myXAxisPts.Add(p1);
+                            p1 = mySuspectedMarkers[j].YAxisPoint.Copy();
+                            RelevelPointFromGF(p1);
+                            myYAxisPts.Add(p1);
                             if (mySuspectedMarkers[j].Confirmed) myGFConfirmed = true;
-                        }
-                        else if (mySuspectedMarkers[j].SeenFromMarkerID == myStepMultiMarkerID) {
-                            pts1.Add(StepMarker.Origin + mySuspectedMarkers[j].Origin.X * StepMarker.VX + mySuspectedMarkers[j].Origin.Y * StepMarker.VY + mySuspectedMarkers[j].Origin.Z * StepMarker.VZ);
-                            pts2.Add(StepMarker.Origin + mySuspectedMarkers[j].XAxisPoint.X * StepMarker.VX + mySuspectedMarkers[j].XAxisPoint.Y * StepMarker.VY + mySuspectedMarkers[j].XAxisPoint.Z * StepMarker.VZ);
-                            pts3.Add(StepMarker.Origin + mySuspectedMarkers[j].YAxisPoint.X * StepMarker.VX + mySuspectedMarkers[j].YAxisPoint.Y * StepMarker.VY + mySuspectedMarkers[j].YAxisPoint.Z * StepMarker.VZ);
-                            pts4.Add(StepMarker.Origin + mySuspectedMarkers[j].ZAxisPoint.X * StepMarker.VX + mySuspectedMarkers[j].ZAxisPoint.Y * StepMarker.VY + mySuspectedMarkers[j].ZAxisPoint.Z * StepMarker.VZ);
-                            pts5.Add(StepMarker.Origin + mySuspectedMarkers[j].Point.X * StepMarker.VX + mySuspectedMarkers[j].Point.Y * StepMarker.VY + mySuspectedMarkers[j].Point.Z * StepMarker.VZ);
-                            myDists.Add(mySuspectedMarkers[j].Origin.Length);
-                            if (mySuspectedMarkers[j].Confirmed) myStepConfirmed = true;
-                        }
-                        else if (mySuspectedMarkers[j].SeenFromMarkerID == myDoorHingeRightMarkerID || mySuspectedMarkers[j].SeenFromMarkerID == myDoorFrameRightMarkerID || mySuspectedMarkers[j].SeenFromMarkerID == myDoorHingeLeftMarkerID || mySuspectedMarkers[j].SeenFromMarkerID == myDoorFrameLeftMarkerID) {
+                            myHistoricMarkerUsed = true;
+                        } else if (myDoorMarkerIDs.Contains(mySuspectedMarkers[j].SeenFromMarkerID)) {
                             for (k = myDoorMarkers.Count - 1; k >= 0; k--) {
                                 if (myDoorMarkers[k].MarkerID == mySuspectedMarkers[j].SeenFromMarkerID) {
                                     pt = myDoorMarkers[k];
-                                    pts1.Add(pt.Origin + mySuspectedMarkers[j].Origin.X * pt.VX + mySuspectedMarkers[j].Origin.Y * pt.VY + mySuspectedMarkers[j].Origin.Z * pt.VZ);
-                                    pts2.Add(pt.Origin + mySuspectedMarkers[j].XAxisPoint.X * pt.VX + mySuspectedMarkers[j].XAxisPoint.Y * pt.VY + mySuspectedMarkers[j].XAxisPoint.Z * pt.VZ);
-                                    pts3.Add(pt.Origin + mySuspectedMarkers[j].YAxisPoint.X * pt.VX + mySuspectedMarkers[j].YAxisPoint.Y * pt.VY + mySuspectedMarkers[j].YAxisPoint.Z * pt.VZ);
-                                    pts4.Add(pt.Origin + mySuspectedMarkers[j].ZAxisPoint.X * pt.VX + mySuspectedMarkers[j].ZAxisPoint.Y * pt.VY + mySuspectedMarkers[j].ZAxisPoint.Z * pt.VZ);
-                                    pts5.Add(pt.Origin + mySuspectedMarkers[j].Point.X * pt.VX + mySuspectedMarkers[j].Point.Y * pt.VY + mySuspectedMarkers[j].Point.Z * pt.VZ);
-                                    myDists.Add(mySuspectedMarkers[j].Origin.Length);
+                                    myOriginPts.Add(pt.Origin + mySuspectedMarkers[j].Origin.X * pt.VX + mySuspectedMarkers[j].Origin.Y * pt.VY + mySuspectedMarkers[j].Origin.Z * pt.VZ);
+                                    myXAxisPts.Add(pt.Origin + mySuspectedMarkers[j].XAxisPoint.X * pt.VX + mySuspectedMarkers[j].XAxisPoint.Y * pt.VY + mySuspectedMarkers[j].XAxisPoint.Z * pt.VZ);
+                                    myYAxisPts.Add(pt.Origin + mySuspectedMarkers[j].YAxisPoint.X * pt.VX + mySuspectedMarkers[j].YAxisPoint.Y * pt.VY + mySuspectedMarkers[j].YAxisPoint.Z * pt.VZ);
                                     if (mySuspectedMarkers[j].Confirmed) myNumConfirmed = myNumConfirmed + 1;
+                                    myHistoricMarkerUsed = true;
                                     break;
                                 }
                             }
-                        }
-                        else if (mySuspectedMarkers[j].SeenFromMarkerID == myObstruct1MarkerID || mySuspectedMarkers[j].SeenFromMarkerID == myObstruct2MarkerID || mySuspectedMarkers[j].SeenFromMarkerID == myObstruct3MarkerID || mySuspectedMarkers[j].SeenFromMarkerID == myObstruct4MarkerID) {
+                        } else if (myObstructMarkerIDs.Contains(mySuspectedMarkers[j].SeenFromMarkerID)) {
                             for (k = myObstructMarkers.Count - 1; k >= 0; k--) {
                                 if (myObstructMarkers[k].MarkerID == mySuspectedMarkers[j].SeenFromMarkerID) {
                                     pt = myObstructMarkers[k];
-                                    pts1.Add(pt.Origin + mySuspectedMarkers[j].Origin.X * pt.VX + mySuspectedMarkers[j].Origin.Y * pt.VY + mySuspectedMarkers[j].Origin.Z * pt.VZ);
-                                    pts2.Add(pt.Origin + mySuspectedMarkers[j].XAxisPoint.X * pt.VX + mySuspectedMarkers[j].XAxisPoint.Y * pt.VY + mySuspectedMarkers[j].XAxisPoint.Z * pt.VZ);
-                                    pts3.Add(pt.Origin + mySuspectedMarkers[j].YAxisPoint.X * pt.VX + mySuspectedMarkers[j].YAxisPoint.Y * pt.VY + mySuspectedMarkers[j].YAxisPoint.Z * pt.VZ);
-                                    pts4.Add(pt.Origin + mySuspectedMarkers[j].ZAxisPoint.X * pt.VX + mySuspectedMarkers[j].ZAxisPoint.Y * pt.VY + mySuspectedMarkers[j].ZAxisPoint.Z * pt.VZ);
-                                    pts5.Add(pt.Origin + mySuspectedMarkers[j].Point.X * pt.VX + mySuspectedMarkers[j].Point.Y * pt.VY + mySuspectedMarkers[j].Point.Z * pt.VZ);
-                                    myDists.Add(mySuspectedMarkers[j].Origin.Length);
+                                    myOriginPts.Add(pt.Origin + mySuspectedMarkers[j].Origin.X * pt.VX + mySuspectedMarkers[j].Origin.Y * pt.VY + mySuspectedMarkers[j].Origin.Z * pt.VZ);
+                                    myXAxisPts.Add(pt.Origin + mySuspectedMarkers[j].XAxisPoint.X * pt.VX + mySuspectedMarkers[j].XAxisPoint.Y * pt.VY + mySuspectedMarkers[j].XAxisPoint.Z * pt.VZ);
+                                    myYAxisPts.Add(pt.Origin + mySuspectedMarkers[j].YAxisPoint.X * pt.VX + mySuspectedMarkers[j].YAxisPoint.Y * pt.VY + mySuspectedMarkers[j].YAxisPoint.Z * pt.VZ);
                                     if (mySuspectedMarkers[j].Confirmed) myNumConfirmed = myNumConfirmed + 1;
+                                    myHistoricMarkerUsed = true;
                                     break;
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             for (k = 0; k <= ConfirmedMarkers.Count - 1; k++) {
                                 if (ConfirmedMarkers[k].MarkerID == mySuspectedMarkers[j].SeenFromMarkerID) {
+                                    if (ConfirmedMarkers[k].MarkerID == myStepMarkerID && ConfirmedMarkers[k].Levelled == false) continue;
                                     pt = ConfirmedMarkers[k];
-                                    pts1.Add(pt.Origin + mySuspectedMarkers[j].Origin.X * pt.VX + mySuspectedMarkers[j].Origin.Y * pt.VY + mySuspectedMarkers[j].Origin.Z * pt.VZ);
-                                    pts2.Add(pt.Origin + mySuspectedMarkers[j].XAxisPoint.X * pt.VX + mySuspectedMarkers[j].XAxisPoint.Y * pt.VY + mySuspectedMarkers[j].XAxisPoint.Z * pt.VZ);
-                                    pts3.Add(pt.Origin + mySuspectedMarkers[j].YAxisPoint.X * pt.VX + mySuspectedMarkers[j].YAxisPoint.Y * pt.VY + mySuspectedMarkers[j].YAxisPoint.Z * pt.VZ);
-                                    pts4.Add(pt.Origin + mySuspectedMarkers[j].ZAxisPoint.X * pt.VX + mySuspectedMarkers[j].ZAxisPoint.Y * pt.VY + mySuspectedMarkers[j].ZAxisPoint.Z * pt.VZ);
-                                    pts5.Add(pt.Origin + mySuspectedMarkers[j].Point.X * pt.VX + mySuspectedMarkers[j].Point.Y * pt.VY + mySuspectedMarkers[j].Point.Z * pt.VZ);
-                                    myDists.Add(mySuspectedMarkers[j].Origin.Length);
-                                    if (mySuspectedMarkers[j].Confirmed) myNumConfirmed = myNumConfirmed + 1;
-                                    break;
+                                    myOriginPts.Add(pt.Origin + mySuspectedMarkers[j].Origin.X * pt.VX + mySuspectedMarkers[j].Origin.Y * pt.VY + mySuspectedMarkers[j].Origin.Z * pt.VZ);
+                                    myXAxisPts.Add(pt.Origin + mySuspectedMarkers[j].XAxisPoint.X * pt.VX + mySuspectedMarkers[j].XAxisPoint.Y * pt.VY + mySuspectedMarkers[j].XAxisPoint.Z * pt.VZ);
+                                    myYAxisPts.Add(pt.Origin + mySuspectedMarkers[j].YAxisPoint.X * pt.VX + mySuspectedMarkers[j].YAxisPoint.Y * pt.VY + mySuspectedMarkers[j].YAxisPoint.Z * pt.VZ);
+                                    if (mySuspectedMarkers[j].Confirmed) {
+                                        if (ConfirmedMarkers[k].MarkerID == myStepMarkerID) {
+                                            myStepConfirmed = true;
+                                        } else {
+                                            myNumConfirmed = myNumConfirmed + 1;
+                                        }
+                                    }
+                                    myHistoricMarkerUsed = true;
                                 }
                             }
-
-                            ////New! Also allow measurement from other suspected markers, but only if they can be seen from confirmed markers
-                            //for (k = 0; k <= mySuspectedMarkers.Count - 1; k++) {
-                            //    if (mySuspectedMarkers[k].MarkerID == mySuspectedMarkers[j].MarkerID) continue;
-                            //    if (mySuspectedMarkers[k].MarkerID == mySuspectedMarkers[j].SeenFromMarkerID) {
-                            //        if (mySuspectedMarkers[k].Origin.Length > myTol) {
-                            //            if (ConfirmedMarkersCopy.Count > 0) {
-                            //                pt = mySuspectedMarkers[k].Copy();
-                            //                SetSuspectedMarkerAxes(ref pt);
-                            //                pt.Confirmed = true;
-                            //            }
-                            //            else {
-                            //                pt = mySuspectedMarkers[k].Copy();
-                            //                pt.Confirmed = false;
-                            //                SetSuspectedMarkerAxes2(ref pt);
-                            //            }
-
-                            //            if (pt.Confirmed) {
-                            //                pts1.Add(pt.Origin + mySuspectedMarkers[j].Origin.X * pt.VX + mySuspectedMarkers[j].Origin.Y * pt.VY + mySuspectedMarkers[j].Origin.Z * pt.VZ);
-                            //                pts2.Add(pt.Origin + mySuspectedMarkers[j].XAxisPoint.X * pt.VX + mySuspectedMarkers[j].XAxisPoint.Y * pt.VY + mySuspectedMarkers[j].XAxisPoint.Z * pt.VZ);
-                            //                pts3.Add(pt.Origin + mySuspectedMarkers[j].YAxisPoint.X * pt.VX + mySuspectedMarkers[j].YAxisPoint.Y * pt.VY + mySuspectedMarkers[j].YAxisPoint.Z * pt.VZ);
-                            //                pts4.Add(pt.Origin + mySuspectedMarkers[j].ZAxisPoint.X * pt.VX + mySuspectedMarkers[j].ZAxisPoint.Y * pt.VY + mySuspectedMarkers[j].ZAxisPoint.Z * pt.VZ);
-                            //                pts5.Add(pt.Origin + mySuspectedMarkers[j].Point.X * pt.VX + mySuspectedMarkers[j].Point.Y * pt.VY + mySuspectedMarkers[j].Point.Z * pt.VZ);
-                            //                myDists.Add(mySuspectedMarkers[j].Origin.Length);
-                            //                break;
-                            //            }
-                            //        }
-                            //    }
-                            //}
-
                         }
-                        myHistoricMarkers.Add(mySuspectedMarkers[j].Copy());
+
+                        if (myHistoricMarkerUsed) {
+                            myHistoricMarkers.Add(mySuspectedMarkers[j].Copy());
+                            mySeenFromMarkerIDs.Add(mySuspectedMarkers[j].SeenFromMarkerID);
+                        }
                     }
                 }
 
                 //Now we can convert our suspected marker to a Confirmed marker
-                if (myGFConfirmed || myStepConfirmed || (myNumConfirmed >= 2 || (myNumConfirmed >= 1 && (myMarkerID == myLeftBulkheadMarkerID || myMarkerID == myRightBulkheadMarkerID || myMarkerID == myDoorHingeRightMarkerID || myMarkerID == myDoorFrameRightMarkerID || myMarkerID == myDoorHingeLeftMarkerID || myMarkerID == myDoorFrameLeftMarkerID || myMarkerID == myObstruct1MarkerID || myMarkerID == myObstruct2MarkerID || myMarkerID == myObstruct3MarkerID || myMarkerID == myObstruct4MarkerID || myMarkerID == myWall1MarkerID || myMarkerID == myWall2MarkerID || myMarkerID == myWall3MarkerID || myMarkerID == myWall4MarkerID)))) {
-                    if (myMarkerID == myStepMultiMarkerID) {
+                if ((myGFConfirmed && (mySuspectedMarkers[i].Origin.Z < 50 || myNumConfirmed >= 1)) || myStepConfirmed || (myNumConfirmed >= 2 || (myNumConfirmed >= 1 && (myMarkerID == myStepMarkerID || myAllFeatureMarkerIDs.Contains(myMarkerID))))) {
+                    if (myMarkerID == myStepMarkerID) {
                         myMarkerConfirmed = true; //So we can auto-save
                         StepMarker.Confirmed = true;
-
-                        StepMarker.SeenFromMarkerID = mySeenFromMarkerID;
-                        StepMarker.Origin = new clsPoint3d(pts1.Average(p => p.X), pts1.Average(p => p.Y), pts1.Average(p => p.Z));
-                        StepMarker.XAxisPoint = new clsPoint3d(pts2.Average(p => p.X), pts2.Average(p => p.Y), pts2.Average(p => p.Z));
-                        StepMarker.YAxisPoint = new clsPoint3d(pts3.Average(p => p.X), pts3.Average(p => p.Y), pts3.Average(p => p.Z));
-                        StepMarker.ZAxisPoint = new clsPoint3d(pts4.Average(p => p.X), pts4.Average(p => p.Y), pts4.Average(p => p.Z));
-                        StepMarker.Point = new clsPoint3d(pts5.Average(p => p.X), pts5.Average(p => p.Y), pts5.Average(p => p.Z));
-                        StepMarker.SetZNormal();
-                        StepMarker.ModelViewMatrix = GetModelViewMatrixFromPoints(StepMarker.Origin, StepMarker.XAxisPoint, StepMarker.YAxisPoint);
                         StepMarker.Levelled = false;
                         StepMarker.Stitched = false;
+                        myConfirmedMarker = StepMarker.Copy();
 
-                        ////If seen from the GF Marker, relevel
-                        //if (mySeenFromMarkerID == myGFMultiMarkerID) {
-                        //    RelevelMarkerFromGF(StepMarker);
-                        //}
+                        PopulateMarkerPoint(ref myConfirmedMarker, mySeenFromMarkerID, myOriginPts, myXAxisPts, myYAxisPts, mySeenFromMarkerIDs, myHistoricMarkers);
 
-                        ConfirmedMarkers.Add(StepMarker.Copy());
-                        ConfirmedMarkers.Last().MarkerID = myMaximumMarkerID;
-                        myMaximumMarkerID = myMaximumMarkerID + 1;
-                        ConfirmedMarkers.Last().ActualMarkerID = myMarkerID;
-                        ConfirmedMarkers.Last().History.AddRange(myHistoricMarkers.ToArray());
-                        ConfirmedMarkers.Last().History[0].MarkerID = ConfirmedMarkers.Last().MarkerID;
-                        ConfirmedMarkers.Last().History[0].ActualMarkerID = ConfirmedMarkers.Last().ActualMarkerID;
-                        ConfirmedMarkers.Last().History[0].VerticalVect = StepMarker.VerticalVect.Copy();
+                        //Set the Stepmarker coordinates so we can use it to recognise other markers
+                        StepMarker.Origin = myConfirmedMarker.Origin.Copy();
+                        StepMarker.XAxisPoint = myConfirmedMarker.XAxisPoint.Copy();
+                        StepMarker.YAxisPoint = myConfirmedMarker.YAxisPoint.Copy();
+                        StepMarker.VX = myConfirmedMarker.VX.Copy();
+                        StepMarker.VY = myConfirmedMarker.VY.Copy();
+                        StepMarker.VZ = myConfirmedMarker.VZ.Copy();
 
-                        //Clear all old bulkhead and door markers
-                        for (j = 0; j < myBulkheadMarkers.Count; j++) {
-                            myBulkheadMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myDoorMarkers.Count; j++) {
-                            myDoorMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myObstructMarkers.Count; j++) {
-                            myObstructMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myWallMarkers.Count; j++) {
-                            myWallMarkers[j].Confirmed = false;
-                        }
+                        UpdateStepMarkerIDs();
+                        myConfirmedMarker.MarkerID = myStepMarkerID;
+                        myConfirmedMarker.ActualMarkerID = myStepMarkerID;
+                        myConfirmedMarker.History[0].MarkerID = myConfirmedMarker.MarkerID;
+                        myConfirmedMarker.History[0].ActualMarkerID = myConfirmedMarker.ActualMarkerID;
+                        myConfirmedMarker.History[0].VerticalVect = StepMarker.VerticalVect?.Copy();
+                        ConfirmedMarkers.Add(myConfirmedMarker);
 
-                    }
-                    else if (myMarkerID == myLeftBulkheadMarkerID || myMarkerID == myRightBulkheadMarkerID) {
+                    } else if (myBulkheadMarkerIDs.Contains(myMarkerID)) {
                         myMarkerConfirmed = true; //So we can auto-save
                         myConfirmedMarker = new clsMarkerPoint(myMarkerID, -1);
-                        myConfirmedMarker.SeenFromMarkerID = mySeenFromMarkerID;
-                        myConfirmedMarker.Origin = new clsPoint3d(pts1.Average(p => p.X), pts1.Average(p => p.Y), pts1.Average(p => p.Z));
-                        myConfirmedMarker.XAxisPoint = new clsPoint3d(pts2.Average(p => p.X), pts2.Average(p => p.Y), pts2.Average(p => p.Z));
-                        myConfirmedMarker.YAxisPoint = new clsPoint3d(pts3.Average(p => p.X), pts3.Average(p => p.Y), pts3.Average(p => p.Z));
-                        myConfirmedMarker.ZAxisPoint = new clsPoint3d(pts4.Average(p => p.X), pts4.Average(p => p.Y), pts4.Average(p => p.Z));
-                        myConfirmedMarker.Point = new clsPoint3d(pts5.Average(p => p.X), pts5.Average(p => p.Y), pts5.Average(p => p.Z));
-                        myConfirmedMarker.SetZNormal();
-                        myConfirmedMarker.ModelViewMatrix = GetModelViewMatrixFromPoints(myConfirmedMarker.Origin, myConfirmedMarker.XAxisPoint, myConfirmedMarker.YAxisPoint);
-                        myBulkheadMarkers.Add(myConfirmedMarker.Copy());
-                        myBulkheadMarkers.Last().Confirmed = true;
-                        myBulkheadMarkers.Last().History.AddRange(myHistoricMarkers.ToArray());
 
-                        ////If seen from the GF Marker, relevel
-                        //if (mySeenFromMarkerID == myGFMultiMarkerID) {
-                        //    clsMarkerPoint m = myBulkheadMarkers.Last();
-                        //    RelevelMarkerFromGF(m);
-                        //}
+                        PopulateMarkerPoint(ref myConfirmedMarker, mySeenFromMarkerID, myOriginPts, myXAxisPts, myYAxisPts, mySeenFromMarkerIDs, myHistoricMarkers);
 
-                        //If seen from Step Marker, reset the SeenFromMarkerID
-                        if (mySeenFromMarkerID == myStepMultiMarkerID) {
-                            j = myStepMultiMarkerID;
-                            for (k = 0; k < ConfirmedMarkers.Count; k++) {
-                                if (ConfirmedMarkers[k].ActualMarkerID == myStepMultiMarkerID) j = ConfirmedMarkers[k].MarkerID;
-                            }
-                            myBulkheadMarkers.Last().SeenFromMarkerID = j;
-                        }
+                        myBulkheadMarkers.Add(myConfirmedMarker);
 
-                        //Clear all old door markers
-                        for (j = 0; j < myDoorMarkers.Count; j++) {
-                            myDoorMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myObstructMarkers.Count; j++) {
-                            myObstructMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myWallMarkers.Count; j++) {
-                            myWallMarkers[j].Confirmed = false;
-                        }
-
-                        //((IARViewController)ViewController).ShowHeightInput((HeightZ)=> { double z; if (double.TryParse(HeightZ, out z) && z > myTol) myBulkheadMarkers.Last().BulkheadHeight = z; else myBulkheadMarkers.Remove(myConfirmedMarkers.Last()); });
-                    }
-                    else if (myMarkerID == myDoorHingeRightMarkerID || myMarkerID == myDoorFrameRightMarkerID || myMarkerID == myDoorHingeLeftMarkerID || myMarkerID == myDoorFrameLeftMarkerID) {
+                    } else if (myDoorMarkerIDs.Contains(myMarkerID)) {
                         myMarkerConfirmed = true; //So we can auto-save
                         myConfirmedMarker = new clsMarkerPoint(myMarkerID, -1);
-                        myConfirmedMarker.SeenFromMarkerID = mySeenFromMarkerID;
-                        myConfirmedMarker.Origin = new clsPoint3d(pts1.Average(p => p.X), pts1.Average(p => p.Y), pts1.Average(p => p.Z));
-                        myConfirmedMarker.XAxisPoint = new clsPoint3d(pts2.Average(p => p.X), pts2.Average(p => p.Y), pts2.Average(p => p.Z));
-                        myConfirmedMarker.YAxisPoint = new clsPoint3d(pts3.Average(p => p.X), pts3.Average(p => p.Y), pts3.Average(p => p.Z));
-                        myConfirmedMarker.ZAxisPoint = new clsPoint3d(pts4.Average(p => p.X), pts4.Average(p => p.Y), pts4.Average(p => p.Z));
-                        myConfirmedMarker.Point = new clsPoint3d(pts5.Average(p => p.X), pts5.Average(p => p.Y), pts5.Average(p => p.Z));
-                        myConfirmedMarker.SetZNormal();
-                        myConfirmedMarker.ModelViewMatrix = GetModelViewMatrixFromPoints(myConfirmedMarker.Origin, myConfirmedMarker.XAxisPoint, myConfirmedMarker.YAxisPoint);
-                        myDoorMarkers.Add(myConfirmedMarker.Copy());
-                        myDoorMarkers.Last().Confirmed = true;
-                        myDoorMarkers.Last().History.AddRange(myHistoricMarkers.ToArray());
 
-                        ////If seen from the GF Marker, relevel
-                        //if (mySeenFromMarkerID == myGFMultiMarkerID) {
-                        //    clsMarkerPoint m = myDoorMarkers.Last();
-                        //    RelevelMarkerFromGF(m);
-                        //}
+                        PopulateMarkerPoint(ref myConfirmedMarker, mySeenFromMarkerID, myOriginPts, myXAxisPts, myYAxisPts, mySeenFromMarkerIDs, myHistoricMarkers);
 
-                        //If seen from Step Marker, reset the SeenFromMarkerID
-                        if (mySeenFromMarkerID == myStepMultiMarkerID) {
-                            j = myStepMultiMarkerID;
-                            for (k = 0; k < ConfirmedMarkers.Count; k++) {
-                                if (ConfirmedMarkers[k].ActualMarkerID == myStepMultiMarkerID) j = ConfirmedMarkers[k].MarkerID;
-                            }
-                            myDoorMarkers.Last().SeenFromMarkerID = j;
-                        }
+                        myDoorMarkers.Add(myConfirmedMarker);
 
-                        //Clear all old bulkhead  markers
-                        for (j = 0; j < myBulkheadMarkers.Count; j++) {
-                            myBulkheadMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myObstructMarkers.Count; j++) {
-                            myObstructMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myWallMarkers.Count; j++) {
-                            myWallMarkers[j].Confirmed = false;
-                        }
-
-                    }
-                    else if (myMarkerID == myObstruct1MarkerID || myMarkerID == myObstruct2MarkerID || myMarkerID == myObstruct3MarkerID || myMarkerID == myObstruct4MarkerID) {
+                    } else if (myObstructMarkerIDs.Contains(myMarkerID)) {
                         myMarkerConfirmed = true; //So we can auto-save
                         myConfirmedMarker = new clsMarkerPoint(myMarkerID, -1);
-                        myConfirmedMarker.SeenFromMarkerID = mySeenFromMarkerID;
-                        myConfirmedMarker.Origin = new clsPoint3d(pts1.Average(p => p.X), pts1.Average(p => p.Y), pts1.Average(p => p.Z));
-                        myConfirmedMarker.XAxisPoint = new clsPoint3d(pts2.Average(p => p.X), pts2.Average(p => p.Y), pts2.Average(p => p.Z));
-                        myConfirmedMarker.YAxisPoint = new clsPoint3d(pts3.Average(p => p.X), pts3.Average(p => p.Y), pts3.Average(p => p.Z));
-                        myConfirmedMarker.ZAxisPoint = new clsPoint3d(pts4.Average(p => p.X), pts4.Average(p => p.Y), pts4.Average(p => p.Z));
-                        myConfirmedMarker.Point = new clsPoint3d(pts5.Average(p => p.X), pts5.Average(p => p.Y), pts5.Average(p => p.Z));
-                        myConfirmedMarker.SetZNormal();
-                        myConfirmedMarker.ModelViewMatrix = GetModelViewMatrixFromPoints(myConfirmedMarker.Origin, myConfirmedMarker.XAxisPoint, myConfirmedMarker.YAxisPoint);
-                        myObstructMarkers.Add(myConfirmedMarker.Copy());
-                        myObstructMarkers.Last().Confirmed = true;
-                        myObstructMarkers.Last().History.AddRange(myHistoricMarkers.ToArray());
 
-                        ////If seen from the GF Marker, relevel
-                        //if (mySeenFromMarkerID == myGFMultiMarkerID) {
-                        //    clsMarkerPoint m = myObstructMarkers.Last();
-                        //    RelevelMarkerFromGF(m);
-                        //}
+                        PopulateMarkerPoint(ref myConfirmedMarker, mySeenFromMarkerID, myOriginPts, myXAxisPts, myYAxisPts, mySeenFromMarkerIDs, myHistoricMarkers);
 
-                        //If seen from Step Marker, reset the SeenFromMarkerID
-                        if (mySeenFromMarkerID == myStepMultiMarkerID) {
-                            j = myStepMultiMarkerID;
-                            for (k = 0; k < ConfirmedMarkers.Count; k++) {
-                                if (ConfirmedMarkers[k].ActualMarkerID == myStepMultiMarkerID) j = ConfirmedMarkers[k].MarkerID;
-                            }
-                            myObstructMarkers.Last().SeenFromMarkerID = j;
-                        }
+                        myObstructMarkers.Add(myConfirmedMarker);
 
-                        //Clear all old bulkhead  markers
-                        for (j = 0; j < myBulkheadMarkers.Count; j++) {
-                            myBulkheadMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myDoorMarkers.Count; j++) {
-                            myDoorMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myWallMarkers.Count; j++) {
-                            myWallMarkers[j].Confirmed = false;
-                        }
-
-                    }
-                    else if (myMarkerID == myWall1MarkerID || myMarkerID == myWall2MarkerID || myMarkerID == myWall3MarkerID || myMarkerID == myWall4MarkerID) {
+                    } else if (myWallMarkerIDs.Contains(myMarkerID)) {
                         myMarkerConfirmed = true; //So we can auto-save
                         myConfirmedMarker = new clsMarkerPoint(myMarkerID, -1);
-                        myConfirmedMarker.SeenFromMarkerID = mySeenFromMarkerID;
-                        myConfirmedMarker.Origin = new clsPoint3d(pts1.Average(p => p.X), pts1.Average(p => p.Y), pts1.Average(p => p.Z));
-                        myConfirmedMarker.XAxisPoint = new clsPoint3d(pts2.Average(p => p.X), pts2.Average(p => p.Y), pts2.Average(p => p.Z));
-                        myConfirmedMarker.YAxisPoint = new clsPoint3d(pts3.Average(p => p.X), pts3.Average(p => p.Y), pts3.Average(p => p.Z));
-                        myConfirmedMarker.ZAxisPoint = new clsPoint3d(pts4.Average(p => p.X), pts4.Average(p => p.Y), pts4.Average(p => p.Z));
-                        myConfirmedMarker.Point = new clsPoint3d(pts5.Average(p => p.X), pts5.Average(p => p.Y), pts5.Average(p => p.Z));
-                        myConfirmedMarker.SetZNormal();
-                        myConfirmedMarker.ModelViewMatrix = GetModelViewMatrixFromPoints(myConfirmedMarker.Origin, myConfirmedMarker.XAxisPoint, myConfirmedMarker.YAxisPoint);
-                        myWallMarkers.Add(myConfirmedMarker.Copy());
-                        myWallMarkers.Last().Confirmed = true;
-                        myWallMarkers.Last().History.AddRange(myHistoricMarkers.ToArray());
 
-                        ////If seen from the GF Marker, relevel
-                        //if (mySeenFromMarkerID == myGFMultiMarkerID) {
-                        //    clsMarkerPoint m = myWallMarkers.Last();
-                        //    RelevelMarkerFromGF(m);
-                        //}
+                        PopulateMarkerPoint(ref myConfirmedMarker, mySeenFromMarkerID, myOriginPts, myXAxisPts, myYAxisPts, mySeenFromMarkerIDs, myHistoricMarkers);
 
-                        //If seen from Step Marker, reset the SeenFromMarkerID
-                        if (mySeenFromMarkerID == myStepMultiMarkerID) {
-                            j = myStepMultiMarkerID;
-                            for (k = 0; k < ConfirmedMarkers.Count; k++) {
-                                if (ConfirmedMarkers[k].ActualMarkerID == myStepMultiMarkerID) j = ConfirmedMarkers[k].MarkerID;
-                            }
-                            myWallMarkers.Last().SeenFromMarkerID = j;
-                        }
+                        myWallMarkers.Add(myConfirmedMarker);
 
-                        //Clear all old bulkhead  markers
-                        for (j = 0; j < myBulkheadMarkers.Count; j++) {
-                            myBulkheadMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myDoorMarkers.Count; j++) {
-                            myDoorMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myObstructMarkers.Count; j++) {
-                            myObstructMarkers[j].Confirmed = false;
-                        }
-
-                    }
-                    else {
+                    } else {
                         myMarkerConfirmed = true; //So we can auto-save
                         myConfirmedMarker = new clsMarkerPoint(myMarkerID, -1);
-                        myConfirmedMarker.SeenFromMarkerID = mySeenFromMarkerID;
-                        //double dMax = myDists.Max();
-                        //double dMin = myDists.Min();
-                        //double dRange = dMax - dMin;
-                        //double d;
-                        //double dTot = 0;
-                        //for (j = 0; j < pts1.Count; j++) {
-                        //    if (dRange > myTol) {
-                        //        d = 1 + (dMax - myDists[j]) / dRange;
-                        //    } else { d = 1; }
-                        //    dTot = dTot + d;
-                        //    myConfirmedMarker.Origin = myConfirmedMarker.Origin + d * pts1[j];
-                        //    myConfirmedMarker.XAxisPoint = myConfirmedMarker.XAxisPoint + d * pts2[j];
-                        //    myConfirmedMarker.YAxisPoint = myConfirmedMarker.YAxisPoint + d * pts3[j];
-                        //    myConfirmedMarker.ZAxisPoint = myConfirmedMarker.ZAxisPoint + d * pts4[j];
-                        //    myConfirmedMarker.Point = myConfirmedMarker.Point + d * pts5[j];
-                        //}
-                        //myConfirmedMarker.Origin = myConfirmedMarker.Origin / dTot;
-                        //myConfirmedMarker.XAxisPoint = myConfirmedMarker.XAxisPoint / dTot;
-                        //myConfirmedMarker.YAxisPoint = myConfirmedMarker.YAxisPoint / dTot;
-                        //myConfirmedMarker.ZAxisPoint = myConfirmedMarker.ZAxisPoint / dTot;
-                        //myConfirmedMarker.Point = myConfirmedMarker.Point / dTot;
-                        myConfirmedMarker.Origin = new clsPoint3d(pts1.Average(p => p.X), pts1.Average(p => p.Y), pts1.Average(p => p.Z));
-                        myConfirmedMarker.XAxisPoint = new clsPoint3d(pts2.Average(p => p.X), pts2.Average(p => p.Y), pts2.Average(p => p.Z));
-                        myConfirmedMarker.YAxisPoint = new clsPoint3d(pts3.Average(p => p.X), pts3.Average(p => p.Y), pts3.Average(p => p.Z));
-                        myConfirmedMarker.ZAxisPoint = new clsPoint3d(pts4.Average(p => p.X), pts4.Average(p => p.Y), pts4.Average(p => p.Z));
-                        myConfirmedMarker.Point = new clsPoint3d(pts5.Average(p => p.X), pts5.Average(p => p.Y), pts5.Average(p => p.Z));
-                        myConfirmedMarker.SetZNormal();
-                        myConfirmedMarker.ModelViewMatrix = GetModelViewMatrixFromPoints(myConfirmedMarker.Origin, myConfirmedMarker.XAxisPoint, myConfirmedMarker.YAxisPoint);
-                        myConfirmedMarker.History.AddRange(myHistoricMarkers.ToArray());
-                        ConfirmedMarkers.Add(myConfirmedMarker.Copy());
-                        ConfirmedMarkers.Last().ActualMarkerID = myMarkerID;
 
-                        ////If seen from the GF Marker, relevel
-                        //if (mySeenFromMarkerID == myGFMultiMarkerID) {
-                        //    clsMarkerPoint m = ConfirmedMarkers.Last();
-                        //    RelevelMarkerFromGF(m);
-                        //}
+                        PopulateMarkerPoint(ref myConfirmedMarker, mySeenFromMarkerID, myOriginPts, myXAxisPts, myYAxisPts, mySeenFromMarkerIDs, myHistoricMarkers);
 
-                        //If seen from Step Marker, reset the SeenFromMarkerID
-                        if (mySeenFromMarkerID == myStepMultiMarkerID) {
-                            j = myStepMultiMarkerID;
-                            for (k = 0; k < ConfirmedMarkers.Count - 1; k++) {
-                                if (ConfirmedMarkers[k].ActualMarkerID == myStepMultiMarkerID) j = ConfirmedMarkers[k].MarkerID;
-                            }
-                            ConfirmedMarkers.Last().SeenFromMarkerID = j;
-                        }
-
-                        //Clear all old bulkhead and door markers
-                        for (j = 0; j < myBulkheadMarkers.Count; j++) {
-                            myBulkheadMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myDoorMarkers.Count; j++) {
-                            myDoorMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myObstructMarkers.Count; j++) {
-                            myObstructMarkers[j].Confirmed = false;
-                        }
-                        for (j = 0; j < myWallMarkers.Count; j++) {
-                            myWallMarkers[j].Confirmed = false;
-                        }
-
+                        ConfirmedMarkers.Add(myConfirmedMarker);
                     }
                     j = 0;
                     while (j <= mySuspectedMarkers.Count - 1) {
                         if (mySuspectedMarkers[j].MarkerID == myMarkerID) {
                             mySuspectedMarkers.RemoveAt(j);
-                        }
-                        else {
+                        } else {
                             j = j + 1;
                         }
                     }
 
-                    mySaveSnapshot = true;
-                    //SaveSnapshot(); //Not doing this any more
                     continue;
                 }
 
                 i = i + 1;
             }
-            if (myMarkerConfirmed) {
-                AutoSaveSurveyData();
+            if (myMarkerConfirmed) ConfirmedMarkersUpdated?.Invoke();
+        }
+
+        public static void UpdateStepMarkerIDs() {
+            int i;
+            int maxConfirmedID = myMaximumMarkerID - 1;
+
+            for (i = 0; i < ConfirmedMarkers.Count; i++) {
+                if (ConfirmedMarkers[i].MarkerID > maxConfirmedID) maxConfirmedID = ConfirmedMarkers[i].MarkerID;
             }
+            maxConfirmedID = maxConfirmedID + 1;
+
+            for (i = 0; i < ConfirmedMarkers.Count; i++) {
+                if (ConfirmedMarkers[i].MarkerID == myStepMarkerID) {
+                    ConfirmedMarkers[i].MarkerID = maxConfirmedID;
+                    break;
+                }
+            }
+
+            for (i = 0; i < ConfirmedMarkers.Count; i++) {
+                if (ConfirmedMarkers[i].SeenFromMarkerID == myStepMarkerID) {
+                    ConfirmedMarkers[i].SeenFromMarkerID = maxConfirmedID;
+                }
+                for (int j = 0; j < ConfirmedMarkers[i].SeenFromMarkerIDs.Count; j++) {
+                    if (ConfirmedMarkers[i].SeenFromMarkerIDs[j] == myStepMarkerID) {
+                        ConfirmedMarkers[i].SeenFromMarkerIDs[j] = maxConfirmedID;
+                    }
+                }
+            }
+
+            for (i = 0; i < mySuspectedMarkers.Count; i++) {
+                if (mySuspectedMarkers[i].SeenFromMarkerID == myStepMarkerID) {
+                    mySuspectedMarkers[i].SeenFromMarkerID = maxConfirmedID;
+                }
+            }
+        }
+
+        public static void RelevelPointFromGF(clsPoint3d myPt, bool goBack = false) {
+            int j;
+            clsPoint3d p1 = myVerticalVector.Copy();
+            if (p1.Z < 0) p1.Scale(-1);
+            p1.Normalise();
+            if (p1.Length < 0.9) return;
+            double a = p1.AngleToHorizontal;
+
+            if (IsSameAngle(a, PI / 2) == false) {
+                double b = -(PI / 2 - a);
+                if (goBack) b = -b;
+                clsPoint3d p2 = new clsPoint3d(p1.X, p1.Y, 0);
+                p2.Normalise();
+                clsPoint3d p3 = p1.Cross(p2);
+                p3.Normalise();
+
+                myPt.RotateAboutLine(p3.Line(), b);
+            }
+        }
+
+        private static bool SuspectedMarkerIsConfirmedObstruction(int myMarkerID) {
+            int i;
+
+            for (i = 0; i < myBulkheadMarkers.Count(); i++) {
+                if (myBulkheadMarkers[i].MarkerID == myMarkerID && myBulkheadMarkers[i].Confirmed) return true;
+            }
+
+            for (i = 0; i < myDoorMarkers.Count(); i++) {
+                if (myDoorMarkers[i].MarkerID == myMarkerID && myDoorMarkers[i].Confirmed) return true;
+            }
+
+            for (i = 0; i < myWallMarkers.Count(); i++) {
+                if (myWallMarkers[i].MarkerID == myMarkerID && myWallMarkers[i].Confirmed) return true;
+            }
+
+            for (i = 0; i < myObstructMarkers.Count(); i++) {
+                if (myObstructMarkers[i].MarkerID == myMarkerID && myObstructMarkers[i].Confirmed) return true;
+            }
+
+            return false;
+        }
+
+        private static List<int> ConfirmedMarkerIDs() {
+            List<int> myMarkerList = new List<int>();
+            int i;
+            for (i = 0; i < ConfirmedMarkers.Count; i++) {
+                myMarkerList.Add(ConfirmedMarkers[i].MarkerID);
+            }
+            return myMarkerList;
+        }
+
+        private static void PopulateMarkerPoint(ref clsMarkerPoint myMarkerPoint, int mySeenFromMarkerID, List<clsPoint3d> pts1, List<clsPoint3d> pts2,
+            List<clsPoint3d> pts3, List<int> mySeenFromMarkerIDs, List<clsMarkerPoint> myHistoricMarkers) {
+            myMarkerPoint.ActualMarkerID = myMarkerPoint.MarkerID;
+            myMarkerPoint.SeenFromMarkerID = mySeenFromMarkerID;
+            myMarkerPoint.Origin = new clsPoint3d(pts1.Average(p => p.X), pts1.Average(p => p.Y), pts1.Average(p => p.Z));
+            myMarkerPoint.XAxisPoint = new clsPoint3d(pts2.Average(p => p.X), pts2.Average(p => p.Y), pts2.Average(p => p.Z));
+            myMarkerPoint.YAxisPoint = new clsPoint3d(pts3.Average(p => p.X), pts3.Average(p => p.Y), pts3.Average(p => p.Z));
+            myMarkerPoint.SetZNormal();
+            myMarkerPoint.SetEndPoint();
+            myMarkerPoint.ModelViewMatrix = GetModelViewMatrixFromPoints(myMarkerPoint.Origin, myMarkerPoint.XAxisPoint, myMarkerPoint.YAxisPoint);
+            myMarkerPoint.SeenFromMarkerIDs.Clear();
+            myMarkerPoint.SeenFromMarkerIDs.AddRange(mySeenFromMarkerIDs);
+            myMarkerPoint.History.AddRange(myHistoricMarkers.ToArray());
+            myMarkerPoint.Confirmed = true;
+
+            //If seen from Step Marker, reset the SeenFromMarkerID
+            if (mySeenFromMarkerID == myStepMarkerID) {
+                int j = myStepMarkerID;
+                for (int k = 0; k < ConfirmedMarkers.Count; k++) {
+                    if (ConfirmedMarkers[k].ActualMarkerID == myStepMarkerID) j = ConfirmedMarkers[k].MarkerID;
+                }
+                myMarkerPoint.SeenFromMarkerID = j;
+            }
+
+        }
+
+        private static bool AddSuspectedMarker(int myMarkerID, int myMarkerIndex, int mySeenFromMarkerID, int mySeenFromMarkerIndex, bool onlySuspectedMarkers = false) {
+            clsPoint3d myCameraPoint = PointFromInvMatrix(myMarkerIndex);
+            clsPoint3d mySeenFromCameraPoint = PointFromInvMatrix(mySeenFromMarkerIndex);
+            clsPoint3d pt1 = UnProjectProject(new clsPoint3d(0, 0, 0), myMarkerIndex, mySeenFromMarkerIndex);
+            clsPoint3d pt2 = UnProjectProject(new clsPoint3d(100, 0, 0), myMarkerIndex, mySeenFromMarkerIndex);
+            clsPoint3d pt3 = UnProjectProject(new clsPoint3d(0, 100, 0), myMarkerIndex, mySeenFromMarkerIndex);
+            return AddSuspectedMarker(myMarkerID, mySeenFromMarkerID, mySeenFromCameraPoint, pt1, pt2, pt3, myCameraPoint, onlySuspectedMarkers);
+        }
+
+
+        private static bool AddSuspectedMarker(int myMarkerID, int mySeenFromMarkerID, clsPoint3d mySeenFromCameraPoint, clsPoint3d pt1, clsPoint3d pt2, clsPoint3d pt3, clsPoint3d myCameraPoint, bool onlySuspectedMarkers = false) {
+            int k;
+            clsPoint3d v1 = null, v2 = null, v3 = null, v4 = null;
+            TimeSpan t;
+            double a, a1 = 0, a2 = 0;
+            System.DateTime t1;
+            System.DateTime t2;
+            bool myHasTime;
+            string myStr;
+            string myMarkerStr;
+            String myErrorString = "";
+            int i;
+            bool b1 = false, b2 = false;
+
+            //Don't add new suspeccted markers for bulkheads or doors if they have just been measured
+            for (i = 0; i < myBulkheadMarkers.Count; i++) {
+                if (myBulkheadMarkers[i].Confirmed && myBulkheadMarkers[i].MarkerID == myMarkerID) return false;
+            }
+            for (i = 0; i < myDoorMarkers.Count; i++) {
+                if (myDoorMarkers[i].Confirmed && myDoorMarkers[i].MarkerID == myMarkerID) return false;
+            }
+            for (i = 0; i < myObstructMarkers.Count; i++) {
+                if (myObstructMarkers[i].Confirmed && myObstructMarkers[i].MarkerID == myMarkerID) return false;
+            }
+            for (i = 0; i < myWallMarkers.Count; i++) {
+                if (myWallMarkers[i].Confirmed && myWallMarkers[i].MarkerID == myMarkerID) return false;
+            }
+
+            v1 = myCameraPoint.Copy();
+            v1.Normalise();
+
+            t1 = DateTime.Now;
+            t2 = t1;
+
+            k = -1;
+            for (i = 0; i <= mySuspectedMarkers.Count - 1; i++) {
+                if (mySuspectedMarkers[i].MarkerID == myMarkerID && mySuspectedMarkers[i].SeenFromMarkerID == mySeenFromMarkerID) {
+                    k = i;
+                    break; // TODO: might not be correct. Was : Exit For
+                }
+            }
+
+            if (onlySuspectedMarkers && k > -1) return false;
+
+            if (k == -1) {
+                mySuspectedMarkers.Add(new clsMarkerPoint(myMarkerID, mySeenFromMarkerID));
+                k = mySuspectedMarkers.Count - 1;
+                mySuspectedMarkers[k].SeenFromMarkerID = mySeenFromMarkerID;
+                mySuspectedMarkers[k].LastTime = t1;
+                mySuspectedMarkers[k].LastVector = v1;
+            } else {
+                myHasTime = (mySuspectedMarkers[k].LastTime != null);
+                if (myHasTime) {
+                    t2 = (DateTime)mySuspectedMarkers[k].LastTime;
+                    v2 = mySuspectedMarkers[k].LastVector;
+                }
+                mySuspectedMarkers[k].LastTime = t1;
+                mySuspectedMarkers[k].LastVector = v1;
+                if (myHasTime) {
+                    a = Acos(v1.Dot(v2)) * 180 / PI;
+                    //DebugStringList = string.Format("Angle {0:0.00}", a);
+                    t = t1 - t2;
+                    //myMain.Label4.Text = Round(a / t.TotalSeconds, 2) & " - " & mySuspectedMarkers[k].Points1a.Count & " - A=" & Round(mySuspectedMarkers[k].MaxAngle * 180 / PI, 1) & " - XY=" & Round(mySuspectedMarkers[k].MaxAngleXY * 180 / PI, 1) & " - Z=" & Round(mySuspectedMarkers[k].MaxAngleZ * 180 / PI, 1) & " - " & mySuspectedMarkers[k].NumPointsCalulated1 & "/" & mySuspectedMarkers[k].NumPointsCalulated2 & "/" & mySuspectedMarkers[k].NumPointsCalulated3 & "/" & mySuspectedMarkers[k].NumPointsCalulated5 & " - " & Round(mySuspectedMarkers[k].Origin.Length, 2)
+                    if (a / t.TotalSeconds > 0.5) {
+                        return false;
+                    }
+
+                    if (mySeenFromMarkerID == myGFMarkerID) {
+                        myMarkerStr = "GF";
+                    } else if (mySeenFromMarkerID == myStepMarkerID) {
+                        myMarkerStr = "ST";
+                    } else {
+                        myMarkerStr = Convert.ToString(myMarkerIDs.IndexOf(mySeenFromMarkerID) + 1);
+                    }
+
+                    mySuspectedMarkers[k].OKToConfirm(ref myErrorString, ref v1, ref v2, ref v3, ref v4, ref b1, ref b2, ref a1, ref a2);
+
+                    //-DEVELOPMENT CHANGE
+                    //myStr = myMarkerIDs.IndexOf(myMarkerID) + 1 + " / " + myMarkerStr + " " + mySuspectedMarkers[k].OriginPoints.Count + " - MaxA=" + Round(mySuspectedMarkers[k].MaxAngle(ref v1, ref v2) * 180 / PI, 1) + " - MaxA2=" + Round(mySuspectedMarkers[k].MaxAnglePerpendicular(ref v1, ref v2) * 180 / PI, 1);
+                    myStr = myMarkerIDs.IndexOf(myMarkerID) + 1 + " / " + myMarkerStr + " " + mySuspectedMarkers[k].OriginPoints.Count + " - MaxD=" + Round(mySuspectedMarkers[k].MaxDistance(ref v1, ref v2)) + " - MaxA2=" + Round(mySuspectedMarkers[k].MaxAnglePerpendicular(ref v1, ref v2) * 180 / PI, 1);
+
+                    if (myStr != mySuspectedMarkers[k].Label) {
+                        mySuspectedMarkers[k].Label = myStr;
+                        mySuspectedMarkers[k].MarkerName = Convert.ToString(myMarkerIDs.IndexOf(myMarkerID) + 1);
+                        mySuspectedMarkers[k].SeenFromMarkerName = myMarkerStr;
+                        mySuspectedMarkers[k].NumPoints = Convert.ToString(mySuspectedMarkers[k].OriginPoints.Count);
+
+                        //-DEVELOPMENT CHANGE
+                        //mySuspectedMarkers[k].MaximumAngleA = Convert.ToString(Round(mySuspectedMarkers[k].MaxAngle(ref v1, ref v2) * 180 / PI, 1));
+                        mySuspectedMarkers[k].MaximumAngleA = Convert.ToString(Round(mySuspectedMarkers[k].MaxDistance(ref v1, ref v2)));
+
+                        mySuspectedMarkers[k].MaximumAngleXY = Convert.ToString(Round(mySuspectedMarkers[k].MaxAnglePerpendicular(ref v1, ref v2) * 180 / PI, 1));
+                    }
+                }
+            }
+
+            mySuspectedMarkers[k].SeenFromCameraPoints.Add(mySeenFromCameraPoint);
+            mySuspectedMarkers[k].OriginPoints.Add(pt1);
+            mySuspectedMarkers[k].EndXAxisPoints.Add(pt2);
+            mySuspectedMarkers[k].EndYAxisPoints.Add(pt3);
+            mySuspectedMarkers[k].CameraPoints.Add(myCameraPoint);
+
+            if (mySuspectedMarkers[k].FirstPointRemoved == false & mySuspectedMarkers[k].OriginPoints.Count == 2) {
+                mySuspectedMarkers[k].SeenFromCameraPoints.RemoveAt(0);
+                mySuspectedMarkers[k].OriginPoints.RemoveAt(0);
+                mySuspectedMarkers[k].EndXAxisPoints.RemoveAt(0);
+                mySuspectedMarkers[k].EndYAxisPoints.RemoveAt(0);
+
+                if (mySuspectedMarkers[k].GyroData.Count > 0) mySuspectedMarkers[k].GyroData.RemoveAt(0);
+                if (mySuspectedMarkers[k].LastGyroData.Count > 0) mySuspectedMarkers[k].LastGyroData.RemoveAt(0);
+                if (mySuspectedMarkers[k].AccelData.Count > 0) mySuspectedMarkers[k].AccelData.RemoveAt(0);
+                if (mySuspectedMarkers[k].LastAccelData.Count > 0) mySuspectedMarkers[k].LastAccelData.RemoveAt(0);
+
+                mySuspectedMarkers[k].FirstPointRemoved = true;
+            }
+
+            mySuspectedMarkers[k].SetEndPointBasedOnZVectors();
+            //mySuspectedMarkers[k].SetPointsToAverage()
+
+            if (mySuspectedMarkers[k].MarkerID == myStepMarkerID) {
+                if (DebugStringList.Count == 0 || !(DebugStringList[DebugStringList.Count - 1].StartsWith("Step Marker Measured"))) {
+                    DebugStringList.Add("Step Marker Measured (" + mySuspectedMarkers[k].OriginPoints.Count + " Times)");
+                } else {
+                    DebugStringList[DebugStringList.Count - 1] = "Step Marker Measured (" + mySuspectedMarkers[k].OriginPoints.Count + " Times)";
+                }
+            } else {
+                if (DebugStringList.Count == 0 || !(DebugStringList[DebugStringList.Count - 1].StartsWith("Marker " + mySuspectedMarkers[k].NewMarkerID() + " Measured"))) {
+                    DebugStringList.Add("Marker " + mySuspectedMarkers[k].NewMarkerID() + " Measured (" + mySuspectedMarkers[k].OriginPoints.Count + " Times)");
+                } else {
+                    DebugStringList[DebugStringList.Count - 1] = "Marker " + mySuspectedMarkers[k].NewMarkerID() + " Measured (" + mySuspectedMarkers[k].OriginPoints.Count + " Times)";
+                }
+            }
+            return true;
         }
 
         private static void FilterLists(double myDist, ref List<clsPoint3d> pts1, ref List<clsPoint3d> pts2, ref List<clsPoint3d> pts3, ref List<clsPoint3d> pts4, ref List<clsPoint3d> pts5)
@@ -2031,8 +1210,8 @@ namespace BatchProcess {
             sw.WriteLine("VerticalVectorY," + myVerticalVector.Y);
             sw.WriteLine("VerticalVectorZ," + myVerticalVector.Z);
             sw.WriteLine("UseNewStyleMarkers,1");
-            sw.WriteLine("GFMarkerID," + myGFMultiMarkerID);
-            sw.WriteLine("StepMarkerID," + myStepMultiMarkerID);
+            sw.WriteLine("GFMarkerID," + myGFMarkerID);
+            sw.WriteLine("StepMarkerID," + myStepMarkerID);
             sw.WriteLine("END_SETTINGS");
             sw.WriteLine(ConfirmedMarkers.Count);
             for (i = 0; i <= ConfirmedMarkers.Count - 1; i++) {
@@ -2107,8 +1286,8 @@ namespace BatchProcess {
             sw.WriteLine("VerticalVectorY," + myVerticalVector.Y);
             sw.WriteLine("VerticalVectorZ," + myVerticalVector.Z);
             if (UseNewStyleMarkers) sw.WriteLine("UseNewStyleMarkers,1");
-            sw.WriteLine("GFMarkerID," + myGFMultiMarkerID);
-            sw.WriteLine("StepMarkerID," + myStepMultiMarkerID);
+            sw.WriteLine("GFMarkerID," + myGFMarkerID);
+            sw.WriteLine("StepMarkerID," + myStepMarkerID);
             sw.WriteLine("END_SETTINGS");
             sw.WriteLine(ConfirmedMarkers.Count);
             for (i = 0; i <= ConfirmedMarkers.Count - 1; i++) {
@@ -2200,9 +1379,9 @@ namespace BatchProcess {
                                 UseNewStyleMarkers = true;
                         }
                         if (mySplit[0] == "GFMarkerID")
-                            myGFMultiMarkerID = Convert.ToInt32(mySplit[1]);
+                            myGFMarkerID = Convert.ToInt32(mySplit[1]);
                         if (mySplit[0] == "StepMarkerID")
-                            myStepMultiMarkerID = Convert.ToInt32(mySplit[1]);
+                            myStepMarkerID = Convert.ToInt32(mySplit[1]);
                     }
                     myLine = sr.ReadLine();
                 }
@@ -2230,97 +1409,28 @@ namespace BatchProcess {
             sr.Close();
         }
 
-        private static void SetSuspectedMarkerAxes(ref clsMarkerPoint pt)
-        {
-            for (int i = 0; i < ConfirmedMarkersCopy.Count; i++) {
-                if (ConfirmedMarkersCopy[i].MarkerID == pt.MarkerID) {
-                    pt.Confirmed = true;
-                    pt.Origin = ConfirmedMarkersCopy[i].Origin.Copy();
-                    pt.XAxisPoint = ConfirmedMarkersCopy[i].XAxisPoint.Copy();
-                    pt.YAxisPoint = ConfirmedMarkersCopy[i].YAxisPoint.Copy();
-                    pt.ZAxisPoint = ConfirmedMarkersCopy[i].ZAxisPoint.Copy();
-                    pt.Point = ConfirmedMarkersCopy[i].Point.Copy();
-                    pt.SetZNormal();
-                }
-            }
-            return;
-        }
-
-
-        private static void SetSuspectedMarkerAxes2(ref clsMarkerPoint pt)
-        {
-            pt.Confirmed = false;
-            int myMarkerID = pt.MarkerID;
-            List<clsPoint3d> pts1 = new List<clsPoint3d>();
-            List<clsPoint3d> pts2 = new List<clsPoint3d>();
-            List<clsPoint3d> pts3 = new List<clsPoint3d>();
-            List<clsPoint3d> pts4 = new List<clsPoint3d>();
-            List<clsPoint3d> pts5 = new List<clsPoint3d>();
-
-            for (int j = 0; j <= mySuspectedMarkers.Count - 1; j++) {
-                if (mySuspectedMarkers[j].MarkerID == myMarkerID && mySuspectedMarkers[j].Origin.Length > myTol) {
-                    if (mySuspectedMarkers[j].SeenFromMarkerID == myGFMultiMarkerID) {
-                        pts1.Add(mySuspectedMarkers[j].Origin.Copy());
-                        pts2.Add(mySuspectedMarkers[j].XAxisPoint.Copy());
-                        pts3.Add(mySuspectedMarkers[j].YAxisPoint.Copy());
-                        pts4.Add(mySuspectedMarkers[j].ZAxisPoint.Copy());
-                        pts5.Add(mySuspectedMarkers[j].Point.Copy());
-                    }
-                    else if (mySuspectedMarkers[j].SeenFromMarkerID == myStepMultiMarkerID) {
-                        pts1.Add(StepMarker.Origin + mySuspectedMarkers[j].Origin.X * StepMarker.VX + mySuspectedMarkers[j].Origin.Y * StepMarker.VY + mySuspectedMarkers[j].Origin.Z * StepMarker.VZ);
-                        pts2.Add(StepMarker.Origin + mySuspectedMarkers[j].XAxisPoint.X * StepMarker.VX + mySuspectedMarkers[j].XAxisPoint.Y * StepMarker.VY + mySuspectedMarkers[j].XAxisPoint.Z * StepMarker.VZ);
-                        pts3.Add(StepMarker.Origin + mySuspectedMarkers[j].YAxisPoint.X * StepMarker.VX + mySuspectedMarkers[j].YAxisPoint.Y * StepMarker.VY + mySuspectedMarkers[j].YAxisPoint.Z * StepMarker.VZ);
-                        pts4.Add(StepMarker.Origin + mySuspectedMarkers[j].ZAxisPoint.X * StepMarker.VX + mySuspectedMarkers[j].ZAxisPoint.Y * StepMarker.VY + mySuspectedMarkers[j].ZAxisPoint.Z * StepMarker.VZ);
-                        pts5.Add(StepMarker.Origin + mySuspectedMarkers[j].Point.X * StepMarker.VX + mySuspectedMarkers[j].Point.Y * StepMarker.VY + mySuspectedMarkers[j].Point.Z * StepMarker.VZ);
-                    }
-                    else {
-                        for (int k = 0; k <= ConfirmedMarkers.Count - 1; k++) {
-                            if (ConfirmedMarkers[k].MarkerID == mySuspectedMarkers[j].SeenFromMarkerID) {
-                                clsMarkerPoint pt2 = ConfirmedMarkers[k];
-                                pts1.Add(pt2.Origin + mySuspectedMarkers[j].Origin.X * pt2.VX + mySuspectedMarkers[j].Origin.Y * pt2.VY + mySuspectedMarkers[j].Origin.Z * pt2.VZ);
-                                pts2.Add(pt2.Origin + mySuspectedMarkers[j].XAxisPoint.X * pt2.VX + mySuspectedMarkers[j].XAxisPoint.Y * pt2.VY + mySuspectedMarkers[j].XAxisPoint.Z * pt2.VZ);
-                                pts3.Add(pt2.Origin + mySuspectedMarkers[j].YAxisPoint.X * pt2.VX + mySuspectedMarkers[j].YAxisPoint.Y * pt2.VY + mySuspectedMarkers[j].YAxisPoint.Z * pt2.VZ);
-                                pts4.Add(pt2.Origin + mySuspectedMarkers[j].ZAxisPoint.X * pt2.VX + mySuspectedMarkers[j].ZAxisPoint.Y * pt2.VY + mySuspectedMarkers[j].ZAxisPoint.Z * pt2.VZ);
-                                pts5.Add(pt2.Origin + mySuspectedMarkers[j].Point.X * pt2.VX + mySuspectedMarkers[j].Point.Y * pt2.VY + mySuspectedMarkers[j].Point.Z * pt2.VZ);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (pts1.Count > 0) {
-                pt.Confirmed = true;
-                pt.Origin = new clsPoint3d(pts1.Average(p => p.X), pts1.Average(p => p.Y), pts1.Average(p => p.Z));
-                pt.XAxisPoint = new clsPoint3d(pts2.Average(p => p.X), pts2.Average(p => p.Y), pts2.Average(p => p.Z));
-                pt.YAxisPoint = new clsPoint3d(pts3.Average(p => p.X), pts3.Average(p => p.Y), pts3.Average(p => p.Z));
-                pt.ZAxisPoint = new clsPoint3d(pts4.Average(p => p.X), pts4.Average(p => p.Y), pts4.Average(p => p.Z));
-                pt.Point = new clsPoint3d(pts5.Average(p => p.X), pts5.Average(p => p.Y), pts5.Average(p => p.Z));
-                pt.SetZNormal();
-            }
-        }
-
-        private static clsPoint3d PointFromInvMatrix(int n)
-        {
-            int i;
+        public static clsPoint3d PointFromInvMatrix(int n, bool lowRes = false) {
             float[] mv = new float[16];
-            OpenTK.Matrix4 myModel, modelViewInv;
 
-            for (i = 0; i <= 15; i++) {
-                mv[i] = GetModelViewMatrix()[n][i];
+            for (int i = 0; i <= 15; i++) {
+                mv[i] = Data.ModelViewMatrix[n][i];
             }
-            myModel = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
-            modelViewInv = OpenTK.Matrix4.Invert(myModel);
+            return PointFromInvMatrix(mv);
+        }
+
+        public static clsPoint3d PointFromInvMatrix(float[] mv) {
+            OpenTK.Matrix4 myModel = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
+            OpenTK.Matrix4 modelViewInv = OpenTK.Matrix4.Invert(myModel);
             return new clsPoint3d(modelViewInv.M41, modelViewInv.M42, modelViewInv.M43);
         }
 
-        public static void RelevelMarkerFromGF(clsMarkerPoint myMarker, bool goBack = false)
-        {
+        public static void RelevelMarkerFromGF(clsMarkerPoint myMarker, bool goBack = false) {
             int j;
             clsPoint3d p1 = myVerticalVector.Copy();
             if (p1.Z < 0) p1.Scale(-1);
             p1.Normalise();
             double a = p1.AngleToHorizontal;
-            
+
             if (IsSameAngle(a, PI / 2) == false) {
                 double b = -(PI / 2 - a);
                 if (goBack) b = -b;
@@ -2336,16 +1446,6 @@ namespace BatchProcess {
                 myMarker.VY.RotateAboutLine(p3.Line(), b);
                 myMarker.VZ.RotateAboutLine(p3.Line(), b);
                 myMarker.Point.RotateAboutLine(p3.Line(), b);
-
-                for (j = 0; j <= myMarker.Points1.Count - 1; j++) {
-                    myMarker.Points1[j].RotateAboutLine(p3.Line(), b);
-                }
-                for (j = 0; j <= myMarker.Points2.Count - 1; j++) {
-                    myMarker.Points2[j].RotateAboutLine(p3.Line(), b);
-                }
-                for (j = 0; j <= myMarker.Points3.Count - 1; j++) {
-                    myMarker.Points3[j].RotateAboutLine(p3.Line(), b);
-                }
             }
         }
 
@@ -2373,290 +1473,85 @@ namespace BatchProcess {
         }
 
 
-        private static bool CheckSuspectedMarker(int myMarkerID, int myMarkerIndex, bool onlySuspectedMarkers = false)
-        {
-            int i, i1, k;
-            clsPoint3d pt1a, pt1b, pt1, pt2, pt3, pt6a, pt6b, myCameraPoint;
-            float[] mv = new float[16];
+        private static bool CheckSuspectedMarker(int myMarkerID, int myMarkerIndex, bool onlySuspectedMarkers = false) {
+            int i1, k;
             bool mySuspectedMarkerAdded = false;
             List<int> SeenFromMarkersAdded = new List<int>();
-
-            for (i = 0; i <= 15; i++) {
-                mv[i] = GetModelViewMatrix()[myMarkerIndex][i];
-            }
-            OpenTK.Matrix4 myModel = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
-            OpenTK.Matrix4 modelviewInv = OpenTK.Matrix4.Invert(myModel);
-            myCameraPoint = new clsPoint3d(modelviewInv.M41, modelviewInv.M42, modelviewInv.M43);
 
             if (onlySuspectedMarkers) goto onlySuspectedMarkersStart;
 
             //Get the coordinates from as many of the GF marker, the step marker and the other confirmed markers as are visible
-            //Start with the Confirmed markers
-            for (k = 0; k <= GetConfirmedMarkersSeenID().Count - 1; k++) {
-                i1 = GetMarkersSeenID().IndexOf(GetConfirmedMarkersSeenID()[k]);
+            //Start with the Confirmed markers (this includes the Step Marker)
+            for (k = 0; k <= ConfirmedMarkers.Count - 1; k++) {
+                if (myAllFeatureMarkerIDs.Contains(ConfirmedMarkers[k].ActualMarkerID)) continue; //Not from obstruction markers
 
-                pt1a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, i1, 0);
-                pt1b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, i1, 1);
-                pt1 = UnProjectProject(new clsPoint3d(0, 0, 0), myMarkerIndex, i1);
-                pt2 = UnProjectProject(new clsPoint3d(100, 0, 0), myMarkerIndex, i1);
-                pt3 = UnProjectProject(new clsPoint3d(0, 100, 0), myMarkerIndex, i1);
+                int mySeenFromMarkerID = ConfirmedMarkers[k].MarkerID;
+                if (mySeenFromMarkerID == myStepMarkerID && StepMarker.Levelled == false) continue;
 
-                RelevelMarkerFromGF(ref pt1a, ref pt1b, ref pt1, ref pt2, ref pt3);
-
-                pt6a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 0);
-                pt6b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 1);
-
-                if (AddSuspectedMarker(myMarkerID, GetConfirmedMarkersSeenID()[k], pt1a, pt1b, pt1, pt2, pt3, pt6a, pt6b, myCameraPoint)) mySuspectedMarkerAdded = true;
+                if (Data.GetMarkerVisible(mySeenFromMarkerID)) {
+                    i1 = Data.GetMarkerIndex(mySeenFromMarkerID);
+                    if (AddSuspectedMarker(myMarkerID, myMarkerIndex, mySeenFromMarkerID, i1, onlySuspectedMarkers)) mySuspectedMarkerAdded = true;
+                }
             }
 
             //Now from the GF marker
-            if (GetGFVisible()) {
-                pt1a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, GetGFMultiMarkerIndex(), 0);
-                pt1b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, GetGFMultiMarkerIndex(), 1);
-                pt1 = UnProjectProject(new clsPoint3d(0, 0, 0), myMarkerIndex, GetGFMultiMarkerIndex());
-                pt2 = UnProjectProject(new clsPoint3d(100, 0, 0), myMarkerIndex, GetGFMultiMarkerIndex());
-                pt3 = UnProjectProject(new clsPoint3d(0, 100, 0), myMarkerIndex, GetGFMultiMarkerIndex());
-                pt6a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 0);
-                pt6b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 1);
-
-                if (AddSuspectedMarker(myMarkerID, myGFMultiMarkerID, pt1a, pt1b, pt1, pt2, pt3, pt6a, pt6b, myCameraPoint)) mySuspectedMarkerAdded = true;
+            if (Data.GetMarkerVisible(myGFMarkerID)) {
+                if (AddSuspectedMarker(myMarkerID, myMarkerIndex, myGFMarkerID, Data.GetMarkerIndex(myGFMarkerID), onlySuspectedMarkers)) mySuspectedMarkerAdded = true;
             }
 
-            //Now from the Step marker
-            if (GetStepVisible() & StepMarker.Confirmed) {
-                pt1a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, GetStepMultiMarkerIndex(), 0);
-                pt1b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, GetStepMultiMarkerIndex(), 1);
-                pt1 = UnProjectProject(new clsPoint3d(0, 0, 0), myMarkerIndex, GetStepMultiMarkerIndex());
-                pt2 = UnProjectProject(new clsPoint3d(100, 0, 0), myMarkerIndex, GetStepMultiMarkerIndex());
-                pt3 = UnProjectProject(new clsPoint3d(0, 100, 0), myMarkerIndex, GetStepMultiMarkerIndex());
-                pt6a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 0);
-                pt6b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 1);
-
-                if (AddSuspectedMarker(myMarkerID, myStepMultiMarkerID, pt1a, pt1b, pt1, pt2, pt3, pt6a, pt6b, myCameraPoint)) mySuspectedMarkerAdded = true;
-            }
-
-            onlySuspectedMarkersStart:
+        onlySuspectedMarkersStart:
 
             //New: now from other suspected markers
-            if (!(myMarkerID == myDoorHingeRightMarkerID || myMarkerID == myDoorFrameRightMarkerID || myMarkerID == myDoorHingeLeftMarkerID || myMarkerID == myDoorFrameLeftMarkerID || myMarkerID == myObstruct1MarkerID || myMarkerID == myObstruct2MarkerID || myMarkerID == myObstruct3MarkerID || myMarkerID == myObstruct4MarkerID)) {
-                for (k = 0; k <= GetSuspectedMarkersSeenID().Count - 1; k++) {
-                    if (SeenFromMarkersAdded.Contains(GetSuspectedMarkersSeenID()[k])) continue;
-                    SeenFromMarkersAdded.Add(GetSuspectedMarkersSeenID()[k]);
-                    if (GetSuspectedMarkersSeenID()[k] == myMarkerID) continue;
-                    i1 = GetMarkersSeenID().IndexOf(GetSuspectedMarkersSeenID()[k]);
-                    if (i1 == myMarkerIndex) continue;
+            if (!(myDoorMarkerIDs.Contains(myMarkerID) || myObstructMarkerIDs.Contains(myMarkerID))) {
+                for (k = 0; k <= mySuspectedMarkers.Count - 1; k++) {
+                    if (myAllFeatureMarkerIDs.Contains(mySuspectedMarkers[k].ActualMarkerID)) continue; //Not from obstruction markers
 
-                    pt1a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, i1, 0);
-                    pt1b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, i1, 1);
-                    pt1 = UnProjectProject(new clsPoint3d(0, 0, 0), myMarkerIndex, i1);
-                    pt2 = UnProjectProject(new clsPoint3d(100, 0, 0), myMarkerIndex, i1);
-                    pt3 = UnProjectProject(new clsPoint3d(0, 100, 0), myMarkerIndex, i1);
-                    pt6a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 0);
-                    pt6b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 1);
+                    int mySeenFromMarkerID = mySuspectedMarkers[k].MarkerID;
+                    if (mySeenFromMarkerID == myMarkerID) continue;
+                    if (SeenFromMarkersAdded.Contains(mySeenFromMarkerID)) continue;
+                    SeenFromMarkersAdded.Add(mySeenFromMarkerID);
 
-                    if (AddSuspectedMarker(myMarkerID, GetSuspectedMarkersSeenID()[k], pt1a, pt1b, pt1, pt2, pt3, pt6a, pt6b, myCameraPoint, onlySuspectedMarkers)) mySuspectedMarkerAdded = true;
+                    if (Data.GetMarkerVisible(mySeenFromMarkerID)) {
+                        i1 = Data.GetMarkerIndex(mySeenFromMarkerID);
+                        if (i1 == myMarkerIndex) continue;
+
+                        if (AddSuspectedMarker(myMarkerID, myMarkerIndex, mySeenFromMarkerID, i1, onlySuspectedMarkers)) mySuspectedMarkerAdded = true;
+                    }
                 }
             }
 
             if (onlySuspectedMarkers) return mySuspectedMarkerAdded;
 
             //For Door markers, allow them to be seen from other Door markers
-            if (myMarkerID == myDoorHingeRightMarkerID || myMarkerID == myDoorFrameRightMarkerID || myMarkerID == myDoorHingeLeftMarkerID || myMarkerID == myDoorFrameLeftMarkerID) {
-                for (k = 0; k <= GetDoorMarkersSeenID().Count - 1; k++) {
-                    for (int k1 = 0; k1 < myDoorMarkers.Count; k1++) {
-                        if (myDoorMarkers[k1].Confirmed && myDoorMarkers[k1].MarkerID == GetDoorMarkersSeenID()[k]) {
-                            i1 = GetMarkersSeenID().IndexOf(GetDoorMarkersSeenID()[k]);
+            if (myDoorMarkerIDs.Contains(myMarkerID)) {
+                for (k = 0; k <= myDoorMarkers.Count - 1; k++) {
+                    int mySeenFromMarkerID = myDoorMarkers[k].MarkerID;
+                    if (mySeenFromMarkerID == myMarkerID) continue;
+                    if (!myDoorMarkers[k].Confirmed) continue;
 
-                            pt1a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, i1, 0);
-                            pt1b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, i1, 1);
-                            pt1 = UnProjectProject(new clsPoint3d(0, 0, 0), myMarkerIndex, i1);
-                            pt2 = UnProjectProject(new clsPoint3d(100, 0, 0), myMarkerIndex, i1);
-                            pt3 = UnProjectProject(new clsPoint3d(0, 100, 0), myMarkerIndex, i1);
-                            pt6a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 0);
-                            pt6b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 1);
-
-                            if (AddSuspectedMarker(myMarkerID, GetDoorMarkersSeenID()[k], pt1a, pt1b, pt1, pt2, pt3, pt6a, pt6b, myCameraPoint)) mySuspectedMarkerAdded = true;
-                            break;
-                        }
+                    if (Data.GetMarkerVisible(mySeenFromMarkerID)) {
+                        i1 = Data.GetMarkerIndex(mySeenFromMarkerID);
+                        if (AddSuspectedMarker(myMarkerID, myMarkerIndex, myDoorMarkers[k].MarkerID, i1, onlySuspectedMarkers)) mySuspectedMarkerAdded = true;
+                        break;
                     }
                 }
             }
 
             //For Obstruction markers, allow them to be seen from other Obstruction markers
-            if (myMarkerID == myObstruct1MarkerID || myMarkerID == myObstruct2MarkerID || myMarkerID == myObstruct3MarkerID || myMarkerID == myObstruct4MarkerID) {
-                for (k = 0; k <= GetObstructMarkersSeenID().Count - 1; k++) {
-                    for (int k1 = 0; k1 < myObstructMarkers.Count; k1++) {
-                        if (myObstructMarkers[k1].Confirmed && myObstructMarkers[k1].MarkerID == GetObstructMarkersSeenID()[k]) {
-                            i1 = GetMarkersSeenID().IndexOf(GetObstructMarkersSeenID()[k]);
+            if (myObstructMarkerIDs.Contains(myMarkerID)) {
+                for (k = 0; k <= myObstructMarkers.Count - 1; k++) {
+                    int mySeenFromMarkerID = myObstructMarkers[k].MarkerID;
+                    if (mySeenFromMarkerID == myMarkerID) continue;
+                    if (!myObstructMarkers[k].Confirmed) continue;
 
-                            pt1a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, i1, 0);
-                            pt1b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, i1, 1);
-                            pt1 = UnProjectProject(new clsPoint3d(0, 0, 0), myMarkerIndex, i1);
-                            pt2 = UnProjectProject(new clsPoint3d(100, 0, 0), myMarkerIndex, i1);
-                            pt3 = UnProjectProject(new clsPoint3d(0, 100, 0), myMarkerIndex, i1);
-                            pt6a = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 0);
-                            pt6b = UnProjectProjectZ(new clsPoint3d(0, 0, 0), myMarkerIndex, myMarkerIndex, 1);
-
-                            if (AddSuspectedMarker(myMarkerID, GetObstructMarkersSeenID()[k], pt1a, pt1b, pt1, pt2, pt3, pt6a, pt6b, myCameraPoint)) mySuspectedMarkerAdded = true;
-                            break;
-                        }
+                    if (Data.GetMarkerVisible(mySeenFromMarkerID)) {
+                        i1 = Data.GetMarkerIndex(mySeenFromMarkerID);
+                        if (AddSuspectedMarker(myMarkerID, myMarkerIndex, myObstructMarkers[k].MarkerID, i1, onlySuspectedMarkers)) mySuspectedMarkerAdded = true;
+                        break;
                     }
                 }
             }
             return mySuspectedMarkerAdded;
-        }
-
-
-        private static bool AddSuspectedMarker(int myMarkerID, int mySeenFromMarkerID, clsPoint3d pt1a, clsPoint3d pt1b, clsPoint3d pt1, clsPoint3d pt2, clsPoint3d pt3, clsPoint3d pt6a, clsPoint3d pt6b, clsPoint3d myCamerPoint, bool onlySuspectedMarkers = false)
-        {
-            int k;
-            clsPoint3d v1 = null, v2 = null, v3 = null, v4 = null;
-            TimeSpan t;
-            double a, a1 = 0, a2 = 0;
-            System.DateTime t1;
-            System.DateTime t2;
-            bool myHasTime;
-            string myStr;
-            string myMarkerStr;
-            double myAngleXY = 0;
-            String myErrorString = "";
-            int i;
-            bool b1 = false, b2 = false;
-
-            //Don't add new suspeccted markers for bulkheads or doors if they have just been measured
-            for (i = 0; i < myBulkheadMarkers.Count; i++) {
-                if (myBulkheadMarkers[i].Confirmed && myBulkheadMarkers[i].MarkerID == myMarkerID) return false;
-            }
-            for (i = 0; i < myDoorMarkers.Count; i++) {
-                if (myDoorMarkers[i].Confirmed && myDoorMarkers[i].MarkerID == myMarkerID) return false;
-            }
-            for (i = 0; i < myObstructMarkers.Count; i++) {
-                if (myObstructMarkers[i].Confirmed && myObstructMarkers[i].MarkerID == myMarkerID) return false;
-            }
-            for (i = 0; i < myWallMarkers.Count; i++) {
-                if (myWallMarkers[i].Confirmed && myWallMarkers[i].MarkerID == myMarkerID) return false;
-            }
-
-            v1 = pt6b - pt6a;
-            v1.Normalise();
-
-            t1 = DateTime.Now;
-            t2 = t1;
-
-            k = -1;
-            for (i = 0; i <= mySuspectedMarkers.Count - 1; i++) {
-                if (mySuspectedMarkers[i].MarkerID == myMarkerID & mySuspectedMarkers[i].SeenFromMarkerID == mySeenFromMarkerID) {
-                    k = i;
-                    break; // TODO: might not be correct. Was : Exit For
-                }
-            }
-
-            if (onlySuspectedMarkers && k > -1) return false;
-
-            if (k == -1) {
-                mySuspectedMarkers.Add(new clsMarkerPoint(myMarkerID, mySeenFromMarkerID));
-                k = mySuspectedMarkers.Count - 1;
-                mySuspectedMarkers[k].SeenFromMarkerID = mySeenFromMarkerID;
-                mySuspectedMarkers[k].LastTime = t1;
-                mySuspectedMarkers[k].LastVector = v1;
-                mySuspectedMarkers[k].FirstPointRemoved = false;
-            } else {
-                myHasTime = (mySuspectedMarkers[k].LastTime != null);
-                myHasTime = false;
-                if (myHasTime) {
-                    t2 = (DateTime)mySuspectedMarkers[k].LastTime;
-                    v2 = mySuspectedMarkers[k].LastVector;
-                }
-                mySuspectedMarkers[k].LastTime = t1;
-                mySuspectedMarkers[k].LastVector = v1;
-                if (myHasTime) {
-                    a = Acos(v1.Dot(v2)) * 180 / PI;
-                    //DebugStringList = string.Format("Angle {0:0.00}", a);
-                    t = t1 - t2;
-                    //myMain.Label4.Text = Round(a / t.TotalSeconds, 2) & " - " & mySuspectedMarkers[k].Points1a.Count & " - A=" & Round(mySuspectedMarkers[k].MaxAngle * 180 / PI, 1) & " - XY=" & Round(mySuspectedMarkers[k].MaxAngleXY * 180 / PI, 1) & " - Z=" & Round(mySuspectedMarkers[k].MaxAngleZ * 180 / PI, 1) & " - " & mySuspectedMarkers[k].NumPointsCalulated1 & "/" & mySuspectedMarkers[k].NumPointsCalulated2 & "/" & mySuspectedMarkers[k].NumPointsCalulated3 & "/" & mySuspectedMarkers[k].NumPointsCalulated5 & " - " & Round(mySuspectedMarkers[k].Origin.Length, 2)
-                    if (a / t.TotalSeconds > 0.5) {
-                        return false;
-                    }
-
-                    if (mySeenFromMarkerID == myGFMultiMarkerID) {
-                        myMarkerStr = "GF";
-                    } else if (mySeenFromMarkerID == myStepMultiMarkerID) {
-                        myMarkerStr = "ST";
-                    } else {
-                        myMarkerStr = Convert.ToString(myMarkerIDs.IndexOf(mySeenFromMarkerID) + 1);
-                    }
-
-                    mySuspectedMarkers[k].OKToConfirm(ref myErrorString, ref v1, ref v2, ref v3, ref v4, ref b1, ref b2, ref a1, ref a2);
-                    myStr = myMarkerIDs.IndexOf(myMarkerID) + 1 + " / " + myMarkerStr + " " + mySuspectedMarkers[k].Points1a.Count + " - MaxA=" + Round(mySuspectedMarkers[k].MaxAngle(ref v1, ref v2) * 180 / PI, 1) + " - MaxA2=" + Round(mySuspectedMarkers[k].MaxAnglePerpendicular(ref v1, ref v2) * 180 / PI, 1);
-                    if (myStr != mySuspectedMarkers[k].Label) {
-                        mySuspectedMarkers[k].Label = myStr;
-                        mySuspectedMarkers[k].MarkerName = Convert.ToString(myMarkerIDs.IndexOf(myMarkerID) + 1);
-                        mySuspectedMarkers[k].SeenFromMarkerName = myMarkerStr;
-                        mySuspectedMarkers[k].NumPoints = Convert.ToString(mySuspectedMarkers[k].Points1a.Count);
-                        mySuspectedMarkers[k].MaximumAngleA = Convert.ToString(Round(mySuspectedMarkers[k].MaxAngle(ref v1, ref v2) * 180 / PI, 1));
-                        mySuspectedMarkers[k].MaximumAngleXY = Convert.ToString(Round(mySuspectedMarkers[k].MaxAnglePerpendicular(ref v1, ref v2) * 180 / PI, 1));
-                    }
-                }
-            }
-
-            mySuspectedMarkers[k].Points1a.Add(pt1a);
-            mySuspectedMarkers[k].Points1b.Add(pt1b);
-            mySuspectedMarkers[k].Points1.Add(pt1);
-            mySuspectedMarkers[k].Points2.Add(pt2);
-            mySuspectedMarkers[k].Points3.Add(pt3);
-            mySuspectedMarkers[k].Points6a.Add(pt6a);
-            mySuspectedMarkers[k].Points6b.Add(pt6b);
-            mySuspectedMarkers[k].CameraPoints.Add(myCamerPoint);
-            
-            if (mySuspectedMarkers[k].FirstPointRemoved == false & mySuspectedMarkers[k].Points1a.Count == 2) {
-                mySuspectedMarkers[k].Points1a.RemoveAt(0);
-                mySuspectedMarkers[k].Points1b.RemoveAt(0);
-                mySuspectedMarkers[k].Points1.RemoveAt(0);
-                mySuspectedMarkers[k].Points2.RemoveAt(0);
-                mySuspectedMarkers[k].Points3.RemoveAt(0);
-                mySuspectedMarkers[k].Points6a.RemoveAt(0);
-                mySuspectedMarkers[k].Points6b.RemoveAt(0);
-
-                if (mySuspectedMarkers[k].GyroData.Count>0) mySuspectedMarkers[k].GyroData.RemoveAt(0);
-                if (mySuspectedMarkers[k].LastGyroData.Count > 0) mySuspectedMarkers[k].LastGyroData.RemoveAt(0);
-                if (mySuspectedMarkers[k].AccelData.Count > 0) mySuspectedMarkers[k].AccelData.RemoveAt(0);
-                if (mySuspectedMarkers[k].LastAccelData.Count > 0) mySuspectedMarkers[k].LastAccelData.RemoveAt(0);
-
-                mySuspectedMarkers[k].FirstPointRemoved = true;
-            }
-
-            mySuspectedMarkers[k].SetEndPointBasedOnZVectors();
-
-            if (mySuspectedMarkers[k].MarkerID == myStepMultiMarkerID) {
-                if (DebugStringList.Count == 0 || !(DebugStringList[DebugStringList.Count - 1].StartsWith("Step Marker Measured"))) {
-                    DebugStringList.Add("Step Marker Measured (" + mySuspectedMarkers[k].Points1a.Count + " Times)");
-                } else {
-                    DebugStringList[DebugStringList.Count - 1] = "Step Marker Measured (" + mySuspectedMarkers[k].Points1a.Count + " Times)";
-                }
-            } else {
-                if (DebugStringList.Count == 0 || !(DebugStringList[DebugStringList.Count - 1].StartsWith("Marker " + (mySuspectedMarkers[k].MarkerID + 1) + " Measured"))) {
-                    DebugStringList.Add("Marker " + (mySuspectedMarkers[k].MarkerID + 1) + " Measured (" + mySuspectedMarkers[k].Points1a.Count + " Times)");
-                } else {
-                    DebugStringList[DebugStringList.Count - 1] = "Marker " + (mySuspectedMarkers[k].MarkerID + 1) + " Measured (" + mySuspectedMarkers[k].Points1a.Count + " Times)";
-                }
-            }
-
-            return true;
-        }
-
-        private static void RemoveSuspectedMarker(int mySeenFromMarkerID)
-        {
-            int i;
-
-            i = 0;
-            while (i <= mySuspectedMarkers.Count - 1) {
-                if (mySuspectedMarkers[i].SeenFromMarkerID == mySeenFromMarkerID) {
-                    mySuspectedMarkers.RemoveAt(i);
-                } else {
-                    i = i + 1;
-                }
-            }
-
         }
 
         public static void ResetMeasurements()
@@ -2681,79 +1576,16 @@ namespace BatchProcess {
             isTrackingEnabled = false;
             mySuspectedMarkers.Clear();
             if (StepMarker.Confirmed == false) {
-                StepMarker = new clsMarkerPoint(myStepMultiMarkerID, myStepMultiMarkerID);
+                StepMarker = new clsMarkerPoint(myStepMarkerID, myStepMarkerID);
             }
         }
-        
-        public static clsPoint3d Project3d(clsPoint3d p1, int n)
-        {
-            int[] vp = new int[4];
-            clsPoint3d p2;
 
-            //GL1.GetInteger(All1.Viewport, vp);
-            vp = GetViewport();
-
-            OpenTK.Matrix4 myProj = new OpenTK.Matrix4(GetProjMatrix()[0], GetProjMatrix()[1], GetProjMatrix()[2], GetProjMatrix()[3], GetProjMatrix()[4], GetProjMatrix()[5], GetProjMatrix()[6], GetProjMatrix()[7], GetProjMatrix()[8], GetProjMatrix()[9], GetProjMatrix()[10], GetProjMatrix()[11], GetProjMatrix()[12], GetProjMatrix()[13], GetProjMatrix()[14], GetProjMatrix()[15]);
-            OpenTK.Matrix4 myModel = new OpenTK.Matrix4(GetModelViewMatrix()[n][0], GetModelViewMatrix()[n][1], GetModelViewMatrix()[n][2], GetModelViewMatrix()[n][3], GetModelViewMatrix()[n][4], GetModelViewMatrix()[n][5], GetModelViewMatrix()[n][6], GetModelViewMatrix()[n][7], GetModelViewMatrix()[n][8], GetModelViewMatrix()[n][9], GetModelViewMatrix()[n][10], GetModelViewMatrix()[n][11], GetModelViewMatrix()[n][12], GetModelViewMatrix()[n][13], GetModelViewMatrix()[n][14], GetModelViewMatrix()[n][15]);
-
-            p2 = gluProject(myProj, myModel, vp, p1);
-
-            return p2;
-        }
-
-        public static clsPoint3d UnProject3d(clsPoint3d p1, int n)
-        {
-            int[] vp = new int[4];
-            clsPoint3d p2;
-
-            vp = GetViewport();
-
-            OpenTK.Matrix4 myProj = new OpenTK.Matrix4(GetProjMatrix()[0], GetProjMatrix()[1], GetProjMatrix()[2], GetProjMatrix()[3], GetProjMatrix()[4], GetProjMatrix()[5], GetProjMatrix()[6], GetProjMatrix()[7], GetProjMatrix()[8], GetProjMatrix()[9], GetProjMatrix()[10], GetProjMatrix()[11], GetProjMatrix()[12], GetProjMatrix()[13], GetProjMatrix()[14], GetProjMatrix()[15]);
-            OpenTK.Matrix4 myModel = new OpenTK.Matrix4(GetModelViewMatrix()[n][0], GetModelViewMatrix()[n][1], GetModelViewMatrix()[n][2], GetModelViewMatrix()[n][3], GetModelViewMatrix()[n][4], GetModelViewMatrix()[n][5], GetModelViewMatrix()[n][6], GetModelViewMatrix()[n][7], GetModelViewMatrix()[n][8], GetModelViewMatrix()[n][9], GetModelViewMatrix()[n][10], GetModelViewMatrix()[n][11], GetModelViewMatrix()[n][12], GetModelViewMatrix()[n][13], GetModelViewMatrix()[n][14], GetModelViewMatrix()[n][15]);
-
-            p2 = gluUnProject(myProj, myModel, vp, p1);
-
-            return p2;
-        }
-
-        public static clsPoint3d UnProjectProjectZ(clsPoint3d p1, int n1, int n2, double winZ)
-        {
-            int i;
-            float[] mv = new float[16];
-            float[] pv = new float[16];
-            int[] vp = new int[4];
-            clsPoint3d p2, p3;
-
-            for (i = 0; i <= 15; i++) {
-                mv[i] = GetModelViewMatrix()[n1][i];
-                pv[i] = GetProjMatrix()[i];
-            }
-            vp = GetViewport();
-
-            OpenTK.Matrix4 myProj = new OpenTK.Matrix4(pv[0], pv[1], pv[2], pv[3], pv[4], pv[5], pv[6], pv[7], pv[8], pv[9], pv[10], pv[11], pv[12], pv[13], pv[14], pv[15]);
-            OpenTK.Matrix4 myModel = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
-
-            p2 = gluProject(myProj, myModel, vp, p1);
-            p2.Z = winZ;
-
-            for (i = 0; i <= 15; i++) {
-                mv[i] = GetModelViewMatrix()[n2][i];
-            }
-
-            myModel = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
-
-            p3 = gluUnProject(myProj, myModel, vp, p2);
-
-            return p3;
-        }
-
-        public static clsPoint3d UnProjectProject(clsPoint3d p1, int n1, int n2)
-        {
+        public static clsPoint3d UnProjectProject(clsPoint3d p1, int n1, int n2, bool lowRes = false) {
             int i;
             float[] mv = new float[16];
 
             for (i = 0; i <= 15; i++) {
-                mv[i] = GetModelViewMatrix()[n1][i];
+                mv[i] = Data.ModelViewMatrix[n1][i];
             }
 
             OpenTK.Matrix4 myModel = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
@@ -2765,7 +1597,7 @@ namespace BatchProcess {
             OpenTK.Vector4.Transform(ref vec, ref myModel, out vec);
 
             for (i = 0; i <= 15; i++) {
-                mv[i] = GetModelViewMatrix()[n2][i];
+                mv[i] = Data.ModelViewMatrix[n2][i];
             }
 
             myModel = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);

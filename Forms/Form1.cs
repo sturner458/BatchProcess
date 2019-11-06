@@ -12,6 +12,8 @@ using static BatchProcess.mdlRecognise;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using static BatchProcess.mdlGlobals;
+using static BatchProcess.mdlGeometry;
+using static System.Math;
 
 namespace BatchProcess {
     public partial class Form1 : Form {
@@ -140,8 +142,9 @@ namespace BatchProcess {
             myFiles.Sort(new AlphaNumericCompare());
             
             foreach (string myFile in myFiles) {
+                Console.WriteLine("Processed " + (myFiles.IndexOf(myFile) + 1).ToString() + " out of " + myFiles.Count + " photos.");
                 if (myFile.ToLower().EndsWith(".jpg")) {
-                    byte[] imageBytes = ImageToByteArray((Bitmap)Image.FromFile(myFolder + "\\" + myFile));
+                    byte[] imageBytes = ImageToGrayscaleByteArray((Bitmap)Image.FromFile(myFolder + "\\" + myFile));
                     nFiles = nFiles + 1;
                     lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
                     Application.DoEvents();
@@ -181,9 +184,9 @@ namespace BatchProcess {
                 }
             }
 
-            if (mySuspectedMarkers.Count > 0) {
-                ProcessMarkers(true);
-            }
+            //if (mySuspectedMarkers.Count > 0) {
+            //    ProcessMarkers(true);
+            //}
 
 
             ////Now clear all data and re-process:
@@ -209,8 +212,44 @@ namespace BatchProcess {
             //    RelevelMarkerFromGF(ConfirmedMarkers[i]);
             //}
 
-            SaveSurvey();
+            var pts = new List<clsPoint3d>();
+            for (int i = 0; i <= myMarkerIDs.Count - 1; i++) {
+                DetectMapperMarkerVisible(myMarkerIDs[i], ref pts);
+            }
+
+            DetectMapperMarkerVisible(myStepMarkerID, ref pts);
+            DetectMapperMarkerVisible(myGFMarkerID, ref pts);
+            DetectMapperMarkerVisible(myLeftBulkheadMarkerID, ref pts);
+            DetectMapperMarkerVisible(myRightBulkheadMarkerID, ref pts);
+            DetectMapperMarkerVisible(myDoorHingeRightMarkerID, ref pts);
+            DetectMapperMarkerVisible(myDoorFrameRightMarkerID, ref pts);
+            DetectMapperMarkerVisible(myDoorHingeLeftMarkerID, ref pts);
+            DetectMapperMarkerVisible(myDoorFrameLeftMarkerID, ref pts);
+            DetectMapperMarkerVisible(myObstruct1MarkerID, ref pts);
+            DetectMapperMarkerVisible(myObstruct2MarkerID, ref pts);
+            DetectMapperMarkerVisible(myObstruct3MarkerID, ref pts);
+            DetectMapperMarkerVisible(myObstruct4MarkerID, ref pts);
+            DetectMapperMarkerVisible(myWall1MarkerID, ref pts);
+            DetectMapperMarkerVisible(myWall2MarkerID, ref pts);
+            DetectMapperMarkerVisible(myWall3MarkerID, ref pts);
+            DetectMapperMarkerVisible(myWall4MarkerID, ref pts);
+
+
+            using (var sw = new System.IO.StreamWriter("C:\\Temp\\points.txt")) {
+                pts.ForEach(p => p.Save(sw));
+                sw.Close();
+            }
+
+            //SaveSurvey();
             MessageBox.Show("Finished");
+        }
+
+        private static void DetectMapperMarkerVisible(int myMarkerID, ref List<clsPoint3d> pts) {
+
+            float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, myMarkerID, myMatrix)) {
+                pts.Add(new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]));
+            }
         }
 
         private Image ImageFromRawRgbaArray(byte[] arr, int width, int height)
@@ -243,7 +282,7 @@ namespace BatchProcess {
             //Temp fix for levelled markers
             for (i = 0; i < ConfirmedMarkers.Count; i++) {
                 for (j = 0; j < ConfirmedMarkers[i].History.Count; j++) {
-                    if (ConfirmedMarkers[i].History[j].SeenFromMarkerID == myGFMultiMarkerID) {
+                    if (ConfirmedMarkers[i].History[j].SeenFromMarkerID == myGFMarkerID) {
                         RelevelMarkerFromGF(ConfirmedMarkers[i].History[j], true);
                     }
                 }
@@ -303,7 +342,7 @@ namespace BatchProcess {
             for (i = 0; i < ConfirmedMarkers.Count; i++) {
                 for (j = 0; j < ConfirmedMarkers[i].History.Count; j++) {
                     mySuspectedMarkers.Add(ConfirmedMarkers[i].History[j].Copy());
-                    if (mySuspectedMarkers.Last().SeenFromMarkerID == myGFMultiMarkerID) {
+                    if (mySuspectedMarkers.Last().SeenFromMarkerID == myGFMarkerID) {
                         RelevelMarkerFromGF(mySuspectedMarkers.Last(), true);
                     }
                 }
