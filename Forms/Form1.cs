@@ -235,10 +235,9 @@ namespace BatchProcess {
             DetectMapperMarkerVisible(myWall4MarkerID, ref pts);
 
 
-            using (var sw = new System.IO.StreamWriter("C:\\Temp\\points.txt")) {
-                pts.ForEach(p => p.Save(sw));
-                sw.Close();
-            }
+            var sw = new System.IO.StreamWriter("C:\\Temp\\points.txt");
+            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t'+ p.z.ToString() + '\t' + (-p.y).ToString()));
+            sw.Close();
 
             //SaveSurvey();
             MessageBox.Show("Finished");

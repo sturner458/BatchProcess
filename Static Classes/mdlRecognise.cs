@@ -341,32 +341,25 @@ namespace BatchProcess {
             DebugStringList.Clear();
 
 
-            for (i = 1; i <= 100; i++) {
-                myMarkerIDs.Add(ARToolKitFunctions.Instance.arwAddMarker("multi;data/MarkerLarge" + i.ToString("00") + ".dat"));
-                //Path to markers is local
-                if (myMarkerIDs[myMarkerIDs.Count - 1] > -1) {
-                    ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 1);
-                    ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 0.75f);
-                    ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-                    ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
-                }
+            for (i = 1; i <= 50; i++) {
+                myMarkerIDs.Add(ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (1 + (i - 1) * 2).ToString("00") + ";80"));
+                ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (i * 2).ToString("00") + ";80");
             }
 
-            myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/GFMarker.dat");
-            if (myGFMarkerID > -1) {
-                ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 1);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 0.75f);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myGFMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
+            for (i = 1; i <= 50; i++) {
+                myMarkerIDs.Add(ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (129 + (i - 1) * 2).ToString("00") + ";80"));
+                ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (128 + i * 2).ToString("00") + ";80");
             }
 
-            myStepMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/StepMarker.dat");
-            if (myStepMarkerID > -1) {
-                ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 1);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 0.75f);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myStepMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
-            }
+            myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;121;80;");
+            ARToolKitFunctions.Instance.arwAddMarker("single_barcode;122;80;");
+            ARToolKitFunctions.Instance.arwAddMarker("single_barcode;123;80;");
+            ARToolKitFunctions.Instance.arwAddMarker("single_barcode;124;80;");
+
+            myStepMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;125;80;");
+            ARToolKitFunctions.Instance.arwAddMarker("single_barcode;126;80;");
+            ARToolKitFunctions.Instance.arwAddMarker("single_barcode;127;80;");
+            ARToolKitFunctions.Instance.arwAddMarker("single_barcode;128;80;");
 
             myLeftBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;249;80;");
             myRightBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;250;80;");
@@ -389,7 +382,8 @@ namespace BatchProcess {
             //float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             //bool b = ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myGFMarkerID, 0, myMatrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
             //string sConfig = "multi_auto;" + barcodeID + ";" + ((int)width) + ";";
-            string sConfig = "multi_auto;" + myGFMarkerID + ";80;";
+            //string sConfig = "multi_auto;" + myGFMarkerID + ";80;";
+            string sConfig = "multi_auto;121;80;";
             myMapperMarkerID = ARToolKitFunctions.Instance.arwAddMarker(sConfig);
             ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
 
