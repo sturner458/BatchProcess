@@ -104,7 +104,7 @@ namespace BatchProcess {
             List<string> myFiles = new List<string>();
             int nFiles = 0;
 
-            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\14112017";
+            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\Survey";
             ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;
             myFolder = myDlg.SelectedPath;
@@ -118,7 +118,7 @@ namespace BatchProcess {
                         string s = ex.ToString();
                     }
                 }
-                if (myFile.ToLower().EndsWith(".jpg")) {
+                if (myFile.ToLower().EndsWith(".png")) {
                     myFiles.Add(Path.GetFileName(myFile));
                     if (myVideoHeight == 0) {
                         Image myImage = Image.FromFile(myFile);
@@ -143,7 +143,7 @@ namespace BatchProcess {
             
             foreach (string myFile in myFiles) {
                 Console.WriteLine("Processed " + (myFiles.IndexOf(myFile) + 1).ToString() + " out of " + myFiles.Count + " photos.");
-                if (myFile.ToLower().EndsWith(".jpg")) {
+                if (myFile.ToLower().EndsWith(".png")) {
                     byte[] imageBytes = ImageToGrayscaleByteArray((Bitmap)Image.FromFile(myFolder + "\\" + myFile));
                     nFiles = nFiles + 1;
                     lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
