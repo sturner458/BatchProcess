@@ -83,8 +83,14 @@ namespace BatchProcess
             myParentID = -1;
         }
 
-        public clsPGPoint(clsPoint3d myPt, int anID, int aParentID)
-        {
+        public clsPGPoint(clsPoint3d myPt, int anID) {
+            X = myPt.X;
+            Y = myPt.Y;
+            Z = myPt.Z;
+            myID = anID;
+        }
+
+        public clsPGPoint(clsPoint3d myPt, int anID, int aParentID) {
             X = myPt.X;
             Y = myPt.Y;
             Z = myPt.Z;

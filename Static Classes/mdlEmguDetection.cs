@@ -16,6 +16,7 @@ using static BatchProcess.mdlRecognise;
 using System.Drawing.Imaging;
 using OpenTK;
 using static BatchProcess.mdlEmguCalibration;
+using static ARToolKitFunctions;
 
 namespace BatchProcess {
     public static class mdlEmguDetection {

@@ -7,6 +7,7 @@ using static BatchProcess.mdlGlobals;
 using static BatchProcess.mdlGeometry;
 using System.IO;
 using OpenTK;
+using static ARToolKitFunctions;
 
 namespace BatchProcess {
     public static class mdlRecognise {
@@ -122,161 +123,6 @@ namespace BatchProcess {
         public static float myNear;
         public static float myFar;
 
-        #region Enums and Constants
-
-        public enum AR_LABELING_THRESH_MODE
-        {
-            AR_LABELING_THRESH_MODE_MANUAL = 0,     ///< Manual threshold selection via arSetLabelingThresh.
-            AR_LABELING_THRESH_MODE_AUTO_MEDIAN,    ///< Automatic threshold selection via full-image histogram median.
-            AR_LABELING_THRESH_MODE_AUTO_OTSU,      ///< Automatic threshold selection via Otsu's method for foreground/background selection.
-            AR_LABELING_THRESH_MODE_AUTO_ADAPTIVE,  ///< Adaptive thresholding.
-            AR_LABELING_THRESH_MODE_AUTO_BRACKETING ///< Automatic threshold selection via heuristic-based exposure bracketing.
-        };
-
-        public enum AR_MARKER_INFO_CUTOFF_PHASE
-        {
-            AR_MARKER_INFO_CUTOFF_PHASE_NONE,                   ///< Marker OK.
-            AR_MARKER_INFO_CUTOFF_PHASE_PATTERN_EXTRACTION,     ///< Failure during pattern extraction.
-            AR_MARKER_INFO_CUTOFF_PHASE_MATCH_GENERIC,          ///< Generic error during matching phase.
-            AR_MARKER_INFO_CUTOFF_PHASE_MATCH_CONTRAST,         ///< Insufficient contrast during matching.
-            AR_MARKER_INFO_CUTOFF_PHASE_MATCH_BARCODE_NOT_FOUND,///< Barcode matching could not find correct barcode locator pattern.
-            AR_MARKER_INFO_CUTOFF_PHASE_MATCH_BARCODE_EDC_FAIL, ///< Barcode matching error detection/correction found unrecoverable error.
-            AR_MARKER_INFO_CUTOFF_PHASE_MATCH_CONFIDENCE,       ///< Matching confidence cutoff value not reached.
-            AR_MARKER_INFO_CUTOFF_PHASE_POSE_ERROR,             ///< Maximum allowable pose error exceeded.
-            AR_MARKER_INFO_CUTOFF_PHASE_POSE_ERROR_MULTI,       ///< Multi-marker pose error value exceeded.
-            AR_MARKER_INFO_CUTOFF_PHASE_HEURISTIC_TROUBLESOME_MATRIX_CODES ///< Heuristic-based rejection of troublesome matrix code which is often generated in error.
-        };
-
-        public const int AR_MATRIX_CODE_TYPE_SIZE_MASK = 0x000000ff;  ///< Mask value, bitwise-OR with matrix code type to find matrix code size.
-        public const int AR_MATRIX_CODE_TYPE_ECC_NONE = 0x00000000;   ///< No error detection or correction.
-        public const int AR_MATRIX_CODE_TYPE_ECC_PARITY = 0x00000100; ///< Single-bit parity.
-        public const int AR_MATRIX_CODE_TYPE_ECC_HAMMING = 0x00000200; ///< Hamming code with Hamming distance of 3.
-        public const int AR_MATRIX_CODE_TYPE_ECC_BCH___3 = 0x00000300; ///< BCH code with Hamming distance of 3.
-        public const int AR_MATRIX_CODE_TYPE_ECC_BCH___5 = 0x00000400; ///< BCH code with Hamming distance of 5.
-        public const int AR_MATRIX_CODE_TYPE_ECC_BCH___7 = 0x00000500; ///< BCH code with Hamming distance of 7.
-        public const int AR_MATRIX_CODE_TYPE_ECC_BCH___9 = 0x00000600; ///< BCH code with Hamming distance of 9.
-        public const int AR_MATRIX_CODE_TYPE_ECC_BCH___11 = 0x00000700; ///< BCH code with Hamming distance of 11.
-        public const int AR_MATRIX_CODE_TYPE_ECC_BCH___19 = 0x00000b00; ///< BCH code with Hamming distance of 19.
-
-        public enum AR_MATRIX_CODE_TYPE
-        {
-            AR_MATRIX_CODE_3x3 = 0x03,                                                  ///< Matrix code in range 0-63.
-            AR_MATRIX_CODE_3x3_PARITY65 = 0x03 | AR_MATRIX_CODE_TYPE_ECC_PARITY,        ///< Matrix code in range 0-31.
-            AR_MATRIX_CODE_3x3_HAMMING63 = 0x03 | AR_MATRIX_CODE_TYPE_ECC_HAMMING,      ///< Matrix code in range 0-7.
-            AR_MATRIX_CODE_4x4 = 0x04,                                                  ///< Matrix code in range 0-8191.
-            AR_MATRIX_CODE_4x4_BCH_13_9_3 = 0x04 | AR_MATRIX_CODE_TYPE_ECC_BCH___3,     ///< Matrix code in range 0-511.
-            AR_MATRIX_CODE_4x4_BCH_13_5_5 = 0x04 | AR_MATRIX_CODE_TYPE_ECC_BCH___5,     ///< Matrix code in range 0-31.
-            AR_MATRIX_CODE_5x5_BCH_22_12_5 = 0x05 | AR_MATRIX_CODE_TYPE_ECC_BCH___5,    ///< Matrix code in range 0-4095.
-            AR_MATRIX_CODE_5x5_BCH_22_7_7 = 0x05 | AR_MATRIX_CODE_TYPE_ECC_BCH___7,     ///< Matrix code in range 0-127.
-            AR_MATRIX_CODE_5x5 = 0x05,                                                  ///< Matrix code in range 0-4194303.
-            AR_MATRIX_CODE_6x6 = 0x06,                                                  ///< Matrix code in range 0-8589934591.
-            AR_MATRIX_CODE_GLOBAL_ID = 0x0e | AR_MATRIX_CODE_TYPE_ECC_BCH___19
-        };
-
-        public const int ARW_TRACKER_OPTION_NFT_MULTIMODE = 0;                          ///< int.
-        public const int ARW_TRACKER_OPTION_SQUARE_THRESHOLD = 1;                       ///< Threshold value used for image binarization. int in range [0-255].
-        public const int ARW_TRACKER_OPTION_SQUARE_THRESHOLD_MODE = 2;                  ///< Threshold mode used for image binarization. int.
-        public const int ARW_TRACKER_OPTION_SQUARE_LABELING_MODE = 3;                   ///< int.
-        public const int ARW_TRACKER_OPTION_SQUARE_PATTERN_DETECTION_MODE = 4;          ///< int.
-        public const int ARW_TRACKER_OPTION_SQUARE_BORDER_SIZE = 5;                     ///< float in range (0-0.5).
-        public const int ARW_TRACKER_OPTION_SQUARE_MATRIX_CODE_TYPE = 6;                ///< int.
-        public const int ARW_TRACKER_OPTION_SQUARE_IMAGE_PROC_MODE = 7;                 ///< int.
-        public const int ARW_TRACKER_OPTION_SQUARE_DEBUG_MODE = 8;                      ///< Enables or disable state of debug mode in the tracker. When enabled, a black and white debug image is generated during marker detection. The debug image is useful for visualising the binarization process and choosing a threshold value. bool.
-        public const int ARW_TRACKER_OPTION_SQUARE_PATTERN_SIZE = 9;                    ///< Number of rows and columns in square template (pattern) markers. Defaults to AR_PATT_SIZE1, which is 16 in all versions of ARToolKit prior to 5.3. int.
-        public const int ARW_TRACKER_OPTION_SQUARE_PATTERN_COUNT_MAX = 10;              ///< Maximum number of square template (pattern) markers that may be loaded at once. Defaults to AR_PATT_NUM_MAX, which is at least 25 in all versions of ARToolKit prior to 5.3. int.
-        public const int ARW_TRACKER_OPTION_2D_TRACKER_FEATURE_TYPE = 11;               ///< Feature detector type used in the 2d Tracker - 0 AKAZE, 1 ORB, 2 BRISK, 3 KAZE
-        public const int ARW_TRACKER_OPTION_2D_CORNER_REFINEMENT = 12;                  ///< Enables or disables corner refinement
-
-        /**
-         * Constants for use with trackable option setters/getters.
-         */
-        public const int ARW_TRACKABLE_OPTION_FILTERED = 1;                         ///< bool, true for filtering enabled.
-        public const int ARW_TRACKABLE_OPTION_FILTER_SAMPLE_RATE = 2;               ///< float, sample rate for filter calculations.
-        public const int ARW_TRACKABLE_OPTION_FILTER_CUTOFF_FREQ = 3;               ///< float, cutoff frequency of filter.
-        public const int ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION = 4;  ///< bool, true to use continuous pose estimate.
-        public const int ARW_TRACKABLE_OPTION_SQUARE_CONFIDENCE = 5;                ///< float, confidence value of most recent marker match
-        public const int ARW_TRACKABLE_OPTION_SQUARE_CONFIDENCE_CUTOFF = 6;         ///< float, minimum allowable confidence value used in marker matching.
-        public const int ARW_TRACKABLE_OPTION_NFT_SCALE = 7;                        ///< float, scale factor applied to NFT marker size.
-        public const int ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS = 8;             ///< int, minimum number of submarkers for tracking to be valid.
-        public const int ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX = 9;            ///< float, minimum confidence value for submarker matrix tracking to be valid.
-        public const int ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_PATTERN = 10;          ///< float, minimum confidence value for submarker pattern tracking to be valid.
-        public const int ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB = 11;           ///< float, minimum inlier probability value for robust multimarker pose estimation (range 1.0 - 0.0).
-
-        /* for arDebug */
-        public const int AR_DEBUG_DISABLE = 0;
-        public const int AR_DEBUG_ENABLE = 1;
-        public const int AR_DEFAULT_DEBUG_MODE = AR_DEBUG_DISABLE;
-
-        /* for arLabelingMode */
-        public const int AR_LABELING_WHITE_REGION = 0;
-        public const int AR_LABELING_BLACK_REGION = 1;
-        public const int AR_DEFAULT_LABELING_MODE = AR_LABELING_BLACK_REGION;
-
-        /* for arlabelingThresh */
-        public const int AR_DEFAULT_LABELING_THRESH = 100;
-
-        /* for arImageProcMode */
-        public const int AR_IMAGE_PROC_FRAME_IMAGE = 0;
-        public const int AR_IMAGE_PROC_FIELD_IMAGE = 1;
-        public const int AR_DEFAULT_IMAGE_PROC_MODE = AR_IMAGE_PROC_FRAME_IMAGE;
-
-        /* for arPatternDetectionMode */
-        public const int AR_TEMPLATE_MATCHING_COLOR = 0;
-        public const int AR_TEMPLATE_MATCHING_MONO = 1;
-        public const int AR_MATRIX_CODE_DETECTION = 2;
-        public const int AR_TEMPLATE_MATCHING_COLOR_AND_MATRIX = 3;
-        public const int AR_TEMPLATE_MATCHING_MONO_AND_MATRIX = 4;
-        public const int AR_DEFAULT_PATTERN_DETECTION_MODE = AR_TEMPLATE_MATCHING_COLOR;
-
-        /* for arMarkerExtractionMode */
-        public const int AR_USE_TRACKING_HISTORY = 0;
-        public const int AR_NOUSE_TRACKING_HISTORY = 1;
-        public const int AR_USE_TRACKING_HISTORY_V2 = 2;
-        public const int AR_DEFAULT_MARKER_EXTRACTION_MODE = AR_USE_TRACKING_HISTORY_V2;
-
-        /* for arCornerRefinementMode */
-        public const int AR_CORNER_REFINEMENT_DISABLE = 0;
-        public const int AR_CORNER_REFINEMENT_ENABLE = 1;
-        public const int AR_DEFAULT_CORNER_REFINEMENT_MODE = AR_CORNER_REFINEMENT_DISABLE;
-
-        /* for arGetTransMat */
-        public const int AR_MAX_LOOP_COUNT = 5;
-        public const float AR_LOOP_BREAK_THRESH = 0.5f;
-
-        /* for arPatt**      */
-        public const int AR_PATT_NUM_MAX = 50;
-        public const int AR_PATT_SIZE1 = 16;        // Default number of rows and columns in pattern when pattern detection mode is not AR_MATRIX_CODE_DETECTION. Must be 16 in order to be compatible with ARToolKit versions 1.0 to 5.1.6.
-        public const int AR_PATT_SIZE1_MAX = 64;     // Maximum number of rows and columns allowed in pattern when pattern detection mode is not AR_MATRIX_CODE_DETECTION.
-        public const int AR_PATT_SIZE2_MAX = 32;     // Maximum number of rows and columns allowed in pattern when pattern detection mode is AR_MATRIX_CODE_DETECTION.
-        public const int AR_PATT_SAMPLE_FACTOR1 = 4;     // Maximum number of samples per pattern pixel row / column when pattern detection mode is not AR_MATRIX_CODE_DETECTION.
-        public const int AR_PATT_SAMPLE_FACTOR2 = 3;     // Maximum number of samples per pattern pixel row / column when detection mode is AR_MATRIX_CODE_DETECTION.
-        public const float AR_PATT_CONTRAST_THRESH1 = 15.0f;   // Required contrast over pattern space when pattern detection mode is AR_TEMPLATE_MATCHING_MONO or AR_TEMPLATE_MATCHING_COLOR.
-        public const float AR_PATT_CONTRAST_THRESH2 = 30.0f;   // Required contrast between black and white barcode segments when pattern detection mode is AR_MATRIX_CODE_DETECTION.
-        public const float AR_PATT_RATIO = 0.5f;   // Default value for percentage of marker width or height considered to be pattern space. Equal to 1.0 - 2*borderSize. Must be 0.5 in order to be compatible with ARToolKit versions 1.0 to 4.4.
-
-
-
-        public const int AR_AREA_MAX = 1000000;     // Maximum area (in pixels) of connected regions considered valid candidate for marker detection.
-        public const int AR_AREA_MIN = 70;      // Minimum area (in pixels) of connected regions considered valid candidate for marker detection.
-        public const float AR_SQUARE_FIT_THRESH = 1.0f;
-
-        public const int AR_LABELING_32_BIT = 1;     // 0 = 16 bits per label, 1 = 32 bits per label.
-        public const int AR_LABELING_WORK_SIZE = 1024 * 32 * 64;
-        //public const int AR_LABELING_LABEL_TYPE = ARInt32;
-
-        public const int AR_SQUARE_MAX = 60;     // Maxiumum number of marker squares per frame.
-        public const int AR_CHAIN_MAX = 10000;
-
-        public const int AR_LABELING_THRESH_AUTO_INTERVAL_DEFAULT = 7; // Number of frames between auto-threshold calculations.
-        public const int AR_LABELING_THRESH_MODE_DEFAULT = (int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL;
-        public const int AR_LABELING_THRESH_ADAPTIVE_KERNEL_SIZE_DEFAULT = 9;
-        public const int AR_LABELING_THRESH_ADAPTIVE_BIAS_DEFAULT = (-7);
-
-        public const float AR_CONFIDENCE_CUTOFF_DEFAULT = 0.5f;
-        public const int AR_MATRIX_CODE_TYPE_DEFAULT = (int)AR_MATRIX_CODE_TYPE.AR_MATRIX_CODE_3x3;
-
-        #endregion
-
         public static bool StartTracking(int hiResX, int hiResY)
         {
 
@@ -341,39 +187,66 @@ namespace BatchProcess {
             DebugStringList.Clear();
 
 
-            for (int i = 1; i <= 50; i++) {
-                markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (1 + (i - 1) * 2).ToString("00") + ";80");
-                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-                myMarkerIDs.Add(markerID);
-                markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (i * 2).ToString("00") + ";80");
-                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            //for (int i = 1; i <= 50; i++) {
+            //    markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (1 + (i - 1) * 2).ToString("00") + ";80");
+            //    ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            //    myMarkerIDs.Add(markerID);
+            //    markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (i * 2).ToString("00") + ";80");
+            //    ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            //}
+
+            //for (int i = 1; i <= 50; i++) {
+            //    markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (129 + (i - 1) * 2).ToString("00") + ";80");
+            //    ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            //    myMarkerIDs.Add(markerID);
+            //    markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (128 + i * 2).ToString("00") + ";80");
+            //    ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            //}
+
+            //myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;121;80;");
+            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myGFMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;122;80;");
+            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;123;80;");
+            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;124;80;");
+            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
+            //myStepMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;125;80;");
+            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myStepMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;126;80;");
+            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;127;80;");
+            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;128;80;");
+            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
+            for (int i = 1; i <= 100; i++) {
+                myMarkerIDs.Add(ARToolKitFunctions.Instance.arwAddMarker("multi;data/MarkerLarge" + i.ToString("00") + ".dat"));
+                //Path to markers is local
+                if (myMarkerIDs[myMarkerIDs.Count - 1] > -1) {
+                    ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 2);
+                    ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 1.0f);
+                    ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+                    ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
+                }
             }
 
-            for (int i = 1; i <= 50; i++) {
-                markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (129 + (i - 1) * 2).ToString("00") + ";80");
-                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-                myMarkerIDs.Add(markerID);
-                markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (128 + i * 2).ToString("00") + ";80");
-                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/GFMarker.dat");
+            if (myGFMarkerID > -1) {
+                ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 4);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 1.0f);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myGFMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
             }
 
-            myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;121;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myGFMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;122;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;123;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;124;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-
-            myStepMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;125;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myStepMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;126;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;127;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;128;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myStepMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/StepMarker.dat");
+            if (myStepMarkerID > -1) {
+                ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 4);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 1.0f);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myStepMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
+            }
 
             myLeftBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;249;80;");
             ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myLeftBulkheadMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
@@ -440,7 +313,7 @@ namespace BatchProcess {
             //ARToolKitFunctions.Instance.arwSetMarkerExtractionMode(AR_USE_TRACKING_HISTORY_V2); //This doesn't work in ARToolKitX
             ARToolKitFunctions.Instance.arwSetVideoThreshold(50);
             ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
-            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(false);
+            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(true);
 
             myMarkerIDs.Clear();
             DebugStringList.Clear();
@@ -523,6 +396,7 @@ namespace BatchProcess {
 
             var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(imageBytes, false);
             ARToolKitFunctions.Instance.arwGetProjectionMatrix(myNear, myFar, Data.ProjMatrix);
+            //ARToolKitFunctions.Instance.arwListTrackables(myMapperMarkerID);
 
             //for (int i = 0; i <= myMarkerIDs.Count - 1; i++) {
             //    DetectMarkerVisible(myMarkerIDs[i]);

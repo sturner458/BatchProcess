@@ -142,13 +142,13 @@ namespace BatchProcess {
             myFiles.Sort(new AlphaNumericCompare());
             
             foreach (string myFile in myFiles) {
-                Console.WriteLine("Processed " + (myFiles.IndexOf(myFile) + 1).ToString() + " out of " + myFiles.Count + " photos.");
                 if (myFile.ToLower().EndsWith(".png")) {
                     byte[] imageBytes = ImageToGrayscaleByteArray((Bitmap)Image.FromFile(myFolder + "\\" + myFile));
                     nFiles = nFiles + 1;
                     lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
                     Application.DoEvents();
                     RecogniseMarkers(imageBytes);
+                    Console.WriteLine("Processed " + nFiles + " out of " + myFiles.Count + " photos - " + myFile);
 
                     //ARToolKitFunctions.Instance.arwSetVideoDebugMode(true);
                     //ARToolKitFunctions.Instance.arwUpdateARToolKit(imageBytes, 2);
@@ -212,13 +212,13 @@ namespace BatchProcess {
             //    RelevelMarkerFromGF(ConfirmedMarkers[i]);
             //}
 
-            var pts = new List<clsPoint3d>();
+            var pts = new List<clsPGPoint>();
             for (int i = 0; i <= myMarkerIDs.Count - 1; i++) {
                 DetectMapperMarkerVisible(myMarkerIDs[i], ref pts);
             }
 
-            DetectMapperMarkerVisible(myStepMarkerID, ref pts);
             DetectMapperMarkerVisible(myGFMarkerID, ref pts);
+            DetectMapperMarkerVisible(myStepMarkerID, ref pts);
             DetectMapperMarkerVisible(myLeftBulkheadMarkerID, ref pts);
             DetectMapperMarkerVisible(myRightBulkheadMarkerID, ref pts);
             DetectMapperMarkerVisible(myDoorHingeRightMarkerID, ref pts);
@@ -236,18 +236,32 @@ namespace BatchProcess {
 
 
             var sw = new System.IO.StreamWriter("C:\\Temp\\points.txt");
-            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t'+ p.z.ToString() + '\t' + (-p.y).ToString()));
+            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t'+ p.z.ToString() + '\t' + (-p.y).ToString() + '\t' + (p.ID + 1).ToString() + '\t' + p.ParentID));
             sw.Close();
 
             //SaveSurvey();
             MessageBox.Show("Finished");
         }
 
-        private static void DetectMapperMarkerVisible(int myMarkerID, ref List<clsPoint3d> pts) {
+        private static void DetectMapperMarkerVisible(int myMarkerID, ref List<clsPGPoint> pts) {
 
             float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, myMarkerID, myMatrix)) {
-                pts.Add(new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]));
+            ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myMarkerID, 0, myMatrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+
+            float[] mv = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, barcodeID, mv)) {
+
+                OpenTK.Matrix4 matrix = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
+                var pt = new OpenTK.Vector4(mv[12], mv[13], mv[14], 0);
+                if (myMarkerID < 50) {
+                    pt = new OpenTK.Vector4(140.0f, -45.0f, 0.0f, 1);
+                    pt = OpenTK.Vector4.Transform(pt, matrix);
+                } else if (myMarkerID < 100) {
+                    pt = new OpenTK.Vector4(140.0f, 45.0f, 0.0f, 1);
+                    pt = OpenTK.Vector4.Transform(pt, matrix);
+                }
+
+                pts.Add(new clsPGPoint(pt.X, pt.Y, pt.Z, myMarkerID, barcodeID));
             }
         }
 
