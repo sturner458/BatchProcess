@@ -48,21 +48,43 @@ namespace BatchProcess {
             var cornerPoints = new Emgu.CV.Util.VectorOfPointF();
             var image = new Image<Gray, byte>(myFile);
             mImageSize = image.Size;
+            Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
 
-            res = CvInvoke.FindChessboardCorners(image, mBoardSize, cornerPoints);
+            res = CvInvoke.FindChessboardCorners(image, mBoardSize, cornerPoints, Emgu.CV.CvEnum.CalibCbType.FastCheck | Emgu.CV.CvEnum.CalibCbType.AdaptiveThresh | Emgu.CV.CvEnum.CalibCbType.FilterQuads);
 
             if (res) {
-                CvInvoke.CornerSubPix(image, cornerPoints, new Size(5, 5), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100, 0.1));
+                var cornersCopy = new List<clsPoint>();
+                var cornersCopy2 = new List<clsPoint>();
+                foreach (var p in cornerPoints.ToArray())  cornersCopy.Add(new clsPoint(p.X, p.Y));
+                CvInvoke.CornerSubPix(image, cornerPoints, new Size(5, 5), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100));
+
+                foreach (var p in cornerPoints.ToArray())  cornersCopy2.Add(new clsPoint(p.X, p.Y));
+
+                var cornersErr = new Emgu.CV.Util.VectorOfPointF();
+                var cornersErr2 = new Emgu.CV.Util.VectorOfPointF();
+                for (int i = 0; i < cornersCopy.Count; i++) {
+                    if (cornersCopy[i].Dist(cornersCopy2[i]) > 4.0) {
+                        cornersErr.Push(new PointF[] { new PointF((float)cornersCopy[i].x, (float)cornersCopy[i].y) });
+                        cornersErr2.Push(new PointF[] { new PointF((float)cornersCopy2[i].x, (float)cornersCopy2[i].y) });
+                    }
+                }
+                if (cornersErr.Size > 0) {
+                    mdlEmguDetection.DrawCornersOnImage(imageCopy, cornersErr, System.Drawing.Color.Green);
+                    mdlEmguDetection.DrawCornersOnImage(imageCopy, cornersErr2, System.Drawing.Color.Red);
+                    CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\Corners-" + Path.GetFileNameWithoutExtension(myFile) + ".png", imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
+                }
 
                 allCornerPoints.Add(cornerPoints.ToArray());
-                capturedImageNum = capturedImageNum + 1;
                 myImageFiles.Add(myFile);
 
                 //foreach (PointF cornerPoint in cornerPoints.ToArray()) {
                 //    System.Diagnostics.Debug.WriteLine(cornerPoint.X + ", " + cornerPoint.Y);
                 //}
+
+                capturedImageNum = capturedImageNum + 1;
                 System.Diagnostics.Debug.WriteLine("Processed Image " + capturedImageNum);
             } else {
+                capturedImageNum = capturedImageNum + 1;
                 System.Diagnostics.Debug.WriteLine("Failed To Process Image " + capturedImageNum);
             }
 
@@ -109,7 +131,7 @@ namespace BatchProcess {
             //    Emgu.CV.CvEnum.CalibType.FixK3, new Emgu.CV.Structure.MCvTermCriteria(30, 0.1), out rvecs, out tvecs);
 
             double error = CvInvoke.CalibrateCamera(objectPoints.ToArray(), allCornerPoints.ToArray(), mImageSize, cameraMatrix, distortionCoeffs,
-                Emgu.CV.CvEnum.CalibType.RationalModel, new Emgu.CV.Structure.MCvTermCriteria(30, 0.01), out rvecs, out tvecs);
+                Emgu.CV.CvEnum.CalibType.RationalModel, new Emgu.CV.Structure.MCvTermCriteria(100), out rvecs, out tvecs);
 
             double[] cameraArray = new double[9];
             Marshal.Copy(cameraMatrix.DataPointer, cameraArray, 0, 9);
@@ -955,10 +977,10 @@ namespace BatchProcess {
             sr.Close();
 
             double s = param.dist_factor[16];
-            param.mat[0, 0] *= s;
-            param.mat[0, 1] *= s;
-            param.mat[1, 0] *= s;
-            param.mat[1, 1] *= s;
+            //param.mat[0, 0] *= s;
+            //param.mat[0, 1] *= s;
+            //param.mat[1, 0] *= s;
+            //param.mat[1, 1] *= s;
             //param.dist_factor[12] /= s;
             //param.dist_factor[13] /= s;
             //param.dist_factor[14] /= s;

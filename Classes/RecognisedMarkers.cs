@@ -8,9 +8,9 @@ namespace BatchProcess
         public bool IsLowRes;
 
         public List<int> MarkersSeenID = new List<int>();
-        public List<float[]> ModelViewMatrix = new List<float[]>();
+        public List<double[]> ModelViewMatrix = new List<double[]>();
         public List<double> LastSeenDistances = new List<double>();
-        public float[] ProjMatrix = new float[16];
+        public double[] ProjMatrix = new double[16];
 
         public List<clsMarkerPoint> ConfirmedMarkers = new List<clsMarkerPoint>();
         public List<clsMarkerPoint> SuspectedMarkers = new List<clsMarkerPoint>();
@@ -74,20 +74,20 @@ namespace BatchProcess
         public RecognisedMarkers Copy()
         {
             int i;
-            List<float> f;
+            List<double> f;
             RecognisedMarkers _copy = new RecognisedMarkers(IsLowRes);
 
             _copy.MarkersSeenID.AddRange(MarkersSeenID.ToArray());
 
             for (i = 0; i < ModelViewMatrix.Count; i++) {
-                f = new List<float>();
+                f = new List<double>();
                 f.AddRange(ModelViewMatrix[i]);
                 _copy.ModelViewMatrix.Add(f.ToArray());
             }
 
             _copy.LastSeenDistances.AddRange(LastSeenDistances.ToArray());
 
-            f = new List<float>();
+            f = new List<double>();
             f.AddRange(ProjMatrix);
             _copy.ProjMatrix = f.ToArray();
 
@@ -124,7 +124,7 @@ namespace BatchProcess
             _copy.MarkersSeenID.AddRange(MarkersSeenID.ToArray());
 
             for (int i = 0; i < ModelViewMatrix.Count; i++) {
-                List<float> f = new List<float>();
+                List<double> f = new List<double>();
                 f.AddRange(ModelViewMatrix[i]);
                 _copy.ModelViewMatrix.Add(f.ToArray());
             }
@@ -150,7 +150,7 @@ namespace BatchProcess
             return -1;
         }
 
-        public void SetMarkerVisible(int myMarkerID, float[] myMatrix)
+        public void SetMarkerVisible(int myMarkerID, double[] myMatrix)
         {
             if (!MarkersSeenID.Contains(myMarkerID)) {
                 MarkersSeenID.Add(myMarkerID);

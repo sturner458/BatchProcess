@@ -14,6 +14,8 @@ using System.Runtime.InteropServices;
 using static BatchProcess.mdlGlobals;
 using static BatchProcess.mdlGeometry;
 using static System.Math;
+using Emgu.CV;
+using Emgu.CV.Structure;
 
 namespace BatchProcess {
     public partial class Form1 : Form {
@@ -46,7 +48,7 @@ namespace BatchProcess {
             }
 
             // ARToolKitFunctions.Instance.arwInitialiseAR();
-            ARToolKitFunctions.Instance.arwInitChessboardCorners(17, 13, 20, 3264, 2448, 20);
+            ARToolKitFunctions.Instance.arwInitChessboardCorners(17, 13, 20, 3264, 2448, nImages);
 
             float[] corners = new float[442];
             int cornerCount;
@@ -63,7 +65,13 @@ namespace BatchProcess {
             StreamWriter sw = new StreamWriter(cornerFile);
             foreach (string myFile in Directory.GetFiles(myFolder)) {
                 if (!(myFile.ToLower().EndsWith(".png") || myFile.ToLower().EndsWith(".jpg"))) continue;
-                byte[] imageBytes = ImageToGrayscaleByteArray((Bitmap)Image.FromFile(myFile));
+
+                var image = new Image<Gray, byte>(myFile);
+                var size = image.Width * image.Height;
+                byte[] imageBytes = new Byte[size];
+                System.Buffer.BlockCopy(image.Data, 0, imageBytes, 0, size);
+
+                //byte[] imageBytes = ImageToGrayscaleByteArray((Bitmap)Image.FromFile(myFile));
 
                 int result = ARToolKitFunctions.Instance.arwFindChessboardCorners(corners, out cornerCount, imageBytes);
 
@@ -104,7 +112,8 @@ namespace BatchProcess {
             List<string> myFiles = new List<string>();
             int nFiles = 0;
 
-            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\Survey";
+            //myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\Survey 2";
+            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\DatumSurvey\\Survey";
             ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;
             myFolder = myDlg.SelectedPath;
@@ -118,7 +127,7 @@ namespace BatchProcess {
                         string s = ex.ToString();
                     }
                 }
-                if (myFile.ToLower().EndsWith(".png")) {
+                if (Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("survey") && myFile.ToLower().EndsWith(".png")) {
                     myFiles.Add(Path.GetFileName(myFile));
                     if (myVideoHeight == 0) {
                         Image myImage = Image.FromFile(myFile);
@@ -130,6 +139,8 @@ namespace BatchProcess {
             }
             ARToolKitFunctions.Instance.arwInitialiseAR();
             StartTracking(myVideoWidth, myVideoHeight);
+            string myCameraFile = "data\\calib.dat";
+            var arParams = mdlEmguCalibration.LoadCameraFromFile(myCameraFile);
 
             //TEMP:
             myVerticalVector.X = -0.00706971850143557;
@@ -142,12 +153,23 @@ namespace BatchProcess {
             myFiles.Sort(new AlphaNumericCompare());
             
             foreach (string myFile in myFiles) {
-                if (myFile.ToLower().EndsWith(".png")) {
-                    byte[] imageBytes = ImageToGrayscaleByteArray((Bitmap)Image.FromFile(myFolder + "\\" + myFile));
+                if (Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("survey") && myFile.ToLower().EndsWith(".png")) {
+                    var image = new Image<Gray, byte>(myFolder + "\\" + myFile);
+                    var size = image.Width * image.Height;
+                    byte[] imageBytes = new Byte[size];
+                    System.Buffer.BlockCopy(image.Data, 0, imageBytes, 0, size);
+                    //byte[] imageBytes = ImageToGrayscaleByteArray((Bitmap)Image.FromFile(myFolder + "\\" + myFile));
                     nFiles = nFiles + 1;
                     lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
                     Application.DoEvents();
-                    RecogniseMarkers(imageBytes);
+                    var exceptionThrown = false;
+                    try {
+                        RecogniseMarkers(imageBytes, myFolder + "\\" + myFile, arParams);
+                    } catch (Exception ex) {
+                        exceptionThrown = true;
+                        Console.WriteLine(ex.ToString());
+                    }
+                    if (exceptionThrown) break;
                     Console.WriteLine("Processed " + nFiles + " out of " + myFiles.Count + " photos - " + myFile);
 
                     //ARToolKitFunctions.Instance.arwSetVideoDebugMode(true);
@@ -234,9 +256,14 @@ namespace BatchProcess {
             DetectMapperMarkerVisible(myWall3MarkerID, ref pts);
             DetectMapperMarkerVisible(myWall4MarkerID, ref pts);
 
+            pts.Sort((p1, p2) => p1.z.CompareTo(p2.z));
 
             var sw = new System.IO.StreamWriter("C:\\Temp\\points.txt");
             pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t'+ p.z.ToString() + '\t' + (-p.y).ToString() + '\t' + (p.ID + 1).ToString() + '\t' + p.ParentID));
+            sw.Close();
+
+            sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
+            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t' + p.y.ToString() + '\t' + p.z.ToString() + '\t' + (p.ID + 1).ToString() + '\t' + p.ParentID));
             sw.Close();
 
             //SaveSurvey();
@@ -245,20 +272,20 @@ namespace BatchProcess {
 
         private static void DetectMapperMarkerVisible(int myMarkerID, ref List<clsPGPoint> pts) {
 
-            float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] myMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myMarkerID, 0, myMatrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
 
-            float[] mv = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, barcodeID, mv)) {
 
-                OpenTK.Matrix4 matrix = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
-                var pt = new OpenTK.Vector4(mv[12], mv[13], mv[14], 0);
+                OpenTK.Matrix4d matrix = new OpenTK.Matrix4d(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
+                var pt = new OpenTK.Vector4d(mv[12], mv[13], mv[14], 0);
                 if (myMarkerID < 50) {
-                    pt = new OpenTK.Vector4(140.0f, -45.0f, 0.0f, 1);
-                    pt = OpenTK.Vector4.Transform(pt, matrix);
+                    pt = new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1);
+                    pt = OpenTK.Vector4d.Transform(pt, matrix);
                 } else if (myMarkerID < 100) {
-                    pt = new OpenTK.Vector4(140.0f, 45.0f, 0.0f, 1);
-                    pt = OpenTK.Vector4.Transform(pt, matrix);
+                    pt = new OpenTK.Vector4d(140.0, 45.0, 0.0f, 1);
+                    pt = OpenTK.Vector4d.Transform(pt, matrix);
                 }
 
                 pts.Add(new clsPGPoint(pt.X, pt.Y, pt.Z, myMarkerID, barcodeID));
@@ -456,7 +483,7 @@ namespace BatchProcess {
             DialogResult ret;
             string myFolder;
 
-            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos";
+            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\Calibration14-11-19\\Calibration";
             ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;
             myFolder = myDlg.SelectedPath;
@@ -476,8 +503,9 @@ namespace BatchProcess {
             mdlEmguCalibration.InitCalibration("C:\\Temp\\Calib.dat", 17, 13, 20.0f, nImages);
 
             foreach (string myFile in Directory.GetFiles(myFolder)) {
-                if (!(myFile.ToLower().EndsWith(".png") || myFile.ToLower().EndsWith(".jpg"))) continue;
-                mdlEmguCalibration.ProcessImage(myFile);
+                if (Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("calibration") && myFile.ToLower().EndsWith(".png")) {
+                    mdlEmguCalibration.ProcessImage(myFile);
+                }
             }
 
             mdlEmguCalibration.CalibrateCamera(true);
@@ -535,14 +563,26 @@ namespace BatchProcess {
             mdlEmguDetection.DoDetection(myFile, myImageFile);
         }
 
-        private void btnDetectCircles_Click(object sender, EventArgs e) {
-            //mdlEmguDetection.DrawMarkers();
-
+        private void btnDetectMarkers_Click(object sender, EventArgs e) {
             OpenFileDialog myDlg = new OpenFileDialog();
             DialogResult ret;
             string myImageFile;
 
-            myDlg.InitialDirectory = "C:\\Customer\\Stannah\\PhotoGrammetry\\BatchProcess\\Photos\\iPad 1";
+            myDlg.InitialDirectory = "C:\\Customer\\Stannah\\PhotoGrammetry\\Photos\\Survey 2";
+            myDlg.Filter = "Image Files (*.jpg;*.png)|*.jpg;*.png";
+            ret = myDlg.ShowDialog();
+            if (ret != DialogResult.OK) return;
+            myImageFile = myDlg.FileName;
+
+            mdlEmguDetection.DetectMarkers(myImageFile);
+        }
+
+        private void btnDetectDatums_Click(object sender, EventArgs e) {
+            OpenFileDialog myDlg = new OpenFileDialog();
+            DialogResult ret;
+            string myImageFile;
+
+            myDlg.InitialDirectory = "C:\\Customer\\Stannah\\PhotoGrammetry\\Photos\\DatumSurvey\\Survey";
             myDlg.Filter = "Image Files (*.jpg;*.png)|*.jpg;*.png";
             ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;

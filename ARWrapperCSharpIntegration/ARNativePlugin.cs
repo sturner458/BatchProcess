@@ -101,7 +101,7 @@ public class ARNativePlugin
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwGetProjectionMatrix(float nearPlane, float farPlane, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] float[] matrix);
+    internal static extern bool arwGetProjectionMatrix(float nearPlane, float farPlane, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] double[] matrix);
 
     //[DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     //[return: MarshalAs(UnmanagedType.I1)]
@@ -285,20 +285,11 @@ public class ARNativePlugin
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwQueryTrackableVisibilityAndTransformation(int markerID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] float[] matrix);
+    internal static extern bool arwQueryTrackableVisibilityAndTransformation(int markerID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] double[] matrix, [MarshalAs(UnmanagedType.LPArray, SizeConst = 32)] double[] corners, out int numCorners);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
     internal static extern bool arwQueryTrackableMapperTransformation(int gMapUID, int trackableUID, IntPtr matrix);
-
-    [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwLastUpdateSuccessful(int gMapUID, out int numMarkers, out int numSuccessfulUpdates, IntPtr matrix);
-    //internal static extern bool arwLastUpdateSuccessful(int gMapUID, ref int numMarkers, ref int numSuccessfulUpdates, [MarshalAs(UnmanagedType.LPArray, SizeConst = 12)] float[] matrix);
-
-    [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void arwGetMappedMarkerTrans(int gMapUID, int nMarker, IntPtr matrix, out int uid);
-    //internal static extern void arwGetMappedMarkerTrans(int gMapUID, int nMarker, [MarshalAs(UnmanagedType.LPArray, SizeConst = 12)] float[] matrix);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     internal static extern void arwResetMapperTrackable(int gMapUID, string cfg);
@@ -311,7 +302,10 @@ public class ARNativePlugin
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwGetTrackablePatternConfig(int trackableUID, int patternID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] float[] matrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+    internal static extern bool arwGetTrackablePatternConfig(int trackableUID, int patternID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] double[] matrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+
+    [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int arwGetTrackablePatternCount(int trackableUID);
 
     //[DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     //[return: MarshalAs(UnmanagedType.I1)]

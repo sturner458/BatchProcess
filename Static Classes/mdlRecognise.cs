@@ -8,6 +8,8 @@ using static BatchProcess.mdlGeometry;
 using System.IO;
 using OpenTK;
 using static ARToolKitFunctions;
+using System.Drawing;
+using Emgu.CV;
 
 namespace BatchProcess {
     public static class mdlRecognise {
@@ -157,7 +159,8 @@ namespace BatchProcess {
             ARToolKitFunctions.Instance.arwSetLogLevel(0);
             myLogger = new Logger();
 
-            AddMarkersToARToolKit();
+            //AddMarkersToARToolKit();
+            AddDatumMarkersToARToolKit();
 
             //mySuspectedMarkers.Clear()
             if (StepMarker.Confirmed == false) {
@@ -168,7 +171,7 @@ namespace BatchProcess {
             return true;
         }
 
-        private static void AddMarkersToARToolKit() {
+        public static void AddMarkersToARToolKit() {
             int markerID;
 
             //!!!IMPORTANT NOTE:
@@ -299,7 +302,7 @@ namespace BatchProcess {
                 myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
         }
 
-        private static void AddDatumMarkersToARToolKit() {
+        public static void AddDatumMarkersToARToolKit() {
             int markerID;
 
             //!!!IMPORTANT NOTE:
@@ -324,7 +327,7 @@ namespace BatchProcess {
             ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myStepMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
 
             for (int i = 1; i <= 100; i++) {
-                markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (i + 1).ToString("00") + ";80");
+                markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (i + 1) + ";80");
                 myMarkerIDs.Add(markerID);
                 ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
             }
@@ -364,7 +367,7 @@ namespace BatchProcess {
             //float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             //bool b = ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myGFMultiMarkerID, 0, myMatrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
             //string sConfig = "multi_auto;" + barcodeID + ";" + ((int)width) + ";";
-            string sConfig = "multi_auto;" + myGFMarkerID + ";80;";
+            string sConfig = "multi_auto;0;80;";
             myMapperMarkerID = ARToolKitFunctions.Instance.arwAddMarker(sConfig);
             ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
 
@@ -389,13 +392,65 @@ namespace BatchProcess {
             ARToolKitFunctions.Instance.arwInitARToolKit(myVConf, myCameraFile);
         }
 
-        public static void RecogniseMarkers(byte[] imageBytes)
+        public static void RecogniseMarkers(byte[] imageBytes, string myFile, ARParam arParams)
         {
-
             //Data.Clear();
 
-            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(imageBytes, false);
-            ARToolKitFunctions.Instance.arwGetProjectionMatrix(myNear, myFar, Data.ProjMatrix);
+            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(imageBytes, true);
+
+            double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners);
+            if (!retB) return;
+            var mapperMatrix = MatrixFromArray(mv);
+            var cornersErr = new Emgu.CV.Util.VectorOfPointF();
+
+            for (int markerID = 0; markerID < 101; markerID++) {
+
+                retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv, corners, out numCorners);
+                if (!retB) continue;
+
+                for (int i = 0; i < numCorners; i++) {
+                    cornersErr.Push(new PointF[] { new PointF((float)corners[i * 2], (float)corners[i * 2 + 1]) });
+                }
+
+                //retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv, corners, out numCorners);
+                //if (!retB) continue;
+
+                //var numBarcodes = ARToolKitFunctions.Instance.arwGetTrackablePatternCount(markerID);
+                //for (int i = 0; i < numBarcodes; i++) {
+                //    ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(markerID, i, mv, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+
+                //    if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, barcodeID, mv)) {
+                //        var barcodeMatrix = MatrixFromArray(mv);
+
+                //        barcodeMatrix = Matrix4d.Mult(barcodeMatrix, mapperMatrix);
+                //        mv = ArrayFromMatrix(barcodeMatrix);
+                //        var trans = mdlEmguDetection.OpenGL2Trans(mv);
+
+                //        var pts2d = new List<clsPoint>();
+                //        var cornerPoints = new Emgu.CV.Util.VectorOfPointF();
+                //        pts2d.Add(new clsPoint(-40, -40));
+                //        pts2d.Add(new clsPoint(40, -40));
+                //        pts2d.Add(new clsPoint(40, 40));
+                //        pts2d.Add(new clsPoint(-40, 40));
+
+                //        for (int j = 0; j < pts2d.Count; j++) {
+                //            var pt = mdlEmguDetection.ModelToImageSpace(arParams, trans, pts2d[j]);
+                //            cornerPoints.Push(new PointF[] { new PointF((float)pt.X, (float)pt.Y) });
+                //        }
+                //        cornersErr.Push(cornerPoints.ToArray());
+                //    }
+                //}
+            }
+
+            if (cornersErr.Size > 0) {
+                Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
+                mdlEmguDetection.DrawCornersOnImage(imageCopy, cornersErr, System.Drawing.Color.Red);
+                CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\Corners-" + Path.GetFileNameWithoutExtension(myFile) + ".png", imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
+            }
+
+            //ARToolKitFunctions.Instance.arwGetProjectionMatrix(myNear, myFar, Data.ProjMatrix);
             //ARToolKitFunctions.Instance.arwListTrackables(myMapperMarkerID);
 
             //for (int i = 0; i <= myMarkerIDs.Count - 1; i++) {
@@ -426,10 +481,19 @@ namespace BatchProcess {
 
         }
 
+        public static Matrix4d MatrixFromArray(double[] mv) {
+            return new Matrix4d(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], 1);
+        }
+
+        public static double[] ArrayFromMatrix(Matrix4d m) {
+            return new double[] { m.M11, m.M12, m.M13, m.M14, m.M21, m.M22, m.M23, m.M24, m.M31, m.M32, m.M33, m.M34, m.M41, m.M42, m.M43, m.M44 };
+        }
+
         private static void DetectMarkerVisible(int myMarkerID) {
 
-            float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMarkerID, myMatrix)) {
+            double[] myMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMarkerID, myMatrix, corners, out int numCorners)) {
                 clsPoint3d pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
                 if (pt.Length < 2000) {
 
@@ -1324,7 +1388,7 @@ namespace BatchProcess {
         }
 
         public static clsPoint3d PointFromInvMatrix(int n, bool lowRes = false) {
-            float[] mv = new float[16];
+            double[] mv = new double[16];
 
             for (int i = 0; i <= 15; i++) {
                 mv[i] = Data.ModelViewMatrix[n][i];
@@ -1332,9 +1396,9 @@ namespace BatchProcess {
             return PointFromInvMatrix(mv);
         }
 
-        public static clsPoint3d PointFromInvMatrix(float[] mv) {
-            OpenTK.Matrix4 myModel = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
-            OpenTK.Matrix4 modelViewInv = OpenTK.Matrix4.Invert(myModel);
+        public static clsPoint3d PointFromInvMatrix(double[] mv) {
+            Matrix4d myModel = new Matrix4d(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
+            Matrix4d modelViewInv = Matrix4d.Invert(myModel);
             return new clsPoint3d(modelViewInv.M41, modelViewInv.M42, modelViewInv.M43);
         }
 
@@ -1496,27 +1560,27 @@ namespace BatchProcess {
 
         public static clsPoint3d UnProjectProject(clsPoint3d p1, int n1, int n2, bool lowRes = false) {
             int i;
-            float[] mv = new float[16];
+            double[] mv = new double[16];
 
             for (i = 0; i <= 15; i++) {
                 mv[i] = Data.ModelViewMatrix[n1][i];
             }
 
-            OpenTK.Matrix4 myModel = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
-            OpenTK.Vector4 vec;
-            vec.X = (float)p1.X;
-            vec.Y = (float)p1.Y;
-            vec.Z = (float)p1.Z;
-            vec.W = 1.0f;
-            OpenTK.Vector4.Transform(ref vec, ref myModel, out vec);
+            Matrix4d myModel = new Matrix4d(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
+            Vector4d vec;
+            vec.X = p1.X;
+            vec.Y = p1.Y;
+            vec.Z = p1.Z;
+            vec.W = 1.0;
+            Vector4d.Transform(ref vec, ref myModel, out vec);
 
             for (i = 0; i <= 15; i++) {
                 mv[i] = Data.ModelViewMatrix[n2][i];
             }
 
-            myModel = new OpenTK.Matrix4(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
-            OpenTK.Matrix4 modelviewInv = OpenTK.Matrix4.Invert(myModel);
-            OpenTK.Vector4.Transform(ref vec, ref modelviewInv, out vec);
+            myModel = new Matrix4d(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
+            Matrix4d modelviewInv = Matrix4d.Invert(myModel);
+            Vector4d.Transform(ref vec, ref modelviewInv, out vec);
 
             return new clsPoint3d(vec.X, vec.Y, vec.Z);
         }

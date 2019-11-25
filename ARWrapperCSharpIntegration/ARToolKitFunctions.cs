@@ -403,7 +403,7 @@ public class ARToolKitFunctions
     /// </summary>
     /// <param name="matrix">Float array to populate with OpenGL compatible projection matrix.</param>
     /// <returns>true if successful, false if an error occurred.</returns>
-    public bool arwGetProjectionMatrix(float nearPlane, float farPlane, float[] matrix) {
+    public bool arwGetProjectionMatrix(float nearPlane, float farPlane, double[] matrix) {
         return ARNativePlugin.arwGetProjectionMatrix(nearPlane, farPlane, matrix);
     }
 
@@ -746,34 +746,17 @@ public class ARToolKitFunctions
     //    return false;
     //}
 
-    public bool arwQueryMarkerTransformation(int markerID, float[] matrix) {
-        return ARNativePlugin.arwQueryTrackableVisibilityAndTransformation(markerID, matrix);
+    public bool arwQueryMarkerTransformation(int markerID, double[] matrix, double[] corners, out int numCorners) {
+        return ARNativePlugin.arwQueryTrackableVisibilityAndTransformation(markerID, matrix, corners, out numCorners);
     }
 
-    public bool arwQueryTrackableMapperTransformation(int gMapUID, int trackableUID, float[] matrix) {
+    public bool arwQueryTrackableMapperTransformation(int gMapUID, int trackableUID, double[] matrix) {
         GCHandle handle1 = GCHandle.Alloc(matrix, GCHandleType.Pinned);
         IntPtr address1 = handle1.AddrOfPinnedObject();
 
         bool ret = ARNativePlugin.arwQueryTrackableMapperTransformation(gMapUID, trackableUID, address1);
         handle1.Free();
         return ret;
-    }
-
-    public bool arwLastUpdateSuccessful(int gMapUID, out int numMarkers, out int numSuccessfulUpdates, float[] matrix) {
-        GCHandle handle1 = GCHandle.Alloc(matrix, GCHandleType.Pinned);
-        IntPtr address1 = handle1.AddrOfPinnedObject();
-
-        bool ret = ARNativePlugin.arwLastUpdateSuccessful(gMapUID, out numMarkers, out numSuccessfulUpdates, address1);
-        handle1.Free();
-        return ret;
-    }
-
-    public void arwGetMappedMarkerTrans(int gMapUID, int nMarker, float[] trans, out int uid) {
-        GCHandle handle1 = GCHandle.Alloc(trans, GCHandleType.Pinned);
-        IntPtr address1 = handle1.AddrOfPinnedObject();
-
-        ARNativePlugin.arwGetMappedMarkerTrans(gMapUID, nMarker, address1, out uid);
-        handle1.Free();
     }
 
     public void arwResetMapperTrackable(int gMapUID, string cfg) {
@@ -806,8 +789,12 @@ public class ARToolKitFunctions
         ARNativePlugin.arwListTrackables(gMapUID);
     }
 
-    public bool arwGetTrackablePatternConfig(int trackableUID, int patternID, float[] matrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID) {
+    public bool arwGetTrackablePatternConfig(int trackableUID, int patternID, double[] matrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID) {
         return ARNativePlugin.arwGetTrackablePatternConfig(trackableUID, patternID, matrix, out width, out height, out imageSizeX, out imageSizeY, out barcodeID);
+    }
+
+    public int arwGetTrackablePatternCount(int trackableUID) {
+        return ARNativePlugin.arwGetTrackablePatternCount(trackableUID);
     }
 
     public bool arwQueryMarkerTransformationStereo(int markerID, float[] matrixL, float[] matrixR) {
