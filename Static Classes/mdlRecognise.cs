@@ -21,6 +21,8 @@ namespace BatchProcess {
             }
         }
 
+        private static bool UseDatums;
+
         static Logger myLogger;
 
         public static double myPGAngleTol = 15;
@@ -125,8 +127,9 @@ namespace BatchProcess {
         public static float myNear;
         public static float myFar;
 
-        public static bool StartTracking(int hiResX, int hiResY)
+        public static bool StartTracking(int hiResX, int hiResY, bool useDatums)
         {
+            UseDatums = useDatums;
 
             //Only initialize ARToolkit the first time this is run
             if (myMarkerIDs.Count > 0) {
@@ -159,8 +162,11 @@ namespace BatchProcess {
             ARToolKitFunctions.Instance.arwSetLogLevel(0);
             myLogger = new Logger();
 
-            //AddMarkersToARToolKit();
-            AddDatumMarkersToARToolKit();
+            if (!useDatums) {
+                AddMarkersToARToolKit();
+            } else {
+                AddDatumMarkersToARToolKit();
+            }
 
             //mySuspectedMarkers.Clear()
             if (StepMarker.Confirmed == false) {
@@ -172,7 +178,6 @@ namespace BatchProcess {
         }
 
         public static void AddMarkersToARToolKit() {
-            int markerID;
 
             //!!!IMPORTANT NOTE:
             //In arConfig.h:
@@ -183,46 +188,12 @@ namespace BatchProcess {
             ARToolKitFunctions.Instance.arwSetMatrixCodeType((int)AR_MATRIX_CODE_TYPE.AR_MATRIX_CODE_4x4);
             //ARToolKitFunctions.Instance.arwSetMarkerExtractionMode(AR_USE_TRACKING_HISTORY_V2); //This doesn't work in ARToolKitX
             ARToolKitFunctions.Instance.arwSetVideoThreshold(50);
-            ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
-            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(true);
+            //ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
+            ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_AUTO_BRACKETING);
+            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(false);
 
             myMarkerIDs.Clear();
             DebugStringList.Clear();
-
-
-            //for (int i = 1; i <= 50; i++) {
-            //    markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (1 + (i - 1) * 2).ToString("00") + ";80");
-            //    ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            //    myMarkerIDs.Add(markerID);
-            //    markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (i * 2).ToString("00") + ";80");
-            //    ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            //}
-
-            //for (int i = 1; i <= 50; i++) {
-            //    markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (129 + (i - 1) * 2).ToString("00") + ";80");
-            //    ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            //    myMarkerIDs.Add(markerID);
-            //    markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + (128 + i * 2).ToString("00") + ";80");
-            //    ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            //}
-
-            //myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;121;80;");
-            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myGFMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;122;80;");
-            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;123;80;");
-            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;124;80;");
-            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-
-            //myStepMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;125;80;");
-            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myStepMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;126;80;");
-            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;127;80;");
-            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            //markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;128;80;");
-            //ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
 
             for (int i = 1; i <= 100; i++) {
                 myMarkerIDs.Add(ARToolKitFunctions.Instance.arwAddMarker("multi;data/MarkerLarge" + i.ToString("00") + ".dat"));
@@ -315,7 +286,8 @@ namespace BatchProcess {
             ARToolKitFunctions.Instance.arwSetMatrixCodeType((int)AR_MATRIX_CODE_TYPE.AR_MATRIX_CODE_5x5_BCH_22_12_5);
             //ARToolKitFunctions.Instance.arwSetMarkerExtractionMode(AR_USE_TRACKING_HISTORY_V2); //This doesn't work in ARToolKitX
             ARToolKitFunctions.Instance.arwSetVideoThreshold(50);
-            ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
+            //ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
+            ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_AUTO_ADAPTIVE);
             ARToolKitFunctions.Instance.arwSetCornerRefinementMode(true);
 
             myMarkerIDs.Clear();
@@ -396,57 +368,78 @@ namespace BatchProcess {
         {
             //Data.Clear();
 
-            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(imageBytes, true);
+            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(imageBytes, UseDatums);
 
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners);
             if (!retB) return;
             var mapperMatrix = MatrixFromArray(mv);
-            var cornersErr = new Emgu.CV.Util.VectorOfPointF();
+            var imagePoints = new Emgu.CV.Util.VectorOfPointF();
+            var cornerPoints = new Emgu.CV.Util.VectorOfPointF();
 
             for (int markerID = 0; markerID < 101; markerID++) {
 
-                retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv, corners, out numCorners);
+                double[] mv2 = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv2, corners, out numCorners);
                 if (!retB) continue;
 
                 for (int i = 0; i < numCorners; i++) {
-                    cornersErr.Push(new PointF[] { new PointF((float)corners[i * 2], (float)corners[i * 2 + 1]) });
+                    double ox, oy;
+                    if (!UseDatums) {
+                        mdlEmguCalibration.arParamIdeal2Observ(arParams.dist_factor, corners[i * 2], corners[i * 2 + 1], out ox, out oy, arParams.dist_function_version);
+                    } else { //For datums, imagePoints are already in Observ coordinates
+                        ox = corners[i * 2];
+                        oy = corners[i * 2 + 1];
+                    }
+                    imagePoints.Push(new PointF[] { new PointF((float)ox, (float)oy) });
                 }
 
-                //retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv, corners, out numCorners);
-                //if (!retB) continue;
+                var numBarcodes = ARToolKitFunctions.Instance.arwGetTrackablePatternCount(markerID);
+                for (int i = 0; i < numBarcodes; i++) {
+                    ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(markerID, i, mv, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
 
-                //var numBarcodes = ARToolKitFunctions.Instance.arwGetTrackablePatternCount(markerID);
-                //for (int i = 0; i < numBarcodes; i++) {
-                //    ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(markerID, i, mv, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+                    if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, barcodeID, mv)) {
+                        var barcodeMatrix = MatrixFromArray(mv);
 
-                //    if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, barcodeID, mv)) {
-                //        var barcodeMatrix = MatrixFromArray(mv);
+                        barcodeMatrix = Matrix4d.Mult(barcodeMatrix, mapperMatrix);
+                        mv = ArrayFromMatrix(barcodeMatrix);
+                        var trans = mdlEmguDetection.OpenGL2Trans(mv);
 
-                //        barcodeMatrix = Matrix4d.Mult(barcodeMatrix, mapperMatrix);
-                //        mv = ArrayFromMatrix(barcodeMatrix);
-                //        var trans = mdlEmguDetection.OpenGL2Trans(mv);
+                        var pts2d = new List<clsPoint>();
+                        var cornerPoints2 = new Emgu.CV.Util.VectorOfPointF();
+                        if (!UseDatums) {
+                            pts2d.Add(new clsPoint(-40, -40));
+                            pts2d.Add(new clsPoint(40, -40));
+                            pts2d.Add(new clsPoint(40, 40));
+                            pts2d.Add(new clsPoint(-40, 40));
+                        } else {
+                            if (barcodeID == 0 || barcodeID == 1) {
+                                pts2d.Add(new clsPoint(-128.5, -85));
+                                pts2d.Add(new clsPoint(128.5, -85));
+                                pts2d.Add(new clsPoint(128.5, 85));
+                                pts2d.Add(new clsPoint(-128.5, 85));
+                            } else {
+                                pts2d.Add(new clsPoint(-55, -30));
+                                pts2d.Add(new clsPoint(55, -30));
+                                pts2d.Add(new clsPoint(55, 30));
+                                pts2d.Add(new clsPoint(-55, 30));
+                            }
+                        }
 
-                //        var pts2d = new List<clsPoint>();
-                //        var cornerPoints = new Emgu.CV.Util.VectorOfPointF();
-                //        pts2d.Add(new clsPoint(-40, -40));
-                //        pts2d.Add(new clsPoint(40, -40));
-                //        pts2d.Add(new clsPoint(40, 40));
-                //        pts2d.Add(new clsPoint(-40, 40));
-
-                //        for (int j = 0; j < pts2d.Count; j++) {
-                //            var pt = mdlEmguDetection.ModelToImageSpace(arParams, trans, pts2d[j]);
-                //            cornerPoints.Push(new PointF[] { new PointF((float)pt.X, (float)pt.Y) });
-                //        }
-                //        cornersErr.Push(cornerPoints.ToArray());
-                //    }
-                //}
+                        for (int j = 0; j < pts2d.Count; j++) {
+                            var pt = mdlEmguDetection.ModelToImageSpace(arParams, trans, pts2d[j]);
+                            cornerPoints2.Push(new PointF[] { new PointF((float)pt.X, (float)pt.Y) });
+                        }
+                        cornerPoints.Push(cornerPoints2.ToArray());
+                    }
+                }
             }
 
-            if (cornersErr.Size > 0) {
+            if (imagePoints.Size > 0 || cornerPoints.Size > 0) {
                 Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
-                mdlEmguDetection.DrawCornersOnImage(imageCopy, cornersErr, System.Drawing.Color.Red);
+                if (imagePoints.Size > 0) mdlEmguDetection.DrawCornersOnImage(imageCopy, imagePoints, System.Drawing.Color.Green);
+                if (cornerPoints.Size > 0) mdlEmguDetection.DrawCornersOnImage(imageCopy, cornerPoints, System.Drawing.Color.Red);
                 CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\Corners-" + Path.GetFileNameWithoutExtension(myFile) + ".png", imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
             }
 

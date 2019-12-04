@@ -112,6 +112,8 @@ namespace BatchProcess {
             List<string> myFiles = new List<string>();
             int nFiles = 0;
 
+            bool USE_DATUMS = false;
+
             //myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\Survey 2";
             myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\DatumSurvey\\Survey";
             ret = myDlg.ShowDialog();
@@ -138,7 +140,7 @@ namespace BatchProcess {
                 }
             }
             ARToolKitFunctions.Instance.arwInitialiseAR();
-            StartTracking(myVideoWidth, myVideoHeight);
+            StartTracking(myVideoWidth, myVideoHeight, USE_DATUMS);
             string myCameraFile = "data\\calib.dat";
             var arParams = mdlEmguCalibration.LoadCameraFromFile(myCameraFile);
 
@@ -236,25 +238,25 @@ namespace BatchProcess {
 
             var pts = new List<clsPGPoint>();
             for (int i = 0; i <= myMarkerIDs.Count - 1; i++) {
-                DetectMapperMarkerVisible(myMarkerIDs[i], ref pts);
+                DetectMapperMarkerVisible(myMarkerIDs[i], ref pts, USE_DATUMS);
             }
 
-            DetectMapperMarkerVisible(myGFMarkerID, ref pts);
-            DetectMapperMarkerVisible(myStepMarkerID, ref pts);
-            DetectMapperMarkerVisible(myLeftBulkheadMarkerID, ref pts);
-            DetectMapperMarkerVisible(myRightBulkheadMarkerID, ref pts);
-            DetectMapperMarkerVisible(myDoorHingeRightMarkerID, ref pts);
-            DetectMapperMarkerVisible(myDoorFrameRightMarkerID, ref pts);
-            DetectMapperMarkerVisible(myDoorHingeLeftMarkerID, ref pts);
-            DetectMapperMarkerVisible(myDoorFrameLeftMarkerID, ref pts);
-            DetectMapperMarkerVisible(myObstruct1MarkerID, ref pts);
-            DetectMapperMarkerVisible(myObstruct2MarkerID, ref pts);
-            DetectMapperMarkerVisible(myObstruct3MarkerID, ref pts);
-            DetectMapperMarkerVisible(myObstruct4MarkerID, ref pts);
-            DetectMapperMarkerVisible(myWall1MarkerID, ref pts);
-            DetectMapperMarkerVisible(myWall2MarkerID, ref pts);
-            DetectMapperMarkerVisible(myWall3MarkerID, ref pts);
-            DetectMapperMarkerVisible(myWall4MarkerID, ref pts);
+            DetectMapperMarkerVisible(myGFMarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myStepMarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myLeftBulkheadMarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myRightBulkheadMarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myDoorHingeRightMarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myDoorFrameRightMarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myDoorHingeLeftMarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myDoorFrameLeftMarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myObstruct1MarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myObstruct2MarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myObstruct3MarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myObstruct4MarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myWall1MarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myWall2MarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myWall3MarkerID, ref pts, USE_DATUMS);
+            DetectMapperMarkerVisible(myWall4MarkerID, ref pts, USE_DATUMS);
 
             pts.Sort((p1, p2) => p1.z.CompareTo(p2.z));
 
@@ -270,7 +272,7 @@ namespace BatchProcess {
             MessageBox.Show("Finished");
         }
 
-        private static void DetectMapperMarkerVisible(int myMarkerID, ref List<clsPGPoint> pts) {
+        private static void DetectMapperMarkerVisible(int myMarkerID, ref List<clsPGPoint> pts, bool useDatums) {
 
             double[] myMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myMarkerID, 0, myMatrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
@@ -280,12 +282,22 @@ namespace BatchProcess {
 
                 OpenTK.Matrix4d matrix = new OpenTK.Matrix4d(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
                 var pt = new OpenTK.Vector4d(mv[12], mv[13], mv[14], 0);
-                if (myMarkerID < 50) {
-                    pt = new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1);
-                    pt = OpenTK.Vector4d.Transform(pt, matrix);
-                } else if (myMarkerID < 100) {
-                    pt = new OpenTK.Vector4d(140.0, 45.0, 0.0f, 1);
-                    pt = OpenTK.Vector4d.Transform(pt, matrix);
+                if (!useDatums) {
+                    if (myMarkerID < 50) {
+                        pt = new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1);
+                        pt = OpenTK.Vector4d.Transform(pt, matrix);
+                    } else if (myMarkerID < 100) {
+                        pt = new OpenTK.Vector4d(140.0, 45.0, 0.0f, 1);
+                        pt = OpenTK.Vector4d.Transform(pt, matrix);
+                    }
+                } else {
+                    if (myMarkerID - 2 > 0 && myMarkerID - 2 < 50) {
+                        pt = new OpenTK.Vector4d(160.0f, -45.0f, 0.0f, 1);
+                        pt = OpenTK.Vector4d.Transform(pt, matrix);
+                    } else if (myMarkerID - 2 >= 50 && myMarkerID - 2 < 100) {
+                        pt = new OpenTK.Vector4d(160.0, 45.0, 0.0f, 1);
+                        pt = OpenTK.Vector4d.Transform(pt, matrix);
+                    }
                 }
 
                 pts.Add(new clsPGPoint(pt.X, pt.Y, pt.Z, myMarkerID, barcodeID));
