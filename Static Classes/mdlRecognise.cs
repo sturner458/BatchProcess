@@ -189,8 +189,8 @@ namespace BatchProcess {
             //ARToolKitFunctions.Instance.arwSetMarkerExtractionMode(AR_USE_TRACKING_HISTORY_V2); //This doesn't work in ARToolKitX
             ARToolKitFunctions.Instance.arwSetVideoThreshold(50);
             //ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
-            ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_AUTO_BRACKETING);
-            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(false);
+            ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
+            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(true);
 
             myMarkerIDs.Clear();
             DebugStringList.Clear();

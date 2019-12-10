@@ -922,7 +922,8 @@ namespace BatchProcess {
 
             DrawCornersOnImage(myImage, grayImage, Path.GetDirectoryName(myImageFile) + "\\" + System.IO.Path.GetFileNameWithoutExtension(myImageFile) + "-Distorted.png", out Emgu.CV.Util.VectorOfPointF cornerPoints);
 
-            ARParam param = LoadCameraFromFile(myFile);
+            //var param = LoadCameraFromFile(myFile);
+            var param = LoadCameraFromFile2(myFile);
 
             //Emgu.CV.Util.VectorOfPointF newCornerPoints = new Emgu.CV.Util.VectorOfPointF();
             //for (i = 0; i < cornerPoints.Size; i++) {
@@ -987,6 +988,68 @@ namespace BatchProcess {
             //param.dist_factor[15] /= s;
             //param.dist_factor[16] = 1.0;
             param.dist_function_version = 5;
+
+            return param;
+        }
+
+        public static ARParam LoadCameraFromFile2(string myFile) {
+            FileStream sr = File.Open(myFile, FileMode.Open, FileAccess.Read);
+            BinaryReader br = new BinaryReader(sr);
+
+            ARParam param = new ARParam();
+            param.xsize = byteSwapInt(br.ReadInt32());
+            param.ysize = byteSwapInt(br.ReadInt32());
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 4; j++) {
+                    param.mat[i, j] = byteSwapDouble(br.ReadDouble());
+                }
+            }
+            for (int i = 0; i < 17; i++) {
+                param.dist_factor[i] = byteSwapDouble(br.ReadDouble());
+            }
+            br.Close();
+            sr.Close();
+
+            double s = param.dist_factor[16];
+            param.mat[0, 0] *= s;
+            param.mat[0, 1] *= s;
+            param.mat[1, 0] *= s;
+            param.mat[1, 1] *= s;
+            param.dist_factor[12] /= s;
+            param.dist_factor[13] /= s;
+            param.dist_factor[14] /= s;
+            param.dist_factor[15] /= s;
+            param.dist_factor[16] = 1.0;
+            param.dist_function_version = 5;
+
+            return param;
+        }
+
+        public static ARParam LoadCameraFromFile4(string myFile) {
+            FileStream sr = File.Open(myFile, FileMode.Open, FileAccess.Read);
+            BinaryReader br = new BinaryReader(sr);
+
+            ARParam param = new ARParam();
+            param.xsize = byteSwapInt(br.ReadInt32());
+            param.ysize = byteSwapInt(br.ReadInt32());
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 4; j++) {
+                    param.mat[i, j] = byteSwapDouble(br.ReadDouble());
+                }
+            }
+            for (int i = 0; i < 9; i++) {
+                param.dist_factor[i] = byteSwapDouble(br.ReadDouble());
+            }
+            br.Close();
+            sr.Close();
+
+            double s = param.dist_factor[8];
+            param.mat[0, 0] *= s;
+            param.mat[0, 1] *= s;
+            param.mat[1, 0] *= s;
+            param.mat[1, 1] *= s;
+            param.dist_factor[8] = 1.0;
+            param.dist_function_version = 4;
 
             return param;
         }
@@ -1085,7 +1148,7 @@ namespace BatchProcess {
             CvInvoke.Imwrite(outFileName, imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 5));
         }
 
-        static double CalculateProjectionErrorsForImage(Mat image ,Mat cameraMatrix, Mat distortionCoeffs, ARParam param) {
+        static double CalculateProjectionErrorsForImage(Mat image, Mat cameraMatrix, Mat distortionCoeffs, ARParam param) {
 
             Mat rvec = new Mat();
             Mat tvec = new Mat();

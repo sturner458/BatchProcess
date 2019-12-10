@@ -26,24 +26,25 @@ namespace BatchProcess {
 
         private void button1_Click(object sender, EventArgs e)
         {
-            FolderBrowserDialog myDlg = new FolderBrowserDialog();
-            DialogResult ret;
-            string myFolder;
+            var myDlg = new FolderBrowserDialog();
 
             myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos";
-            ret = myDlg.ShowDialog();
+            var ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;
-            myFolder = myDlg.SelectedPath;
-
+            var myFolder = myDlg.SelectedPath;
+            var myFiles = new List<string>();
             int myWidth = 0, myHeight = 0, nImages = 0, nCount = 0;
 
             foreach (string myFile in Directory.GetFiles(myFolder)) {
-                if (!(myFile.ToLower().EndsWith(".png") || myFile.ToLower().EndsWith(".jpg"))) continue;
-                nImages = nImages + 1;
-                if (myWidth == 0) {
-                    Image myImage = Image.FromFile(myFile);
-                    myWidth = myImage.Width;
-                    myHeight = myImage.Height;
+                if (Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("calibration") && myFile.ToLower().EndsWith(".png") && !myFile.ToLower().Contains("-adj.png")) {
+                    if (Path.GetFileNameWithoutExtension(myFile).Contains("17")) continue;
+                    nImages = nImages + 1;
+                    myFiles.Add(myFile);
+                    if (myWidth == 0) {
+                        Image myImage = Image.FromFile(myFile);
+                        myWidth = myImage.Width;
+                        myHeight = myImage.Height;
+                    }
                 }
             }
 
@@ -52,22 +53,27 @@ namespace BatchProcess {
 
             float[] corners = new float[442];
             int cornerCount;
-            string cornerFile = "C:\\Temp\\CornersARToolkit.txt";
-            if (File.Exists(cornerFile)) {
-                try {
-                    File.Delete(cornerFile);
-                }
-                catch (Exception ex) {
-                    string s = ex.ToString();
-                }
-            }
+            //string cornerFile = "C:\\Temp\\CornersARToolkit.txt";
+            //if (File.Exists(cornerFile)) {
+            //    try {
+            //        File.Delete(cornerFile);
+            //    }
+            //    catch (Exception ex) {
+            //        string s = ex.ToString();
+            //    }
+            //}
 
-            StreamWriter sw = new StreamWriter(cornerFile);
-            foreach (string myFile in Directory.GetFiles(myFolder)) {
-                if (!(myFile.ToLower().EndsWith(".png") || myFile.ToLower().EndsWith(".jpg"))) continue;
+            myFiles.Sort(new AlphaNumericCompare());
 
+            //StreamWriter sw = new StreamWriter(cornerFile);
+            foreach (string myFile in myFiles) {
                 var image = new Image<Gray, byte>(myFile);
                 var size = image.Width * image.Height;
+
+                var cornerPoints = new Emgu.CV.Util.VectorOfPointF();
+                var mBoardSize = new Size(13, 17);
+                var res = CvInvoke.FindChessboardCorners(image, mBoardSize, cornerPoints);
+
                 byte[] imageBytes = new Byte[size];
                 System.Buffer.BlockCopy(image.Data, 0, imageBytes, 0, size);
 
@@ -75,15 +81,24 @@ namespace BatchProcess {
 
                 int result = ARToolKitFunctions.Instance.arwFindChessboardCorners(corners, out cornerCount, imageBytes);
 
+                var imagePoints = new Emgu.CV.Util.VectorOfPointF();
                 int l = 0;
                 for (int i = 0; i < 17; i++) {
                     for (int j = 0; j < 13; j++) {
-                        sw.WriteLine(corners[l * 2].ToString() + '\t' + corners[l * 2 + 1].ToString());
+                        //sw.WriteLine(corners[l * 2].ToString() + '\t' + corners[l * 2 + 1].ToString());
+                        imagePoints.Push(new PointF[] { new PointF(corners[l * 2], corners[l * 2 + 1]) });
                         l++;
                     }
                 }
 
                 if (result == 1) {
+
+                    if (imagePoints.Size > 0) {
+                        Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
+                        if (imagePoints.Size > 0) mdlEmguDetection.DrawCornersOnImage(imageCopy, imagePoints, System.Drawing.Color.Green);
+                        CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\Corners-" + Path.GetFileNameWithoutExtension(myFile) + ".png", imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
+                    }
+
                     cornerCount = ARToolKitFunctions.Instance.arwCaptureChessboardCorners();
                     System.Diagnostics.Debug.Print("Processed image " + cornerCount.ToString());
                     if (cornerCount == nImages) {
@@ -101,7 +116,7 @@ namespace BatchProcess {
                 }
 
             }
-            sw.Close();
+            //sw.Close();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -112,13 +127,31 @@ namespace BatchProcess {
             List<string> myFiles = new List<string>();
             int nFiles = 0;
 
+            InitGlobals();
+
             bool USE_DATUMS = false;
 
-            //myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\Survey 2";
-            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\DatumSurvey\\Survey";
+            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\Survey 2";
+            //myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\021219";
             ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;
             myFolder = myDlg.SelectedPath;
+
+            if (File.Exists(Path.Combine(myFolder, "Calib.dat")) && File.Exists(Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"))) {
+                try {
+                    File.Delete(Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"));
+                } catch (Exception ex) {
+                    MessageBox.Show(ex.ToString());
+                    return;
+                }
+            }
+
+            try {
+                File.Copy(Path.Combine(myFolder, "Calib.dat"), Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"));
+            } catch (Exception ex) {
+                MessageBox.Show(ex.ToString());
+                return;
+            }
 
             foreach (string myFile in Directory.GetFiles(myFolder)) {
                 if (myFile.ToLower().EndsWith("-debug.png")) {
@@ -129,8 +162,8 @@ namespace BatchProcess {
                         string s = ex.ToString();
                     }
                 }
-                if (Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("survey") && myFile.ToLower().EndsWith(".png")) {
-                    myFiles.Add(Path.GetFileName(myFile));
+                if (Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("survey") && !myFile.ToLower().EndsWith("-adj.png")) {
+                    myFiles.Add(myFile);
                     if (myVideoHeight == 0) {
                         Image myImage = Image.FromFile(myFile);
                         myVideoWidth = myImage.Width;
@@ -142,99 +175,28 @@ namespace BatchProcess {
             ARToolKitFunctions.Instance.arwInitialiseAR();
             StartTracking(myVideoWidth, myVideoHeight, USE_DATUMS);
             string myCameraFile = "data\\calib.dat";
-            var arParams = mdlEmguCalibration.LoadCameraFromFile(myCameraFile);
-
-            //TEMP:
-            myVerticalVector.X = -0.00706971850143557;
-            myVerticalVector.Y = -0.00875298481130118;
-            myVerticalVector.Z = 0.999936700165167;
-            myVerticalVector.X = 0.0;
-            myVerticalVector.Y = 0.0;
-            myVerticalVector.Z = 0.1;
+            var arParams = mdlEmguCalibration.LoadCameraFromFile2(myCameraFile);
 
             myFiles.Sort(new AlphaNumericCompare());
-            
+
             foreach (string myFile in myFiles) {
-                if (Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("survey") && myFile.ToLower().EndsWith(".png")) {
-                    var image = new Image<Gray, byte>(myFolder + "\\" + myFile);
-                    var size = image.Width * image.Height;
-                    byte[] imageBytes = new Byte[size];
-                    System.Buffer.BlockCopy(image.Data, 0, imageBytes, 0, size);
-                    //byte[] imageBytes = ImageToGrayscaleByteArray((Bitmap)Image.FromFile(myFolder + "\\" + myFile));
-                    nFiles = nFiles + 1;
-                    lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
-                    Application.DoEvents();
-                    var exceptionThrown = false;
-                    try {
-                        RecogniseMarkers(imageBytes, myFolder + "\\" + myFile, arParams);
-                    } catch (Exception ex) {
-                        exceptionThrown = true;
-                        Console.WriteLine(ex.ToString());
-                    }
-                    if (exceptionThrown) break;
-                    Console.WriteLine("Processed " + nFiles + " out of " + myFiles.Count + " photos - " + myFile);
-
-                    //ARToolKitFunctions.Instance.arwSetVideoDebugMode(true);
-                    //ARToolKitFunctions.Instance.arwUpdateARToolKit(imageBytes, 2);
-                    //Color32[] myPixels = new Color32[myVideoWidth * myVideoHeight];
-                    //byte[] myBytes = new byte[myVideoWidth * myVideoHeight * myVideoPixelSize];
-                    //ARToolKitFunctions.Instance.arwUpdateTexture32(myPixels);
-                    //for (int i = 0; i <= myPixels.GetUpperBound(0); i++) {
-                    //    if (myPixels[i].g < 128) {
-                    //        myBytes[i * myVideoPixelSize] = 0;
-                    //        myBytes[i * myVideoPixelSize + 1] = 0;
-                    //        myBytes[i * myVideoPixelSize + 2] = 0;
-                    //        myBytes[i * myVideoPixelSize + 3] = 255;
-                    //    }
-                    //    else {
-                    //        myBytes[i * myVideoPixelSize] = 255;
-                    //        myBytes[i * myVideoPixelSize + 1] = 255;
-                    //        myBytes[i * myVideoPixelSize + 2] = 255;
-                    //        myBytes[i * myVideoPixelSize + 3] = 255;
-                    //    }
-                    //}
-
-                    //Image newImage = ImageFromRawRgbaArray(myBytes, myVideoWidth, myVideoHeight);
-                    //if (File.Exists(myFile.ToLower().Replace(".jpg", "-debug.png"))) {
-                    //    try {
-                    //        File.Delete(myFile.ToLower().Replace(".jpg", "-debug.png"));
-                    //    }
-                    //    catch (Exception ex) {
-                    //        string s = ex.ToString();
-                    //    }
-                    //}
-                    //newImage.Save(myFile.ToLower().Replace(".jpg", "-debug.png"), ImageFormat.Png);
-                    //ARToolKitFunctions.Instance.arwSetVideoDebugMode(false);
+                var image = new Image<Gray, byte>(myFile);
+                var size = image.Width * image.Height;
+                byte[] imageBytes = new Byte[size];
+                System.Buffer.BlockCopy(image.Data, 0, imageBytes, 0, size);
+                nFiles = nFiles + 1;
+                lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
+                Application.DoEvents();
+                var exceptionThrown = false;
+                try {
+                    RecogniseMarkers(imageBytes, myFile, arParams);
+                } catch (Exception ex) {
+                    exceptionThrown = true;
+                    Console.WriteLine(ex.ToString());
                 }
+                if (exceptionThrown) break;
+                Console.WriteLine("Processed " + nFiles + " out of " + myFiles.Count + " photos - " + Path.GetFileName(myFile));
             }
-
-            //if (mySuspectedMarkers.Count > 0) {
-            //    ProcessMarkers(true);
-            //}
-
-
-            ////Now clear all data and re-process:
-            //mySuspectedMarkers.Clear();
-            //for (int i = 0; i < ConfirmedMarkers.Count; i++) {
-            //    for (int j = 0; j < ConfirmedMarkers[i].History.Count; j++) {
-            //        mySuspectedMarkers.Add(ConfirmedMarkers[i].History[j].Copy());
-            //    }
-            //}
-            //ConfirmedMarkers.Clear();
-
-            //int n = -1;
-            //while (n < ConfirmedMarkers.Count && mySuspectedMarkers.Count > 0) {
-            //    n = ConfirmedMarkers.Count;
-            //    ProcessMarkers(true);
-            //}
-
-            //myVerticalVector.X = -0.00706971850143557;
-            //myVerticalVector.Y = -0.00875298481130118;
-            //myVerticalVector.Z = 0.999936700165167;
-
-            //for (int i = 0; i < ConfirmedMarkers.Count; i++) {
-            //    RelevelMarkerFromGF(ConfirmedMarkers[i]);
-            //}
 
             var pts = new List<clsPGPoint>();
             for (int i = 0; i <= myMarkerIDs.Count - 1; i++) {
@@ -291,7 +253,7 @@ namespace BatchProcess {
                         pt = OpenTK.Vector4d.Transform(pt, matrix);
                     }
                 } else {
-                    if (myMarkerID - 2 > 0 && myMarkerID - 2 < 50) {
+                    if (myMarkerID - 2 >= 0 && myMarkerID - 2 < 50) {
                         pt = new OpenTK.Vector4d(160.0f, -45.0f, 0.0f, 1);
                         pt = OpenTK.Vector4d.Transform(pt, matrix);
                     } else if (myMarkerID - 2 >= 50 && myMarkerID - 2 < 100) {
@@ -602,14 +564,70 @@ namespace BatchProcess {
 
             mdlEmguDetection.DetectDatums(myImageFile);
         }
+
+        private void btnBrightness_Click(object sender, EventArgs e) {
+            var myDlg = new FolderBrowserDialog();
+            string myFolder;
+            List<string> myFiles = new List<string>();
+            int nFiles = 0;
+
+            myDlg.SelectedPath = "C:\\Customer\\Stannah\\PhotoGrammetry\\Photos\\survey 1 05-12-19\\survey 1\\";
+            //myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\Survey 2";
+            var ret = myDlg.ShowDialog();
+            if (ret != DialogResult.OK) return;
+            myFolder = myDlg.SelectedPath;
+
+            foreach (string myFile in Directory.GetFiles(myFolder)) {
+                if ((Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("survey") || Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("calibration")) && myFile.ToLower().EndsWith(".png") && !myFile.ToLower().Contains("-adj")) {
+                    myFiles.Add(myFile);
+                }
+            }
+
+            foreach (string myFile in myFiles) {
+                nFiles++;
+                BrightenImage(myFile);
+                lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
+                Application.DoEvents();
+            }
+
+        }
+
+        void BrightenImage(string myFile) {
+            using (var originalImage = (Bitmap)Image.FromFile(myFile)) {
+                using (var adjustedImage = new Bitmap(originalImage.Width, originalImage.Height)) {
+                    float brightness = -1.0f; // darker
+                    float contrast = 2.0f; // twice the contrast
+                    float gamma = 1.0f; // half the gamma
+
+                    // create matrix that will brighten and contrast the image
+                    float[][] ptsArray ={
+                    new float[] {contrast, 0, 0, 0, 0}, // scale red
+                    new float[] {0, contrast, 0, 0, 0}, // scale green
+                    new float[] {0, 0, contrast, 0, 0}, // scale blue
+                    new float[] {0, 0, 0, 1.0f, 0}, // don't scale alpha
+                    new float[] { brightness, brightness, brightness, 0, 1}
+                };
+
+                    ImageAttributes imageAttributes = new ImageAttributes();
+                    imageAttributes.ClearColorMatrix();
+                    imageAttributes.SetColorMatrix(new ColorMatrix(ptsArray), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+                    imageAttributes.SetGamma(gamma, ColorAdjustType.Bitmap);
+                    Graphics g = Graphics.FromImage(adjustedImage);
+                    g.DrawImage(originalImage, new Rectangle(0, 0, adjustedImage.Width, adjustedImage.Height)
+                        , 0, 0, originalImage.Width, originalImage.Height,
+                        GraphicsUnit.Pixel, imageAttributes);
+                    adjustedImage.Save(Path.Combine(Path.GetDirectoryName(myFile), Path.GetFileNameWithoutExtension(myFile) + "-adj.png"));
+                }
+            }
+        }
     }
 
     class AlphaNumericCompare : IComparer<string> {
         public int Compare(string lhs, string rhs)
         {
             var numExtract = new Regex("[0-9]+");
-            int lhsNumber = int.Parse(numExtract.Match(lhs).Value);
-            int rhsNumber = int.Parse(numExtract.Match(rhs).Value);
+            int lhsNumber = int.Parse(numExtract.Match(Path.GetFileNameWithoutExtension(lhs)).Value);
+            int rhsNumber = int.Parse(numExtract.Match(Path.GetFileNameWithoutExtension(rhs)).Value);
             return lhsNumber.CompareTo(rhsNumber);
         }
     }

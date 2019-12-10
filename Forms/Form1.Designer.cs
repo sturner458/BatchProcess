@@ -35,12 +35,13 @@
             this.btnUndistort = new System.Windows.Forms.Button();
             this.btnDetectMarkers = new System.Windows.Forms.Button();
             this.btnDetectDatums = new System.Windows.Forms.Button();
+            this.btnBrightness = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnCalibrate
             // 
             this.btnCalibrate.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnCalibrate.Location = new System.Drawing.Point(22, 30);
+            this.btnCalibrate.Location = new System.Drawing.Point(27, 30);
             this.btnCalibrate.Name = "btnCalibrate";
             this.btnCalibrate.Size = new System.Drawing.Size(86, 47);
             this.btnCalibrate.TabIndex = 0;
@@ -51,7 +52,7 @@
             // btnProcessPhotos
             // 
             this.btnProcessPhotos.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnProcessPhotos.Location = new System.Drawing.Point(244, 30);
+            this.btnProcessPhotos.Location = new System.Drawing.Point(249, 30);
             this.btnProcessPhotos.Name = "btnProcessPhotos";
             this.btnProcessPhotos.Size = new System.Drawing.Size(86, 47);
             this.btnProcessPhotos.TabIndex = 1;
@@ -62,7 +63,7 @@
             // btnImportDiagnostics
             // 
             this.btnImportDiagnostics.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnImportDiagnostics.Location = new System.Drawing.Point(355, 30);
+            this.btnImportDiagnostics.Location = new System.Drawing.Point(360, 30);
             this.btnImportDiagnostics.Name = "btnImportDiagnostics";
             this.btnImportDiagnostics.Size = new System.Drawing.Size(86, 47);
             this.btnImportDiagnostics.TabIndex = 2;
@@ -81,7 +82,7 @@
             // btnImportDiagnostics2
             // 
             this.btnImportDiagnostics2.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnImportDiagnostics2.Location = new System.Drawing.Point(466, 30);
+            this.btnImportDiagnostics2.Location = new System.Drawing.Point(471, 30);
             this.btnImportDiagnostics2.Name = "btnImportDiagnostics2";
             this.btnImportDiagnostics2.Size = new System.Drawing.Size(86, 47);
             this.btnImportDiagnostics2.TabIndex = 4;
@@ -92,7 +93,7 @@
             // btnReadCalibDat
             // 
             this.btnReadCalibDat.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnReadCalibDat.Location = new System.Drawing.Point(577, 30);
+            this.btnReadCalibDat.Location = new System.Drawing.Point(582, 30);
             this.btnReadCalibDat.Name = "btnReadCalibDat";
             this.btnReadCalibDat.Size = new System.Drawing.Size(86, 47);
             this.btnReadCalibDat.TabIndex = 5;
@@ -103,7 +104,7 @@
             // btnOpenCV
             // 
             this.btnOpenCV.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnOpenCV.Location = new System.Drawing.Point(133, 30);
+            this.btnOpenCV.Location = new System.Drawing.Point(138, 30);
             this.btnOpenCV.Name = "btnOpenCV";
             this.btnOpenCV.Size = new System.Drawing.Size(86, 47);
             this.btnOpenCV.TabIndex = 6;
@@ -114,7 +115,7 @@
             // btnUndistort
             // 
             this.btnUndistort.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnUndistort.Location = new System.Drawing.Point(688, 30);
+            this.btnUndistort.Location = new System.Drawing.Point(693, 30);
             this.btnUndistort.Name = "btnUndistort";
             this.btnUndistort.Size = new System.Drawing.Size(86, 47);
             this.btnUndistort.TabIndex = 7;
@@ -125,7 +126,7 @@
             // btnDetectMarkers
             // 
             this.btnDetectMarkers.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnDetectMarkers.Location = new System.Drawing.Point(799, 30);
+            this.btnDetectMarkers.Location = new System.Drawing.Point(804, 30);
             this.btnDetectMarkers.Name = "btnDetectMarkers";
             this.btnDetectMarkers.Size = new System.Drawing.Size(86, 47);
             this.btnDetectMarkers.TabIndex = 8;
@@ -136,7 +137,7 @@
             // btnDetectDatums
             // 
             this.btnDetectDatums.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnDetectDatums.Location = new System.Drawing.Point(910, 30);
+            this.btnDetectDatums.Location = new System.Drawing.Point(915, 30);
             this.btnDetectDatums.Name = "btnDetectDatums";
             this.btnDetectDatums.Size = new System.Drawing.Size(86, 47);
             this.btnDetectDatums.TabIndex = 9;
@@ -144,11 +145,22 @@
             this.btnDetectDatums.UseVisualStyleBackColor = true;
             this.btnDetectDatums.Click += new System.EventHandler(this.btnDetectDatums_Click);
             // 
+            // btnBrightness
+            // 
+            this.btnBrightness.Anchor = System.Windows.Forms.AnchorStyles.Top;
+            this.btnBrightness.Location = new System.Drawing.Point(27, 89);
+            this.btnBrightness.Name = "btnBrightness";
+            this.btnBrightness.Size = new System.Drawing.Size(86, 47);
+            this.btnBrightness.TabIndex = 0;
+            this.btnBrightness.Text = "Adjust Brightness";
+            this.btnBrightness.UseVisualStyleBackColor = true;
+            this.btnBrightness.Click += new System.EventHandler(this.btnBrightness_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1018, 107);
+            this.ClientSize = new System.Drawing.Size(1029, 159);
             this.Controls.Add(this.btnDetectDatums);
             this.Controls.Add(this.btnDetectMarkers);
             this.Controls.Add(this.btnUndistort);
@@ -158,6 +170,7 @@
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.btnImportDiagnostics);
             this.Controls.Add(this.btnProcessPhotos);
+            this.Controls.Add(this.btnBrightness);
             this.Controls.Add(this.btnCalibrate);
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -180,6 +193,7 @@
         private System.Windows.Forms.Button btnUndistort;
         private System.Windows.Forms.Button btnDetectMarkers;
         private System.Windows.Forms.Button btnDetectDatums;
+        private System.Windows.Forms.Button btnBrightness;
     }
 }
 

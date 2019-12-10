@@ -104,6 +104,12 @@
     <Compile Include="Forms\Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\frmImage.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmImage.Designer.cs">
+      <DependentUpon>frmImage.cs</DependentUpon>
+    </Compile>
     <Compile Include="Static Classes\mdlEmguBundleAdjustment.cs" />
     <Compile Include="Static Classes\mdlEmguDetection.cs" />
     <Compile Include="Static Classes\mdlEmguCalibration.cs" />
@@ -116,6 +122,9 @@
     <Compile Include="Classes\RecognisedMarkers.cs" />
     <EmbeddedResource Include="Forms\Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\frmImage.resx">
+      <DependentUpon>frmImage.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
