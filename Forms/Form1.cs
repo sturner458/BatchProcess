@@ -180,21 +180,22 @@ namespace BatchProcess {
             myFiles.Sort(new AlphaNumericCompare());
 
             foreach (string myFile in myFiles) {
-                var image = new Image<Gray, byte>(myFile);
-                var size = image.Width * image.Height;
-                byte[] imageBytes = new Byte[size];
-                System.Buffer.BlockCopy(image.Data, 0, imageBytes, 0, size);
                 nFiles = nFiles + 1;
                 lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
-                Application.DoEvents();
-                var exceptionThrown = false;
                 try {
-                    RecogniseMarkers(imageBytes, myFile, arParams);
+                    var image = new Image<Gray, byte>(myFile);
+                    var size = image.Width * image.Height;
+                    byte[] imageBytes = new Byte[size];
+                    System.Buffer.BlockCopy(image.Data, 0, imageBytes, 0, size);
+                    Application.DoEvents();
+                    try {
+                        RecogniseMarkers(imageBytes, myFile, arParams);
+                    } catch (Exception ex) {
+                        Console.WriteLine(ex.ToString());
+                    }
                 } catch (Exception ex) {
-                    exceptionThrown = true;
                     Console.WriteLine(ex.ToString());
                 }
-                if (exceptionThrown) break;
                 Console.WriteLine("Processed " + nFiles + " out of " + myFiles.Count + " photos - " + Path.GetFileName(myFile));
             }
 

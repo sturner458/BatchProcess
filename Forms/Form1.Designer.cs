@@ -74,7 +74,7 @@
             // lblStatus
             // 
             this.lblStatus.AutoSize = true;
-            this.lblStatus.Location = new System.Drawing.Point(110, 86);
+            this.lblStatus.Location = new System.Drawing.Point(942, 134);
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Size = new System.Drawing.Size(0, 13);
             this.lblStatus.TabIndex = 3;
@@ -148,7 +148,7 @@
             // btnBrightness
             // 
             this.btnBrightness.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.btnBrightness.Location = new System.Drawing.Point(27, 89);
+            this.btnBrightness.Location = new System.Drawing.Point(27, 97);
             this.btnBrightness.Name = "btnBrightness";
             this.btnBrightness.Size = new System.Drawing.Size(86, 47);
             this.btnBrightness.TabIndex = 0;
