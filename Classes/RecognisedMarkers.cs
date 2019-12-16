@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BatchProcess
 {
-    public class RecognisedMarkers {
-
-        public bool IsLowRes;
-
+    public class RecognisedMarkers
+    {
         public List<int> MarkersSeenID = new List<int>();
         public List<double[]> ModelViewMatrix = new List<double[]>();
-        public List<double> LastSeenDistances = new List<double>();
+        public List<List<clsPoint>> Corners = new List<List<clsPoint>>();
+        public List<double> LastSeenMarkerDistances = new List<double>();
         public double[] ProjMatrix = new double[16];
 
         public List<clsMarkerPoint> ConfirmedMarkers = new List<clsMarkerPoint>();
@@ -19,15 +19,14 @@ namespace BatchProcess
         public List<clsMarkerPoint> BulkheadMarkers = new List<clsMarkerPoint>();
         public List<clsMarkerPoint> ObstructMarkers = new List<clsMarkerPoint>();
 
-        public RecognisedMarkers(bool _lowRes)
-        {
-            IsLowRes = _lowRes;
+        public RecognisedMarkers() {
+            
         }
 
-        public void Clear()
-        {
+        public void Clear() {
             MarkersSeenID.Clear();
             ModelViewMatrix.Clear();
+            Corners.Clear();
             ConfirmedMarkers.Clear();
             SuspectedMarkers.Clear();
             DoorMarkers.Clear();
@@ -36,104 +35,59 @@ namespace BatchProcess
             ObstructMarkers.Clear();
         }
 
-        public void GetMarkersCopy()
-        {
-            int i;
-
-            ConfirmedMarkers.Clear();
-            for (i = 0; i < mdlRecognise.ConfirmedMarkers.Count; i++) {
-                ConfirmedMarkers.Add(mdlRecognise.ConfirmedMarkers[i].Copy(true));
-            }
-
-            SuspectedMarkers.Clear();
-            for (i = 0; i < mdlRecognise.mySuspectedMarkers.Count; i++) {
-                SuspectedMarkers.Add(mdlRecognise.mySuspectedMarkers[i].Copy(true));
-            }
-
-            DoorMarkers.Clear();
-            for (i = 0; i < mdlRecognise.myDoorMarkers.Count; i++) {
-                DoorMarkers.Add(mdlRecognise.myDoorMarkers[i].Copy(true));
-            }
-
-            WallMarkers.Clear();
-            for (i = 0; i < mdlRecognise.myWallMarkers.Count; i++) {
-                WallMarkers.Add(mdlRecognise.myWallMarkers[i].Copy(true));
-            }
-
-            BulkheadMarkers.Clear();
-            for (i = 0; i < mdlRecognise.myBulkheadMarkers.Count; i++) {
-                BulkheadMarkers.Add(mdlRecognise.myBulkheadMarkers[i].Copy(true));
-            }
-
-            ObstructMarkers.Clear();
-            for (i = 0; i < mdlRecognise.myObstructMarkers.Count; i++) {
-                ObstructMarkers.Add(mdlRecognise.myObstructMarkers[i].Copy(true));
-            }
+        public void GetMarkersCopy() {
+            ConfirmedMarkers = mdlRecognise.ConfirmedMarkers.Select(m => m.Copy(true)).ToList();
+            SuspectedMarkers = mdlRecognise.mySuspectedMarkers.Select(m => m.Copy(true)).ToList();
+            DoorMarkers = mdlRecognise.myDoorMarkers.Select(m => m.Copy(true)).ToList();
+            WallMarkers = mdlRecognise.myWallMarkers.Select(m => m.Copy(true)).ToList();
+            BulkheadMarkers = mdlRecognise.myBulkheadMarkers.Select(m => m.Copy(true)).ToList();
+            ObstructMarkers = mdlRecognise.myObstructMarkers.Select(m => m.Copy(true)).ToList();
         }
 
-        public RecognisedMarkers Copy()
-        {
-            int i;
-            List<double> f;
-            RecognisedMarkers _copy = new RecognisedMarkers(IsLowRes);
-
-            _copy.MarkersSeenID.AddRange(MarkersSeenID.ToArray());
-
-            for (i = 0; i < ModelViewMatrix.Count; i++) {
-                f = new List<double>();
-                f.AddRange(ModelViewMatrix[i]);
-                _copy.ModelViewMatrix.Add(f.ToArray());
-            }
-
-            _copy.LastSeenDistances.AddRange(LastSeenDistances.ToArray());
-
-            f = new List<double>();
-            f.AddRange(ProjMatrix);
-            _copy.ProjMatrix = f.ToArray();
-
-            for (i = 0; i < ConfirmedMarkers.Count; i++) {
-                _copy.ConfirmedMarkers.Add(ConfirmedMarkers[i].Copy(true));
-            }
-
-            for (i = 0; i < SuspectedMarkers.Count; i++) {
-                _copy.SuspectedMarkers.Add(SuspectedMarkers[i].Copy(true));
-            }
-
-            for (i = 0; i < DoorMarkers.Count; i++) {
-                _copy.DoorMarkers.Add(DoorMarkers[i].Copy(true));
-            }
-
-            for (i = 0; i < WallMarkers.Count; i++) {
-                _copy.WallMarkers.Add(WallMarkers[i].Copy(true));
-            }
-
-            for (i = 0; i < BulkheadMarkers.Count; i++) {
-                _copy.BulkheadMarkers.Add(BulkheadMarkers[i].Copy(true));
-            }
-
-            for (i = 0; i < ObstructMarkers.Count; i++) {
-                _copy.ObstructMarkers.Add(ObstructMarkers[i].Copy(true));
-            }
-
-            return _copy;
-        }
-
-        public RecognisedMarkers QuickCopy() {
-            RecognisedMarkers _copy = new RecognisedMarkers(IsLowRes);
+        public RecognisedMarkers Copy() {
+            RecognisedMarkers _copy = new RecognisedMarkers();
 
             _copy.MarkersSeenID.AddRange(MarkersSeenID.ToArray());
 
             for (int i = 0; i < ModelViewMatrix.Count; i++) {
-                List<double> f = new List<double>();
-                f.AddRange(ModelViewMatrix[i]);
-                _copy.ModelViewMatrix.Add(f.ToArray());
+                _copy.ModelViewMatrix.Add(ModelViewMatrix[i].ToArray());
             }
+
+            for (int i = 0; i < Corners.Count; i++) {
+                _copy.Corners.Add(Corners[i].Select(p => p.Copy()).ToList());
+            }
+
+            _copy.LastSeenMarkerDistances.AddRange(LastSeenMarkerDistances.ToArray());
+            _copy.ProjMatrix = ProjMatrix.ToArray();
+            _copy.ConfirmedMarkers.AddRange(ConfirmedMarkers.Select(m => m.Copy(true)));
+            _copy.SuspectedMarkers.AddRange(SuspectedMarkers.Select(m => m.Copy(true)));
+            _copy.DoorMarkers.AddRange(DoorMarkers.Select(m => m.Copy(true)));
+            _copy.DoorMarkers.AddRange(WallMarkers.Select(m => m.Copy(true)));
+            _copy.BulkheadMarkers.AddRange(BulkheadMarkers.Select(m => m.Copy(true)));
+            _copy.ObstructMarkers.AddRange(ObstructMarkers.Select(m => m.Copy(true)));
 
             return _copy;
         }
 
-        public bool GetMarkerVisible(int myMarkerID)
-        {
+        //public RecognisedMarkers QuickCopy() {
+        //    inCopy = true;
+
+        //    RecognisedMarkers _copy = new RecognisedMarkers(IsLowRes);
+
+        //    _copy.TimeTaken = TimeTaken;
+        //    _copy.TimeDifference = TimeDifference;
+        //    _copy.AngularVelocity = AngularVelocity;
+
+        //    _copy.MarkersSeenID.AddRange(MarkersSeenID.ToArray());
+        //    for (int i = 0; i < ModelViewMatrix.Count; i++) {
+        //        _copy.ModelViewMatrix.Add(ModelViewMatrix[i].ToArray());
+        //    }
+
+        //    inCopy = false;
+        //    return _copy;
+        //}
+
+        public bool GetMarkerVisible(int myMarkerID) {
             int i;
             for (i = 0; i < MarkersSeenID.Count; i++) {
                 if (MarkersSeenID[i] == myMarkerID) return true;
@@ -141,8 +95,7 @@ namespace BatchProcess
             return false;
         }
 
-        public int GetMarkerIndex(int myMarkerID)
-        {
+        public int GetMarkerIndex(int myMarkerID) {
             int i;
             for (i = 0; i < MarkersSeenID.Count; i++) {
                 if (MarkersSeenID[i] == myMarkerID) return i;
@@ -150,25 +103,16 @@ namespace BatchProcess
             return -1;
         }
 
-        public void SetMarkerVisible(int myMarkerID, double[] myMatrix)
-        {
-            if (!MarkersSeenID.Contains(myMarkerID)) {
-                MarkersSeenID.Add(myMarkerID);
-                ModelViewMatrix.Add(myMatrix);
-            }
-        }
-
-        public void SetMarkerInvisible(int myMarkerID)
-        {
+        public void SetMarkerInvisible(int myMarkerID) {
             int i = MarkersSeenID.IndexOf(myMarkerID);
             if (i > -1) {
                 MarkersSeenID.RemoveAt(i);
                 ModelViewMatrix.RemoveAt(i);
+                Corners.RemoveAt(i);
             }
         }
 
-        public List<int> GetConfirmedMarkersSeenID()
-        {
+        public List<int> GetConfirmedMarkersSeenID() {
             int i;
             List<int> myMarkerList = new List<int>();
 
@@ -179,8 +123,7 @@ namespace BatchProcess
             return myMarkerList;
         }
 
-        public List<int> GetSuspectedMarkersSeenID()
-        {
+        public List<int> GetSuspectedMarkersSeenID() {
             int i;
             List<int> myMarkerList = new List<int>();
 
@@ -191,8 +134,7 @@ namespace BatchProcess
             return myMarkerList;
         }
 
-        public List<int> GetDoorMarkersSeenID()
-        {
+        public List<int> GetDoorMarkersSeenID() {
             int i;
             List<int> myMarkerList = new List<int>();
 
@@ -203,8 +145,7 @@ namespace BatchProcess
             return myMarkerList;
         }
 
-        public List<int> GetObstructMarkersSeenID()
-        {
+        public List<int> GetObstructMarkersSeenID() {
             int i;
             List<int> myMarkerList = new List<int>();
 
@@ -215,8 +156,7 @@ namespace BatchProcess
             return myMarkerList;
         }
 
-        public List<int> GetWallMarkersSeenID()
-        {
+        public List<int> GetWallMarkersSeenID() {
             int i;
             List<int> myMarkerList = new List<int>();
 
@@ -226,6 +166,6 @@ namespace BatchProcess
 
             return myMarkerList;
         }
-        
+
     }
 }

@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static BatchProcess.mdlRecognise;
+using static BatchProcess.mdlDetectPhotos;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using static BatchProcess.mdlGlobals;
@@ -119,7 +119,7 @@ namespace BatchProcess {
             //sw.Close();
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void btnPhotos_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog myDlg = new FolderBrowserDialog();
             DialogResult ret;
@@ -284,7 +284,7 @@ namespace BatchProcess {
             DialogResult ret;
             string myFile;
             int i, j, k, n;
-            clsMarkerPoint myMarkerPoint, mySeenFromMarker;
+            clsMarkerPoint2 myMarkerPoint, mySeenFromMarker;
 
             myDlg.InitialDirectory = "C:\\Customer\\Stannah\\Photogrammetry\\BatchProcess\\Diagnostic Files";
             myDlg.Filter = "Diagnostic Files (*.txt)|*.txt";
@@ -620,6 +620,99 @@ namespace BatchProcess {
                     adjustedImage.Save(Path.Combine(Path.GetDirectoryName(myFile), Path.GetFileNameWithoutExtension(myFile) + "-adj.png"));
                 }
             }
+        }
+
+        private void btnSimplePhotos_Click(object sender, EventArgs e) {
+            FolderBrowserDialog myDlg = new FolderBrowserDialog();
+            DialogResult ret;
+            string myFolder;
+            List<string> myFiles = new List<string>();
+            int nFiles = 0;
+
+            InitGlobals();
+
+            bool USE_DATUMS = false;
+
+            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\Survey 2";
+            //myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\021219";
+            ret = myDlg.ShowDialog();
+            if (ret != DialogResult.OK) return;
+            myFolder = myDlg.SelectedPath;
+
+            if (File.Exists(Path.Combine(myFolder, "Calib.dat")) && File.Exists(Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"))) {
+                try {
+                    File.Delete(Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"));
+                } catch (Exception ex) {
+                    MessageBox.Show(ex.ToString());
+                    return;
+                }
+            }
+
+            try {
+                File.Copy(Path.Combine(myFolder, "Calib.dat"), Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"));
+            } catch (Exception ex) {
+                MessageBox.Show(ex.ToString());
+                return;
+            }
+
+            foreach (string myFile in Directory.GetFiles(myFolder)) {
+                if (myFile.ToLower().EndsWith("-debug.png")) {
+                    try {
+                        File.Delete(myFile);
+                    } catch (Exception ex) {
+                        string s = ex.ToString();
+                    }
+                }
+                if (Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("survey") && !myFile.ToLower().EndsWith("-adj.png")) {
+                    myFiles.Add(myFile);
+                    if (myVideoHeight == 0) {
+                        Image myImage = Image.FromFile(myFile);
+                        myVideoWidth = myImage.Width;
+                        myVideoHeight = myImage.Height;
+                        myVideoPixelSize = 4;
+                    }
+                }
+            }
+            ARToolKitFunctions.Instance.arwInitialiseAR();
+            mdlRecognise.StartTracking(myVideoWidth, myVideoHeight);
+            string myCameraFile = "data\\calib.dat";
+            var arParams = mdlEmguCalibration.LoadCameraFromFile2(myCameraFile);
+
+            myFiles.Sort(new AlphaNumericCompare());
+
+            foreach (string myFile in myFiles) {
+                nFiles = nFiles + 1;
+                lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
+                try {
+                    var image = new Image<Gray, byte>(myFile);
+                    var size = image.Width * image.Height;
+                    byte[] imageBytes = new Byte[size];
+                    System.Buffer.BlockCopy(image.Data, 0, imageBytes, 0, size);
+                    Application.DoEvents();
+                    try {
+                        mdlRecognise.RecogniseMarkers(imageBytes);
+                    } catch (Exception ex) {
+                        Console.WriteLine(ex.ToString());
+                    }
+                } catch (Exception ex) {
+                    Console.WriteLine(ex.ToString());
+                }
+                Console.WriteLine("Processed " + nFiles + " out of " + myFiles.Count + " photos - " + Path.GetFileName(myFile));
+            }
+
+            mdlRecognise.ConfirmedMarkers.Sort(new MarkerPointComparer());
+
+            var res = mdlRecognise.SaveToString(false);
+
+            var sw = new System.IO.StreamWriter("C:\\Temp\\Output.txt");
+            sw.WriteLine(res);
+            sw.Close();
+
+            sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
+            mdlRecognise.ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.MarkerID + 1).ToString() + '\t' + p.SeenFromMarkerID));
+            sw.Close();
+
+            MessageBox.Show("Finished");
         }
     }
 

@@ -10,35 +10,32 @@ namespace BatchProcess
 {
     public class clsMarkerPoint
     {
-        int myMarkerID;
-        int mySeenFromMarkerID;
-        List<int> mySeenFromMarkerIDs = new List<int>();
-        int myActualMarkerID; //For when we renumber the markers, e.g. due to stitching a new flight
+        public int MarkerID { get; set; }
+        public int SeenFromMarkerID { get; set; }
+        public int ActualMarkerID { get; set; } //For when we renumber the markers, e.g. due to stitching a new flight
+        public int ConfirmedImageNumber { get; set; }
 
         //Coordinates of key points on the marker - in the model space of the SeenFrom marker, until turned into a Confirmed Marker
-        clsPoint3d myOrigin = new clsPoint3d(); //Origin Point
-        clsPoint3d myEndXAxis = new clsPoint3d(); //End of X Axis
-        clsPoint3d myEndYAxis = new clsPoint3d(); //End of Y Axis
-        clsPoint3d myPoint = new clsPoint3d(); //Tip of marker
+        public clsPoint3d Origin { get; set; } = new clsPoint3d(); //Origin Point
+        public clsPoint3d Point { get; set; } = new clsPoint3d(); //Tip of marker
+        public clsPoint3d EndXAxis { get; set; } = new clsPoint3d();
+        public clsPoint3d EndYAxis { get; set; } = new clsPoint3d();
 
-        //Coordinate vectors - in the model space of the SeenFrom marker, until turned into a Confirmed Marker
-        clsPoint3d myVx = new clsPoint3d();
-        clsPoint3d myVy = new clsPoint3d();
-        clsPoint3d myVz = new clsPoint3d();
+        //Coordinate vectors
+        public clsPoint3d Vx { get; set; } = new clsPoint3d(1, 0, 0);
+        public clsPoint3d Vy { get; set; } = new clsPoint3d(0, 1, 0);
+        public clsPoint3d Vz { get; set; } = new clsPoint3d(0, 0, 1);
 
-        //Lists of measured points - in the model space of the SeenFrom marker, except for CameraPoints
-        List<clsPoint3d> myCameraPoints = new List<clsPoint3d>(); //Location of camera, in coordinate system of this marker
-        List<clsPoint3d> mySeenFromCameraPoints = new List<clsPoint3d>(); //Camera Point, as seen in the model view matrix of the SeenFrom marker
-        List<clsPoint3d> myPts1 = new List<clsPoint3d>(); //Origin Point
-        List<clsPoint3d> myPts2 = new List<clsPoint3d>(); //End of X Axis
-        List<clsPoint3d> myPts3 = new List<clsPoint3d>(); //End of Y Axis
+        public double[] ModelViewMatrix { get; set; } = new double[16]; // Matrix of this marker with respect to the origin marker
 
-        clsPoint3d myVerticalVect = null;
+        public List<double[]> Matrixes { get; } = new List<double[]>(); // Model View Matrices as recorded by ARToolkit
+        public List<int> PhotoNumbers { get; } = new List<int>();
+        public List<clsPoint3d> Points { get; } = new List<clsPoint3d>();
+        public List<clsPoint3d> PointsX { get; } = new List<clsPoint3d>();
+        public List<clsPoint3d> PointsY { get; } = new List<clsPoint3d>();
+        public List<clsPoint3d> CameraPoints { get; } = new List<clsPoint3d>();
 
-        float[] myModelViewMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-        List<clsMarkerPoint> myHistory = new List<clsMarkerPoint>();
-        //Dim myVectors As New List(Of clsPoint3d)
+        public clsPoint3d VerticalVect { get; set; } = null;
 
         public bool Visible = false;
 
@@ -74,148 +71,69 @@ namespace BatchProcess
         }
         public event BlankEventHandler StichedValueChanged;
 
-        Nullable<System.DateTime> myLastTime;
-        clsPoint3d myLastVector = null;
-        public bool FirstPointRemoved = false;
-        //List<int> myCalculatedPoints = new List<int>();
-        public double MaxAngle3 = 0;
-        public double MinDist3 = 0;
-
-        public double MaxDist3 = 0;
-        string myLabel;
+        public string Label { get; set; }
         public string MarkerName { get; set; }
-        public string SeenFromMarkerName { get; set; }
-        public string NumPoints { get; set; }
         public string MaximumAngleA { get; set; }
         public string MaximumAngleXY { get; set; }
-
         public double BulkheadHeight { get; set; }
 
-        //Public StepSeenIndex As Integer = 0
-        //Public MaxVector1 As New clsPoint3d
-        //Public MaxVector2 As New clsPoint3d
 
-        public List<clsPoint3d> GyroData { get; }
-        public List<clsPoint3d> LastGyroData { get; }
-        public List<clsPoint3d> AccelData { get; }
-        public List<clsPoint3d> LastAccelData { get; }
-
-        public int MarkerID {
-            get { return myMarkerID; }
-            set { myMarkerID = value; }
-        }
+        public List<clsPoint3d> GyroData { get; } = new List<clsPoint3d>();
+        public List<clsPoint3d> AccelData { get; } = new List<clsPoint3d>();
+        public List<double> Velocity { get; } = new List<double>();
+        public List<double> AngularVelocity { get; } = new List<double>();
 
         public int NewMarkerID() {
-            int newMarkerID = myMarkerID + 1;
-            if (newMarkerID <= 25) {
-                //Do Nothing
-            } else if (newMarkerID <= 50) {
-                return newMarkerID + 25;
-            } else if (myMarkerID <= 75) {
-                return newMarkerID - 25;
-            } else if (newMarkerID <= 100) {
-                //Do Nothing
+            int newMarkerID;
+            if (BatchProcess.mdlRecognise.UseDatumMarkers) {
+                newMarkerID = MarkerID - 1;
+                if (newMarkerID <= 25) {
+                    //Do Nothing
+                } else if (newMarkerID <= 50) {
+                    return newMarkerID + 25;
+                } else if (MarkerID <= 75) {
+                    return newMarkerID - 25;
+                } else if (newMarkerID <= 100) {
+                    //Do Nothing
+                }
+            } else {
+                newMarkerID = MarkerID + 1;
+                if (newMarkerID <= 25) {
+                    //Do Nothing
+                } else if (newMarkerID <= 50) {
+                    return newMarkerID + 25;
+                } else if (MarkerID <= 75) {
+                    return newMarkerID - 25;
+                } else if (newMarkerID <= 100) {
+                    //Do Nothing
+                }
+                return newMarkerID;
             }
             return newMarkerID;
         }
 
-        public int SeenFromMarkerID {
-            get { return mySeenFromMarkerID; }
-            set { mySeenFromMarkerID = value; }
-        }
-
-        public List<int> SeenFromMarkerIDs {
-            get { return mySeenFromMarkerIDs; }
-        }
-
-        public int ActualMarkerID {
-            get { return myActualMarkerID; }
-            set { myActualMarkerID = value; }
-        }
-
-        public clsPoint3d Origin {
-            get { return myOrigin; }
-            set { myOrigin = (value == null ? new clsPoint3d(0, 0, 0) : value.Copy()); }
-        }
-
-        public clsPoint3d XAxisPoint {
-            get { return myEndXAxis; }
-            set { myEndXAxis = (value == null ? new clsPoint3d(0, 0, 0) : value.Copy()); }
-        }
-
-        public clsPoint3d YAxisPoint {
-            get { return myEndYAxis; }
-            set { myEndYAxis = (value == null ? new clsPoint3d(0, 0, 0) : value.Copy()); }
-        }
-
-        public clsPoint3d Point {
-            get { return myPoint; }
-            set { myPoint = (value == null ? new clsPoint3d(0, 0, 0) : value.Copy()); }
-        }
-
-        public clsPoint3d VX {
-            get { return myVx ?? new clsPoint3d(0, 0, 0); }
-            set { myVx = (value == null ? new clsPoint3d(0, 0, 0) : value.Copy()); }
-        }
-
-        public clsPoint3d VY {
-            get { return myVy ?? new clsPoint3d(0, 0, 0); }
-            set { myVy = (value == null ? new clsPoint3d(0, 0, 0) : value.Copy()); }
-        }
-
-        public clsPoint3d VZ {
-            get { return myVz ?? new clsPoint3d(0, 0, 0); }
-            set { myVz = (value == null ? new clsPoint3d(0, 0, 0) : value.Copy()); }
-        }
-
-        public clsPoint3d VerticalVect {
-            get { return myVerticalVect; }
-            set { myVerticalVect = value?.Copy(); }
-        }
-
-        public float[] ModelViewMatrix {
-            get { return myModelViewMatrix; }
-            set {
-                int i;
-
-                for (i = 0; i <= 15; i++) {
-                    myModelViewMatrix[i] = value[i];
-                }
-            }
-        }
-
-        public List<clsMarkerPoint> History {
-            get { return myHistory; }
-        }
-
         public clsMarkerPoint() {
-            GyroData = new List<clsPoint3d>();
-            LastGyroData = new List<clsPoint3d>();
-            AccelData = new List<clsPoint3d>();
-            LastAccelData = new List<clsPoint3d>();
-            VX = new clsPoint3d(1, 0, 0);
-            VY = new clsPoint3d(0, 1, 0);
-            VZ = new clsPoint3d(0, 0, 1);
         }
 
         //Public Sub New(aMarkerID As Integer)
-        //    myMarkerID = aMarkerID
+        //    MarkerID = aMarkerID
         //End Sub
 
-        public clsMarkerPoint(int aMarkerID, int aSeenFromID) {
-            myMarkerID = aMarkerID;
-            myActualMarkerID = myMarkerID;
-            mySeenFromMarkerID = aSeenFromID;
-            GyroData = new List<clsPoint3d>();
-            LastGyroData = new List<clsPoint3d>();
-            AccelData = new List<clsPoint3d>();
-            LastAccelData = new List<clsPoint3d>();
+        public clsMarkerPoint(int aMarkerID, int seenFromMarkerID) {
+            MarkerID = aMarkerID;
+            ActualMarkerID = MarkerID;
+            SeenFromMarkerID = seenFromMarkerID;
         }
 
         public bool OKToConfirm(ref string myErrString, ref clsPoint3d maxAV1, ref clsPoint3d maxAV2, ref clsPoint3d maxAV3, ref clsPoint3d maxAV4, ref bool myAngleOK, ref bool myAngle2OK, ref double a1, ref double a2) {
             myErrString = "";
             myAngleOK = false;
             myAngle2OK = false;
+
+            //if (Matrixes.Count < 10) {
+            //    myErrString = Matrixes.Count.ToString() + "measurements (10 required)";
+            //    return false;
+            //}
 
             //-DEVELOPMENT CHANGE
             a1 = MaxDistance(ref maxAV1, ref maxAV2);
@@ -234,7 +152,7 @@ namespace BatchProcess
 
             a2 = MaxAnglePerpendicular(ref maxAV3, ref maxAV4);
             a2 = 25 * PI / 180;
-            if (a2 < 20 * PI / 180) {
+            if (a2 < 5 * PI / 180) {
                 if (myErrString == "") myErrString = "Perpendicular Angle Range = " + Round(a2 * 180 / PI, 1) + " < 20°";
                 return false;
             } else {
@@ -255,10 +173,10 @@ namespace BatchProcess
 
             maxA = 0;
             pz = new clsPoint3d(0, 0, 1.0);
-            for (int j = 0; j <= myCameraPoints.Count - 2; j++) {
-                p1 = myCameraPoints[j];
-                for (int k = j + 1; k <= myCameraPoints.Count - 1; k++) {
-                    p2 = myCameraPoints[k];
+            for (int j = 0; j <= Matrixes.Count - 2; j++) {
+                for (int k = j + 1; k <= Matrixes.Count - 1; k++) {
+                    p1 = PointFromInvMatrix(Matrixes[j]);
+                    p2 = PointFromInvMatrix(Matrixes[k]);
                     py = new clsPoint3d((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2, (p1.Z + p2.Z) / 2).Point2D().Point3d(0);
                     if (IsSameDbl(py.Length, 0)) continue;
                     py.Normalise();
@@ -288,10 +206,11 @@ namespace BatchProcess
 
             maxD = 0;
             pz = new clsPoint3d(0, 0, 1.0);
-            for (int j = 0; j <= myCameraPoints.Count - 2; j++) {
-                p1 = myCameraPoints[j];
-                for (int k = j + 1; k <= myCameraPoints.Count - 1; k++) {
-                    p2 = myCameraPoints[k];
+            for (int j = 0; j <= CameraPoints.Count - 2; j++) {
+                for (int k = j + 1; k <= CameraPoints.Count - 1; k++) {
+                    p1 = CameraPoints[j];
+                    p2 = CameraPoints[k];
+                    d = p1.Dist(p2);
                     py = new clsPoint3d((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2, (p1.Z + p2.Z) / 2).Point2D().Point3d(0);
                     if (IsSameDbl(py.Length, 0)) continue;
                     py.Normalise();
@@ -301,7 +220,6 @@ namespace BatchProcess
                     p1.Normalise();
                     p2 = px * p2.Dot(px) + pz * p2.Dot(pz);
                     p2.Normalise();
-                    d = myCameraPoints[j].Dist(myCameraPoints[k]);
                     if (Abs(d) > maxD) {
                         maxD = Abs(d);
                         maxAV1 = p1.Copy();
@@ -328,12 +246,12 @@ namespace BatchProcess
             py.Normalise();
 
             maxA = 0;
-            for (int j = 0; j <= myCameraPoints.Count - 2; j++) {
-                for (int k = j + 1; k <= myCameraPoints.Count - 1; k++) {
-                    p1 = myCameraPoints[j];
+            for (int j = 0; j <= Matrixes.Count - 2; j++) {
+                for (int k = j + 1; k <= Matrixes.Count - 1; k++) {
+                    p1 = PointFromInvMatrix(Matrixes[j]);
+                    p2 = PointFromInvMatrix(Matrixes[k]);
                     p1 = py * py.Dot(p1) + pz * pz.Dot(p1);
                     p1.Normalise();
-                    p2 = myCameraPoints[k];
                     p2 = py * py.Dot(p2) + pz * pz.Dot(p2);
                     p2.Normalise();
                     a = Acos(p1.Dot(p2));
@@ -348,195 +266,136 @@ namespace BatchProcess
             return maxA;
         }
 
-        public List<clsPoint3d> CameraPoints {
-            get { return myCameraPoints; }
-        }
-
-        public List<clsPoint3d> SeenFromCameraPoints {
-            get { return mySeenFromCameraPoints; }
-        }
-
-        public List<clsPoint3d> OriginPoints {
-            get { return myPts1; }
-        }
-
-        public List<clsPoint3d> EndXAxisPoints {
-            get { return myPts2; }
-        }
-
-        public List<clsPoint3d> EndYAxisPoints {
-            get { return myPts3; }
-        }
-
-        public Nullable<System.DateTime> LastTime {
-            get { return myLastTime; }
-            set { myLastTime = value; }
-        }
-
-        public clsPoint3d LastVector {
-            get { return myLastVector; }
-            set { myLastVector = value.Copy(); }
-        }
-
-        public string Label {
-            get { return myLabel; }
-            set { myLabel = value; }
-        }
-
         public void SetZNormal() {
-            VX = myEndXAxis - myOrigin;
-            if (IsSameDbl(VX.Length, 0))
-                return;
-            VX.Normalise();
-            VY = myEndYAxis - myOrigin;
-            if (IsSameDbl(VY.Length, 0))
-                return;
-            VY.Normalise();
-            VZ = VX.Cross(VY);
-            if (IsSameDbl(VZ.Length, 0))
-                return;
-            VZ.Normalise();
-            VY = VZ.Cross(VX);
-            if (IsSameDbl(VY.Length, 0))
-                return;
-            VY.Normalise();
+            Vx = EndXAxis - Origin;
+            if (IsSameDbl(Vx.Length, 0)) return;
+            Vx.Normalise();
+            Vy = EndYAxis - Origin;
+            if (IsSameDbl(Vy.Length, 0)) return;
+            Vy.Normalise();
+            Vz = Vx.Cross(Vy);
+            if (IsSameDbl(Vz.Length, 0)) return;
+            Vz.Normalise();
+            Vy = Vz.Cross(Vx);
+            if (IsSameDbl(Vy.Length, 0)) return;
+            Vy.Normalise();
         }
 
-        public clsMarkerPoint Copy(bool includeConfirmedFlag = false, bool avoidHistory = false) {
+        public clsMarkerPoint Copy(bool includeConfirmedFlag = false) {
             clsMarkerPoint myCopy = new clsMarkerPoint();
-            int i;
 
-            myCopy.MarkerID = myMarkerID;
-            myCopy.SeenFromMarkerID = mySeenFromMarkerID;
-            myCopy.ActualMarkerID = myActualMarkerID;
-            myCopy.Origin = myOrigin;
-            myCopy.XAxisPoint = myEndXAxis;
-            myCopy.YAxisPoint = myEndYAxis;
-            myCopy.Point = myPoint?.Copy();
-            myCopy.VX = VX;
-            myCopy.VY = VY;
-            myCopy.VZ = VZ;
+            myCopy.MarkerID = MarkerID;
+            myCopy.SeenFromMarkerID = SeenFromMarkerID;
+            myCopy.ActualMarkerID = ActualMarkerID;
+            myCopy.ConfirmedImageNumber = ConfirmedImageNumber;
+            myCopy.Origin = Origin.Copy();
+            myCopy.EndXAxis = EndXAxis.Copy();
+            myCopy.EndYAxis = EndYAxis.Copy();
+            myCopy.Point = Point?.Copy();
+            myCopy.Vx = Vx.Copy();
+            myCopy.Vy = Vy.Copy();
+            myCopy.Vz = Vz.Copy();
             if (includeConfirmedFlag) myCopy.SetConfirmedFlag(_confirmed);
 
-            foreach (int myID in mySeenFromMarkerIDs) {
-                myCopy.SeenFromMarkerIDs.Add(myID);
-            }
-            foreach (clsPoint3d p1 in myCameraPoints) {
-                myCopy.CameraPoints.Add(p1.Copy());
-            }
-            foreach (clsPoint3d p1 in mySeenFromCameraPoints) {
-                myCopy.SeenFromCameraPoints.Add(p1.Copy());
-            }
-            foreach (clsPoint3d p1 in myPts1) {
-                myCopy.OriginPoints.Add(p1.Copy());
-            }
-            foreach (clsPoint3d p1 in myPts2) {
-                myCopy.EndXAxisPoints.Add(p1.Copy());
-            }
-            foreach (clsPoint3d p1 in myPts3) {
-                myCopy.EndYAxisPoints.Add(p1.Copy());
+            myCopy.PhotoNumbers.AddRange(PhotoNumbers.ToArray());
+
+            myCopy.ModelViewMatrix = ModelViewMatrix.ToArray();
+
+            for (int i = 0; i < Matrixes.Count; i++) {
+                myCopy.Matrixes.Add(Matrixes[i].ToArray());
             }
 
-            for (i = 0; i <= 15; i++) {
-                myCopy.ModelViewMatrix[i] = myModelViewMatrix[i];
-            }
+            myCopy.Points.AddRange(Points.Select(p => p.Copy()).ToArray());
+            myCopy.PointsX.AddRange(PointsX.Select(p => p.Copy()).ToArray());
+            myCopy.PointsY.AddRange(PointsY.Select(p => p.Copy()).ToArray());
+            myCopy.CameraPoints.AddRange(CameraPoints.Select(p => p.Copy()).ToArray());
 
-            for (i = 0; i < GyroData.Count; i++) {
+            for (int i = 0; i < GyroData.Count; i++) {
                 myCopy.GyroData.Add(GyroData[i]?.Copy());
             }
-            for (i = 0; i < LastGyroData.Count; i++) {
-                myCopy.LastGyroData.Add(LastGyroData[i]?.Copy());
-            }
-            for (i = 0; i < AccelData.Count; i++) {
+            for (int i = 0; i < AccelData.Count; i++) {
                 myCopy.AccelData.Add(AccelData[i]?.Copy());
             }
-            for (i = 0; i < LastAccelData.Count; i++) {
-                myCopy.LastAccelData.Add(LastAccelData[i]?.Copy());
-            }
-            if (myVerticalVect != null) myCopy.VerticalVect = myVerticalVect.Copy();
+            myCopy.Velocity.AddRange(Velocity.ToList());
+            myCopy.AngularVelocity.AddRange(AngularVelocity.ToList());
+
+            if (VerticalVect != null) myCopy.VerticalVect = VerticalVect.Copy();
 
             myCopy.BulkheadHeight = BulkheadHeight;
-
-
-            if (!avoidHistory) {
-                foreach (clsMarkerPoint myHistoricPoint in myHistory) {
-                    myCopy.History.Add(myHistoricPoint.Copy());
-                }
-            }
 
             return myCopy;
         }
 
         public void Save(System.IO.StreamWriter sw) {
             sw.WriteLine("MARKER_POINT_SETTINGS");
-            sw.WriteLine("MarkerID," + myMarkerID.ToString());
-            sw.WriteLine("SeenFromMarkerID," + mySeenFromMarkerID.ToString());
-            sw.WriteLine("ActualMarkerID," + myActualMarkerID.ToString());
-            if (myVerticalVect != null) {
-                sw.WriteLine("VerticalVectorX," + myVerticalVect.X.ToString());
-                sw.WriteLine("VerticalVectorY," + myVerticalVect.Y.ToString());
-                sw.WriteLine("VerticalVectorZ," + myVerticalVect.Z.ToString());
+            sw.WriteLine("MarkerID," + MarkerID.ToString());
+            sw.WriteLine("SeenFromMarkerID," + SeenFromMarkerID.ToString());
+            sw.WriteLine("ActualMarkerID," + ActualMarkerID.ToString());
+            sw.WriteLine("ConfirmedImageNumber," + ConfirmedImageNumber.ToString());
+            if (VerticalVect != null) {
+                sw.WriteLine("VerticalVectorX," + VerticalVect.X.ToString());
+                sw.WriteLine("VerticalVectorY," + VerticalVect.Y.ToString());
+                sw.WriteLine("VerticalVectorZ," + VerticalVect.Z.ToString());
             }
             sw.WriteLine("BulkheadHeight," + BulkheadHeight.ToString());
-            foreach (int myID in mySeenFromMarkerIDs) {
-                sw.WriteLine("SeenFromMarkerIDs," + myID.ToString());
+            foreach (int myID in PhotoNumbers) {
+                sw.WriteLine("PhotoNumbers," + myID.ToString());
+            }
+            foreach (var v in Velocity) {
+                sw.WriteLine("Velocity," + v.ToString());
+            }
+            foreach (var v in AngularVelocity) {
+                sw.WriteLine("AngularVelocity," + v.ToString());
             }
             sw.WriteLine("Confirmed," + (_confirmed ? "1" : "0"));
             sw.WriteLine("END_MARKER_POINT_SETTINGS");
 
-            myOrigin.Save(sw);
-            myEndXAxis.Save(sw);
-            myEndYAxis.Save(sw);
-            myPoint.Save(sw);
-            VX.Save(sw);
-            VY.Save(sw);
-            VZ.Save(sw);
+            Origin.Save(sw);
+            EndXAxis.Save(sw);
+            EndYAxis.Save(sw);
+            Point.Save(sw);
+            Vx.Save(sw);
+            Vy.Save(sw);
+            Vz.Save(sw);
 
-            sw.WriteLine(myCameraPoints.Count);
-            foreach (clsPoint3d p1 in myCameraPoints) {
-                p1.Save(sw);
+            for (int i = 0; i < 16; i++) {
+                sw.WriteLine(ModelViewMatrix[i].ToString());
             }
 
-            sw.WriteLine(mySeenFromCameraPoints.Count);
-            foreach (clsPoint3d p1 in mySeenFromCameraPoints) {
-                p1.Save(sw);
+            sw.WriteLine(Matrixes.Count);
+            for (int i = 0; i < Matrixes.Count; i++) {
+                for (int j = 0; j < 16; j++) {
+                    sw.WriteLine(Matrixes[i][j].ToString());
+                }
             }
 
-            sw.WriteLine(myPts1.Count);
-            foreach (clsPoint3d p1 in myPts1) {
-                p1.Save(sw);
+            sw.WriteLine(Points.Count);
+            for (int i = 0; i < Points.Count; i++) {
+                Points[i].Save(sw);
             }
 
-            sw.WriteLine(myPts2.Count);
-            foreach (clsPoint3d p1 in myPts2) {
-                p1.Save(sw);
+            sw.WriteLine(PointsX.Count);
+            for (int i = 0; i < PointsX.Count; i++) {
+                PointsX[i].Save(sw);
             }
 
-            sw.WriteLine(myPts3.Count);
-            foreach (clsPoint3d p1 in myPts3) {
-                p1.Save(sw);
+            sw.WriteLine(PointsY.Count);
+            for (int i = 0; i < PointsY.Count; i++) {
+                PointsY[i].Save(sw);
+            }
+
+            sw.WriteLine(CameraPoints.Count);
+            for (int i = 0; i < CameraPoints.Count; i++) {
+                CameraPoints[i].Save(sw);
             }
 
             sw.WriteLine(GyroData.Count);
             for (int i = 0; i < GyroData.Count; i++) {
                 GyroData[i].Save(sw);
             }
-            sw.WriteLine(LastGyroData.Count);
-            for (int i = 0; i < LastGyroData.Count; i++) {
-                LastGyroData[i].Save(sw);
-            }
             sw.WriteLine(AccelData.Count);
             for (int i = 0; i < AccelData.Count; i++) {
                 AccelData[i].Save(sw);
-            }
-            sw.WriteLine(LastAccelData.Count);
-            for (int i = 0; i < LastAccelData.Count; i++) {
-                LastAccelData[i].Save(sw);
-            }
-
-            sw.WriteLine(myHistory.Count);
-            foreach (clsMarkerPoint myHistoricPoint in myHistory) {
-                myHistoricPoint.Save(sw);
             }
 
         }
@@ -555,25 +414,24 @@ namespace BatchProcess
                 if (myLine.IndexOf(",") > -1) {
                     var mySplit = myLine.Split(',');
                     if (mySplit.GetUpperBound(0) == 1) {
-                        if (mySplit[0] == "MarkerID")
-                            myMarkerID = Convert.ToInt32(mySplit[1]);
-                        if (mySplit[0] == "SeenFromMarkerID")
-                            mySeenFromMarkerID = Convert.ToInt32(mySplit[1]);
-                        if (mySplit[0] == "SeenFromMarkerIDs")
-                            mySeenFromMarkerIDs.Add(Convert.ToInt32(mySplit[1]));
-                        if (mySplit[0] == "ActualMarkerID")
-                            myActualMarkerID = Convert.ToInt32(mySplit[1]);
+                        if (mySplit[0] == "MarkerID") MarkerID = Convert.ToInt32(mySplit[1]);
+                        if (mySplit[0] == "SeenFromMarkerID") SeenFromMarkerID = Convert.ToInt32(mySplit[1]);
+                        if (mySplit[0] == "ActualMarkerID") ActualMarkerID = Convert.ToInt32(mySplit[1]);
+                        if (mySplit[0] == "ConfirmedImageNumber") ConfirmedImageNumber = Convert.ToInt32(mySplit[1]);
+                        if (mySplit[0] == "PhotoNumber") PhotoNumbers.Add(Convert.ToInt32(mySplit[1]));
+                        if (mySplit[0] == "Velocity") Velocity.Add(Convert.ToDouble(mySplit[1]));
+                        if (mySplit[0] == "AngularVelocity") AngularVelocity.Add(Convert.ToDouble(mySplit[1]));
                         if (mySplit[0] == "VerticalVectorX") {
-                            if (myVerticalVect == null) myVerticalVect = new clsPoint3d();
-                            myVerticalVect.X = Convert.ToDouble(mySplit[1]);
+                            if (VerticalVect == null) VerticalVect = new clsPoint3d();
+                            VerticalVect.X = Convert.ToDouble(mySplit[1]);
                         }
                         if (mySplit[0] == "VerticalVectorY") {
-                            if (myVerticalVect == null) myVerticalVect = new clsPoint3d();
-                            myVerticalVect.Y = Convert.ToDouble(mySplit[1]);
+                            if (VerticalVect == null) VerticalVect = new clsPoint3d();
+                            VerticalVect.Y = Convert.ToDouble(mySplit[1]);
                         }
                         if (mySplit[0] == "VerticalVectorZ") {
-                            if (myVerticalVect == null) myVerticalVect = new clsPoint3d();
-                            myVerticalVect.Z = Convert.ToDouble(mySplit[1]);
+                            if (VerticalVect == null) VerticalVect = new clsPoint3d();
+                            VerticalVect.Z = Convert.ToDouble(mySplit[1]);
                         }
                         if (mySplit[0] == "BulkheadHeight") {
                             BulkheadHeight = Convert.ToDouble(mySplit[1]);
@@ -585,49 +443,52 @@ namespace BatchProcess
                 }
             }
 
-            if (mySeenFromMarkerIDs.Contains(mySeenFromMarkerID) == false) { mySeenFromMarkerIDs.Add(mySeenFromMarkerID); }
+            Origin.Load(sr);
+            EndXAxis.Load(sr);
+            EndYAxis.Load(sr);
+            Point.Load(sr);
+            Vx.Load(sr);
+            Vy.Load(sr);
+            Vz.Load(sr);
 
-            myOrigin.Load(sr);
-            myEndXAxis.Load(sr);
-            myEndYAxis.Load(sr);
-            myPoint.Load(sr);
-            VX.Load(sr);
-            VY.Load(sr);
-            VZ.Load(sr);
+            for (int i = 0; i < 16; i++) {
+                ModelViewMatrix[i] = Convert.ToDouble(sr.ReadLine());
+            }
 
             var n = Convert.ToInt32(sr.ReadLine());
-            for (var i = 1; i <= n; i++) {
-                p1 = new clsPoint3d();
-                p1.Load(sr);
-                myCameraPoints.Add(p1);
+            for (int i = 0; i < n; i++) {
+                Matrixes.Add(new double[16]);
+                for (int j = 0; j < 16; j++) {
+                    Matrixes.Last()[j] = Convert.ToDouble(sr.ReadLine());
+                }
             }
 
             n = Convert.ToInt32(sr.ReadLine());
             for (var i = 1; i <= n; i++) {
                 p1 = new clsPoint3d();
                 p1.Load(sr);
-                mySeenFromCameraPoints.Add(p1);
+                Points.Add(p1);
             }
 
             n = Convert.ToInt32(sr.ReadLine());
             for (var i = 1; i <= n; i++) {
                 p1 = new clsPoint3d();
                 p1.Load(sr);
-                myPts1.Add(p1);
+                PointsX.Add(p1);
             }
 
             n = Convert.ToInt32(sr.ReadLine());
             for (var i = 1; i <= n; i++) {
                 p1 = new clsPoint3d();
                 p1.Load(sr);
-                myPts2.Add(p1);
+                PointsY.Add(p1);
             }
 
             n = Convert.ToInt32(sr.ReadLine());
             for (var i = 1; i <= n; i++) {
                 p1 = new clsPoint3d();
                 p1.Load(sr);
-                myPts3.Add(p1);
+                CameraPoints.Add(p1);
             }
 
             n = Convert.ToInt32(sr.ReadLine());
@@ -641,168 +502,88 @@ namespace BatchProcess
             for (var i = 1; i <= n; i++) {
                 p1 = new clsPoint3d();
                 p1.Load(sr);
-                LastGyroData.Add(p1);
-            }
-
-            n = Convert.ToInt32(sr.ReadLine());
-            for (var i = 1; i <= n; i++) {
-                p1 = new clsPoint3d();
-                p1.Load(sr);
                 AccelData.Add(p1);
             }
 
-            n = Convert.ToInt32(sr.ReadLine());
-            for (var i = 1; i <= n; i++) {
-                p1 = new clsPoint3d();
-                p1.Load(sr);
-                LastAccelData.Add(p1);
-            }
-
-            n = Convert.ToInt32(sr.ReadLine());
-            for (var i = 1; i <= n; i++) {
-                var myHistoricPoint = new clsMarkerPoint();
-                myHistoricPoint.Load(sr);
-                myHistory.Add(myHistoricPoint);
-            }
         }
 
         public void SetEndPointBasedOnZVectors() {
-            int n = 0;
-
-            if (myPts1.Count == 0) return;
-
-            //Let's try without this for a while:
-            //CompactMarkers()
-
-            myOrigin = ProcessPointListPair(myPts1, mySeenFromCameraPoints, ref n);
-            if (myOrigin == null || myOrigin.Length < myTol || n == 0) goto quitOut;
-
-            VX = AverageAxis(myPts1, myPts2);
-            if (VX == null || VX.Length < myTol) goto quitOut;
-            VX.Normalise();
-            myEndXAxis = myOrigin + VX;
-
-            VY = AverageAxis(myPts1, myPts3);
-            if (VY == null || VY.Length < myTol) goto quitOut;
-            VY.Normalise();
-            myEndYAxis = myOrigin + VY;
-
-            SetZNormal();
-            myEndXAxis = myOrigin + VX;
-            myEndYAxis = myOrigin + VY;
-
+            EndXAxis = Origin + Vx;
+            EndYAxis = Origin + Vy;
             SetEndPoint();
-
-            return;
-
-        quitOut:
-            myOrigin = new clsPoint3d();
-            myEndXAxis = new clsPoint3d();
-            myEndYAxis = new clsPoint3d();
-            myPoint = new clsPoint3d();
+            ModelViewMatrix = GetMatrixFromVectorsAndPoint(Origin, Vx, Vy, Vz);
         }
 
         public void SetEndPoint() {
-            if (myActualMarkerID < myGFMarkerID) {
-                if (myActualMarkerID >= 0 && myActualMarkerID < 50) {
-                    myPoint = myOrigin + VX * 160 - VY * 45;
-                } else if (myActualMarkerID >= 50 && myActualMarkerID < 100) {
-                    myPoint = myOrigin - VX * 160 - VY * 45;
+            if (BatchProcess.mdlRecognise.UseDatumMarkers) {
+                if (ActualMarkerID == myGFMarkerID || ActualMarkerID <= myStepMarkerID) { //GF, Step & Bulkhead Markers
+                    Point = Origin.Copy();
+                } else if (ActualMarkerID < myLeftBulkheadMarkerID) {
+                    if (ActualMarkerID - 2 >= 0 && ActualMarkerID - 2 < 50) {
+                        Point = Origin + Vx * 160 - Vy * 45;
+                    } else if (ActualMarkerID - 2 >= 50 && ActualMarkerID - 2 < 100) {
+                        Point = Origin - Vx * 160 - Vy * 45;
+                    }
+                } else if (ActualMarkerID >= myLeftBulkheadMarkerID && ActualMarkerID <= myRightBulkheadMarkerID) //GF, Step & Bulkhead Markers
+                  {
+                    Point = Origin.Copy();
+                } else if (ActualMarkerID >= myDoorHingeRightMarkerID && ActualMarkerID <= myDoorFrameLeftMarkerID) //Door Markers
+                  {
+                    Point = Origin + Vy * 65.0;
+                } else if (ActualMarkerID >= myObstruct1MarkerID && ActualMarkerID <= myObstruct4MarkerID) //Obstruction Markers
+                  {
+                    Point = Origin + Vy * 65.0;
+                } else if (ActualMarkerID >= myWall1MarkerID && ActualMarkerID <= myWall4MarkerID) //Wall Markers
+                  {
+                    Point = Origin + Vy * 65.0;
+                } else {
+                    Point = Origin.Copy();
                 }
-            } else if (myActualMarkerID >= myGFMarkerID && myActualMarkerID <= myRightBulkheadMarkerID) //GF, Step & Bulkhead Markers
-              {
-                myPoint = myOrigin.Copy();
-            } else if (myActualMarkerID >= myDoorHingeRightMarkerID && myActualMarkerID <= myDoorFrameLeftMarkerID) //Door Markers
-              {
-                myPoint = myOrigin + VY * 65.0;
-            } else if (myActualMarkerID >= myObstruct1MarkerID && myActualMarkerID <= myObstruct4MarkerID) //Obstruction Markers
-              {
-                myPoint = myOrigin + VY * 65.0;
-            } else if (myActualMarkerID >= myWall1MarkerID && myActualMarkerID <= myWall4MarkerID) //Wall Markers
-              {
-                myPoint = myOrigin + VY * 65.0;
             } else {
-                myPoint = myOrigin.Copy();
+                if (ActualMarkerID < myGFMarkerID) {
+                    if (ActualMarkerID >= 0 && ActualMarkerID < 50) {
+                        Point = Origin + Vx * 140 - Vy * 45;
+                    } else if (ActualMarkerID >= 50 && ActualMarkerID < 100) {
+                        Point = Origin + Vx * 140 + Vy * 45;
+                    }
+                } else if (ActualMarkerID >= myGFMarkerID && ActualMarkerID <= myRightBulkheadMarkerID) //GF, Step & Bulkhead Markers
+                  {
+                    Point = Origin.Copy();
+                } else if (ActualMarkerID >= myDoorHingeRightMarkerID && ActualMarkerID <= myDoorFrameLeftMarkerID) //Door Markers
+                  {
+                    Point = Origin + Vy * 65.0;
+                } else if (ActualMarkerID >= myObstruct1MarkerID && ActualMarkerID <= myObstruct4MarkerID) //Obstruction Markers
+                  {
+                    Point = Origin + Vy * 65.0;
+                } else if (ActualMarkerID >= myWall1MarkerID && ActualMarkerID <= myWall4MarkerID) //Wall Markers
+                  {
+                    Point = Origin + Vy * 65.0;
+                } else {
+                    Point = Origin.Copy();
+                }
             }
         }
 
         /// <summary>
-        /// Processes the point list pair.
+        /// Averages the axis.
         /// </summary>
-        /// <param name="estimatedLocationPoints">The estimated location points (from AR Toolkit).</param>
-        /// <param name="axisStartPoints">The axis start point (from the camera).</param>
-        /// <param name="axisEndPoints">The axis end point (from the camera).</param>
-        /// <param name="myNumPtsCalculated">Nnumber of points calculated.</param>
-        /// <returns>The average point of all processed points if successful, otherwise a zero length vector.</returns>
-        /// <remarks>estimatedLocationPoints and seenFromCameraPoints must be matched lists.</remarks>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException">estimatedLocationPoints and seenFromCameraPoints should be matched lists.</exception>
-        private clsPoint3d ProcessPointListPair(List<clsPoint3d> estimatedLocationPoints, List<clsPoint3d> seenFromCameraPoints, ref int myNumPtsCalculated) {
-            if (estimatedLocationPoints == null || seenFromCameraPoints == null) throw new ArgumentNullException();
-            if (estimatedLocationPoints.Count != seenFromCameraPoints.Count) throw new ArgumentException("estimatedLocationPoints and seenFromCameraPoints should be matched lists.");
-            myNumPtsCalculated = 0;
+        /// <param name="axisStartPoints">The axis start points.</param>
+        /// <param name="axisEndPoints">The axis end points.</param>
+        /// <returns>
+        /// The averaged point, or a zero length vector if one can not be found within the specified tolerance.
+        /// </returns>
+        /// <exception cref="ArgumentException">Axis start and end point lists are not matched.</exception>
+        private clsPoint3d AverageAxisSimple(List<clsPoint3d> axisStartPoints, List<clsPoint3d> axisEndPoints) {
+            if (axisStartPoints == null || axisEndPoints == null) throw new ArgumentNullException("Axis start or end point lists are null.");
+            if (axisStartPoints.Count != axisEndPoints.Count) throw new ArgumentException("Axis start and end point lists are not matched.");
 
-            // Take copies of the list, such as not to affect the passed list
-            estimatedLocationPoints = estimatedLocationPoints.ToList();
-            seenFromCameraPoints = seenFromCameraPoints.ToList();
-
-            // Get the points within 12.5mm of the average
-            var points = GetPointsWithinDistanceOfAveragePoint(estimatedLocationPoints, 12.5);
-
-            // Align the matched lists by removing the axis points matched to the estimated location points that have been removed
-            var removedPoints = estimatedLocationPoints.Where(p => !points.Contains(p)).ToList();
-            removedPoints.ForEach(p => {
-                var index = estimatedLocationPoints.IndexOf(p);
-                estimatedLocationPoints.RemoveAt(index);
-                seenFromCameraPoints.RemoveAt(index);
-            });
-
-            // Don't process anything if we have less than 3 usable points
-            if (points.Count <= 3) {
-                return new clsPoint3d(0, 0, 0);
+            var points = new List<clsPoint3d>();
+            for (var i = 0; i <= axisStartPoints.Count - 1; i++) {
+                points.Add(axisEndPoints[i] - axisStartPoints[i]);
             }
 
-
-            var intersectionPoints = new List<clsPoint3d>();
-            // Get the first line - don't loop through all as we compare to the next line
-            for (var i = 0; i <= estimatedLocationPoints.Count - 2; i++) {
-                var line1 = new clsLine3d(estimatedLocationPoints[i], seenFromCameraPoints[i]);
-
-                // Compare to the next line
-                for (var j = i + 1; j <= estimatedLocationPoints.Count - 1; j++) {
-                    var line2 = new clsLine3d(estimatedLocationPoints[j].Copy(), seenFromCameraPoints[j].Copy());
-
-                    // Get midpoint of each line
-                    var p1 = line1.Point;
-                    p1.Normalise();
-                    var p2 = line2.Point;
-                    p2.Normalise();
-
-                    // Determine angle between lines
-                    var a = Acos(p1.Dot(p2)) * 180 / PI;
-                    if (a > myPGAngleTol) {
-                        // Angle is above minimum threshold, so determine the point on each line which is closest to the other line
-                        var p3 = line1.ClosestPointToLine(line2);
-                        var p4 = line2.ClosestPointToLine(line1);
-
-                        // Determine the distance between the closest points
-                        var d = p3.Dist(p4);
-                        if (d < myPGPointTol) {
-                            // Distance is below threshold so add the intersection point as the midpoint between them
-                            intersectionPoints.Add(new clsPoint3d((p3.X + p4.X) / 2, (p3.Y + p4.Y) / 2, (p3.Z + p4.Z) / 2));
-                        }
-                    }
-                }
-            }
-
-            var intersectionPointsToFind = 10;
-            if (intersectionPoints.Count >= intersectionPointsToFind) {
-                myNumPtsCalculated = intersectionPoints.Count;
-                return GetAveragePoint(intersectionPoints);
-            } else {
-                DebugStringList.Add($"{intersectionPoints.Count} / {intersectionPointsToFind}");
-            }
-            return new clsPoint3d(0, 0, 0);
+            // Return the point (if we have more than 7 points within the tolerance)
+            return new clsPoint3d(points.Average(p => p.X), points.Average(p => p.Y), points.Average(p => p.Z));
         }
 
         /// <summary>
@@ -862,186 +643,23 @@ namespace BatchProcess
             return new clsPoint3d(points.Average(p => p.X), points.Average(p => p.Y), points.Average(p => p.Z));
         }
 
-        /// <summary>
-        /// Gets the maximum distance between the points.
-        /// </summary>
-        /// <param name="points">The points.</param>
-        /// <returns>The maximum distance between the points.</returns>
-        public double MaxSpread(List<clsPoint3d> points) {
-            return points.Max(p => points.Max(p1 => p.Dist(p1)));
-        }
-
-        public bool AngleXYIsOK(ref double myMaxAngle, ref string myErrorString) {
-            double a;
-            List<double> myAngles = new List<double>();
-            int j;
-            int k = 0;
-            clsPoint3d p1;
-            clsPoint p3;
-            int i1 = 0;
-            int i2 = 0;
-            bool isOK;
-            double a1;
-            double a2;
-            double myAngleSoFar;
-
-            myMaxAngle = 0;
-            myErrorString = "";
-
-            for (j = 0; j <= myCameraPoints.Count - 1; j++) {
-                p1 = myCameraPoints[j];
-                p1.Normalise();
-                p3 = p1.Point2D();
-                if (p3.Length > 0.1) {
-                    p3.Normalise();
-                    myAngles.Add(p3.Angle(true));
-                }
-            }
-            if (myAngles.Count <= 1) {
-                myErrorString = "Not Enough Measurements Taken";
-                return false;
-            }
-
-            myAngles.Sort();
-            for (j = 0; j <= myAngles.Count - 2; j++) {
-                for (k = j + 1; k <= myAngles.Count - 1; k++) {
-                    a = Min(myAngles[k] - myAngles[j], myAngles[j] + 2 * PI - myAngles[k]);
-                    if (a > myMaxAngle) {
-                        i1 = j;
-                        i2 = k;
-                        myMaxAngle = Abs(a);
-                    }
-                }
-            }
-            if (myMaxAngle < 15 * PI / 180) {
-                myErrorString = "Horizontal Angle Range < 15°";
-                return false;
-            }
-
-            //Now check that we can get from one angle to the next in jumps of 90 degrees or less
-            isOK = true;
-            myAngleSoFar = 0;
-            for (j = i1; j <= i2 - 1; j++) {
-                if (myAngles[j + 1] - myAngles[j] > 120 * PI / 180 + myTol) {
-                    isOK = false;
-                    break; // TODO: might not be correct. Was : Exit For
-                } else {
-                    myAngleSoFar = myAngleSoFar + myAngles[j + 1] - myAngles[j];
-                    if (myAngleSoFar > 90 * PI / 180 + myTol)
-                        return true;
-                }
-            }
-            if (isOK)
-                return true;
-
-            try {
-                j = i2;
-                myAngleSoFar = 0;
-                while (j != i1) {
-                    k = j + 1;
-                    if (k > myAngles.Count - 1)
-                        k = 0;
-                    a1 = myAngles[j];
-                    a2 = myAngles[k];
-                    if (a2 < a1)
-                        a2 = a2 + 2 * PI;
-                    if ((a2 - a1) > 120 * PI / 180 + myTol) {
-                        myErrorString = "Horizontal Angle Range Has > 120° Gap";
-                        return false;
-                    } else {
-                        myAngleSoFar = myAngleSoFar + a2 - a1;
-                        if (myAngleSoFar > 15 * PI / 180 + myTol)
-                            return true;
-                    }
-                    j = j + 1;
-                    if (j > myAngles.Count - 1)
-                        j = 0;
-                }
-
-            } catch (Exception ex) {
-                string s = ex.ToString();
-            }
-
-            return true;
-        }
-
-        public void AngleRangeXY(ref double a1, ref double a2, ref List<double> myAngles) {
-            double a;
-            double maxA;
-            clsPoint3d p1;
-            clsPoint p3;
-            int j;
-            int k;
-
-            a1 = 0;
-            a2 = 0;
-            myAngles = new List<double>();
-
-            for (j = 0; j <= myCameraPoints.Count - 1; j++) {
-                p1 = myCameraPoints[j];
-                p1.Normalise();
-                p3 = p1.Point2D();
-                if (p3.Length > 0.1) {
-                    p3.Normalise();
-                    myAngles.Add(p3.Angle(true));
-                }
-            }
-            if (myAngles.Count <= 1)
-                return;
-
-            myAngles.Sort();
-            maxA = 0;
-            for (j = 0; j <= myAngles.Count - 1; j++) {
-                k = j + 1;
-                if (k < myAngles.Count) {
-                    a = myAngles[k] - myAngles[j];
-                    if (a > maxA) {
-                        maxA = a;
-                        a1 = myAngles[j];
-                        a2 = myAngles[k];
-                    }
-                    if (myAngles.Count == 2) {
-                        a = myAngles[j] + 2 * PI - myAngles[k];
-                        if (a > maxA) {
-                            maxA = a;
-                            a1 = myAngles[k];
-                            a2 = myAngles[j];
-                        }
-                    }
-                } else if (myAngles.Count > 2) {
-                    k = 0;
-                    a = myAngles[k] + 2 * PI - myAngles[j];
-                    if (a > maxA) {
-                        maxA = a;
-                        a1 = myAngles[j];
-                        a2 = myAngles[k] + 2 * PI;
-                    }
-                }
-            }
-        }
-
         public void Clear() {
-            myOrigin = new clsPoint3d();
-            myEndXAxis = new clsPoint3d();
-            myEndYAxis = new clsPoint3d();
-            myPoint = new clsPoint3d();
-            VX = new clsPoint3d();
-            VY = new clsPoint3d();
-            VZ = new clsPoint3d();
-            mySeenFromCameraPoints.Clear();
-            myPts1.Clear();
-            myPts2.Clear();
-            myPts3.Clear();
-            myCameraPoints.Clear();
+            Origin = new clsPoint3d();
+            EndXAxis = new clsPoint3d();
+            EndYAxis = new clsPoint3d();
+            Point = new clsPoint3d();
+            Vx = new clsPoint3d();
+            Vy = new clsPoint3d();
+            Vz = new clsPoint3d();
+            PhotoNumbers.Clear();
+            ModelViewMatrix = new double[16];
+            Matrixes.Clear();
+            Points.Clear();
+            PointsX.Clear();
+            PointsY.Clear();
+            CameraPoints.Clear();
             GyroData.Clear();
-            LastGyroData.Clear();
             AccelData.Clear();
-            LastAccelData.Clear();
-            myHistory.Clear();
-            myLastTime = null;
-            myLastVector = null;
-            FirstPointRemoved = false;
-            mySeenFromMarkerIDs.Clear();
         }
     }
 
@@ -1075,7 +693,11 @@ namespace BatchProcess
             if (myItem1.MarkerID < myItem2.MarkerID) {
                 return -1;
             } else if (myItem1.MarkerID == myItem2.MarkerID) {
-                if (myItem1.SeenFromMarkerID < myItem2.SeenFromMarkerID) {
+                if (myItem1.SeenFromMarkerID == myGFMarkerID) {
+                    return -1;
+                } else if (myItem2.SeenFromMarkerID == myGFMarkerID) {
+                    return 1;
+                } else if (myItem1.SeenFromMarkerID < myItem2.SeenFromMarkerID) {
                     return -1;
                 } else if (myItem1.SeenFromMarkerID == myItem2.SeenFromMarkerID) {
                     return 0;

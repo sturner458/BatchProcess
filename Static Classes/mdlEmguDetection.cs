@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using static System.Math;
 using Emgu.CV.Structure;
-using static BatchProcess.mdlRecognise;
+using static BatchProcess.mdlDetectPhotos;
 using System.Drawing.Imaging;
 using OpenTK;
 using static BatchProcess.mdlEmguCalibration;
@@ -226,7 +226,7 @@ namespace BatchProcess {
             Marshal.Copy(cameraArray, 0, cameraMatrix.DataPointer, 9);
             Marshal.Copy(distCoeffArray, 0, distortionCoeffs.DataPointer, nFactors);
 
-            mdlRecognise.AddDatumMarkersToARToolKit();
+            mdlDetectPhotos.AddDatumMarkersToARToolKit();
 
             var cornersErr = new Emgu.CV.Util.VectorOfPointF();
             var cornersErr2 = new Emgu.CV.Util.VectorOfPointF();
@@ -387,7 +387,7 @@ namespace BatchProcess {
             Marshal.Copy(cameraArray, 0, cameraMatrix.DataPointer, 9);
             Marshal.Copy(distCoeffArray, 0, distortionCoeffs.DataPointer, nFactors);
 
-            mdlRecognise.AddMarkersToARToolKit();
+            mdlDetectPhotos.AddMarkersToARToolKit();
 
             var cornersErr = new Emgu.CV.Util.VectorOfPointF();
             var cornersErr2 = new Emgu.CV.Util.VectorOfPointF();

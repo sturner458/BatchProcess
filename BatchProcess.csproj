@@ -93,6 +93,8 @@
     <Compile Include="Classes\clsLine.cs" />
     <Compile Include="Classes\clsLine3d.cs" />
     <Compile Include="Classes\clsMarkerPoint.cs" />
+    <Compile Include="Classes\clsMarkerPoint2.cs" />
+    <Compile Include="Classes\clsMeasurement.cs" />
     <Compile Include="Classes\clsPGPoint.cs" />
     <Compile Include="Classes\clsPoint.cs" />
     <Compile Include="Classes\clsPoint3d.cs" />
@@ -115,6 +117,7 @@
     <Compile Include="Static Classes\mdlEmguCalibration.cs" />
     <Compile Include="Static Classes\mdlGeometry.cs" />
     <Compile Include="Static Classes\mdlGlobals.cs" />
+    <Compile Include="Static Classes\mdlDetectPhotos.cs" />
     <Compile Include="Static Classes\mdlRecognise.cs" />
     <Compile Include="Static Classes\mdlUndistort.cs" />
     <Compile Include="Static Classes\Program.cs" />
@@ -153,7 +156,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Images\Temperature.bmp" />
-    <Content Include="License-LGPL.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="ARWrapperCSharpIntegration\ARWrapperCSharpIntegration.csproj">

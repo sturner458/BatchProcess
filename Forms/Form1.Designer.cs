@@ -36,6 +36,7 @@
             this.btnDetectMarkers = new System.Windows.Forms.Button();
             this.btnDetectDatums = new System.Windows.Forms.Button();
             this.btnBrightness = new System.Windows.Forms.Button();
+            this.btnSimplePhotos = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnCalibrate
@@ -58,7 +59,7 @@
             this.btnProcessPhotos.TabIndex = 1;
             this.btnProcessPhotos.Text = "Process Photos";
             this.btnProcessPhotos.UseVisualStyleBackColor = true;
-            this.btnProcessPhotos.Click += new System.EventHandler(this.button2_Click);
+            this.btnProcessPhotos.Click += new System.EventHandler(this.btnPhotos_Click);
             // 
             // btnImportDiagnostics
             // 
@@ -156,6 +157,17 @@
             this.btnBrightness.UseVisualStyleBackColor = true;
             this.btnBrightness.Click += new System.EventHandler(this.btnBrightness_Click);
             // 
+            // btnSimplePhotos
+            // 
+            this.btnSimplePhotos.Anchor = System.Windows.Forms.AnchorStyles.Top;
+            this.btnSimplePhotos.Location = new System.Drawing.Point(138, 97);
+            this.btnSimplePhotos.Name = "btnSimplePhotos";
+            this.btnSimplePhotos.Size = new System.Drawing.Size(86, 47);
+            this.btnSimplePhotos.TabIndex = 1;
+            this.btnSimplePhotos.Text = "Simple Photos";
+            this.btnSimplePhotos.UseVisualStyleBackColor = true;
+            this.btnSimplePhotos.Click += new System.EventHandler(this.btnSimplePhotos_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -169,6 +181,7 @@
             this.Controls.Add(this.btnImportDiagnostics2);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.btnImportDiagnostics);
+            this.Controls.Add(this.btnSimplePhotos);
             this.Controls.Add(this.btnProcessPhotos);
             this.Controls.Add(this.btnBrightness);
             this.Controls.Add(this.btnCalibrate);
@@ -194,6 +207,7 @@
         private System.Windows.Forms.Button btnDetectMarkers;
         private System.Windows.Forms.Button btnDetectDatums;
         private System.Windows.Forms.Button btnBrightness;
+        private System.Windows.Forms.Button btnSimplePhotos;
     }
 }
 
