@@ -397,7 +397,7 @@ namespace BatchProcess {
 
                 var numBarcodes = ARToolKitFunctions.Instance.arwGetTrackablePatternCount(markerID);
                 for (int i = 0; i < numBarcodes; i++) {
-                    ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(markerID, i, mv, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+                    ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(markerID, i, mv, out double width, out double height, out int imageSizeX, out int imageSizeY, out int barcodeID);
 
                     if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, barcodeID, mv)) {
                         var barcodeMatrix = MatrixFromArray(mv);

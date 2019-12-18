@@ -763,18 +763,18 @@ public class ARToolKitFunctions
         ARNativePlugin.arwResetMapperTrackable(gMapUID, cfg);
     }
 
-    public void arwAddMappedMarkers(int gMapUID, int nMarkers, float[] thisTrans, float[] markerTrans, int[] uids) {
+    public void arwAddMappedMarkers(int gMapUID, int GFMarkerID, int nMarkers, double[] markerTrans, int[] uids, double[] corners) {
 
-        GCHandle handle1 = GCHandle.Alloc(thisTrans, GCHandleType.Pinned);
+        GCHandle handle1 = GCHandle.Alloc(markerTrans, GCHandleType.Pinned);
         IntPtr address1 = handle1.AddrOfPinnedObject();
 
-        GCHandle handle2 = GCHandle.Alloc(markerTrans, GCHandleType.Pinned);
+        GCHandle handle2 = GCHandle.Alloc(uids, GCHandleType.Pinned);
         IntPtr address2 = handle2.AddrOfPinnedObject();
 
-        GCHandle handle3 = GCHandle.Alloc(uids, GCHandleType.Pinned);
+        GCHandle handle3 = GCHandle.Alloc(corners, GCHandleType.Pinned);
         IntPtr address3 = handle3.AddrOfPinnedObject();
 
-        ARNativePlugin.arwAddMappedMarkers(gMapUID, nMarkers, address1, address2, address3);
+        ARNativePlugin.arwAddMappedMarkers(gMapUID, GFMarkerID, nMarkers, address1, address2, address3);
         handle1.Free();
         handle2.Free();
         handle3.Free();
@@ -789,7 +789,7 @@ public class ARToolKitFunctions
         ARNativePlugin.arwListTrackables(gMapUID);
     }
 
-    public bool arwGetTrackablePatternConfig(int trackableUID, int patternID, double[] matrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID) {
+    public bool arwGetTrackablePatternConfig(int trackableUID, int patternID, double[] matrix, out double width, out double height, out int imageSizeX, out int imageSizeY, out int barcodeID) {
         return ARNativePlugin.arwGetTrackablePatternConfig(trackableUID, patternID, matrix, out width, out height, out imageSizeX, out imageSizeY, out barcodeID);
     }
 

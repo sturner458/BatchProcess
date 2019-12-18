@@ -30,9 +30,6 @@ namespace BatchProcess
 
         public List<double[]> Matrixes { get; } = new List<double[]>(); // Model View Matrices as recorded by ARToolkit
         public List<int> PhotoNumbers { get; } = new List<int>();
-        public List<clsPoint3d> Points { get; } = new List<clsPoint3d>();
-        public List<clsPoint3d> PointsX { get; } = new List<clsPoint3d>();
-        public List<clsPoint3d> PointsY { get; } = new List<clsPoint3d>();
         public List<clsPoint3d> CameraPoints { get; } = new List<clsPoint3d>();
 
         public clsPoint3d VerticalVect { get; set; } = null;
@@ -305,9 +302,6 @@ namespace BatchProcess
                 myCopy.Matrixes.Add(Matrixes[i].ToArray());
             }
 
-            myCopy.Points.AddRange(Points.Select(p => p.Copy()).ToArray());
-            myCopy.PointsX.AddRange(PointsX.Select(p => p.Copy()).ToArray());
-            myCopy.PointsY.AddRange(PointsY.Select(p => p.Copy()).ToArray());
             myCopy.CameraPoints.AddRange(CameraPoints.Select(p => p.Copy()).ToArray());
 
             for (int i = 0; i < GyroData.Count; i++) {
@@ -367,21 +361,6 @@ namespace BatchProcess
                 for (int j = 0; j < 16; j++) {
                     sw.WriteLine(Matrixes[i][j].ToString());
                 }
-            }
-
-            sw.WriteLine(Points.Count);
-            for (int i = 0; i < Points.Count; i++) {
-                Points[i].Save(sw);
-            }
-
-            sw.WriteLine(PointsX.Count);
-            for (int i = 0; i < PointsX.Count; i++) {
-                PointsX[i].Save(sw);
-            }
-
-            sw.WriteLine(PointsY.Count);
-            for (int i = 0; i < PointsY.Count; i++) {
-                PointsY[i].Save(sw);
             }
 
             sw.WriteLine(CameraPoints.Count);
@@ -461,27 +440,6 @@ namespace BatchProcess
                 for (int j = 0; j < 16; j++) {
                     Matrixes.Last()[j] = Convert.ToDouble(sr.ReadLine());
                 }
-            }
-
-            n = Convert.ToInt32(sr.ReadLine());
-            for (var i = 1; i <= n; i++) {
-                p1 = new clsPoint3d();
-                p1.Load(sr);
-                Points.Add(p1);
-            }
-
-            n = Convert.ToInt32(sr.ReadLine());
-            for (var i = 1; i <= n; i++) {
-                p1 = new clsPoint3d();
-                p1.Load(sr);
-                PointsX.Add(p1);
-            }
-
-            n = Convert.ToInt32(sr.ReadLine());
-            for (var i = 1; i <= n; i++) {
-                p1 = new clsPoint3d();
-                p1.Load(sr);
-                PointsY.Add(p1);
             }
 
             n = Convert.ToInt32(sr.ReadLine());
@@ -654,9 +612,6 @@ namespace BatchProcess
             PhotoNumbers.Clear();
             ModelViewMatrix = new double[16];
             Matrixes.Clear();
-            Points.Clear();
-            PointsX.Clear();
-            PointsY.Clear();
             CameraPoints.Clear();
             GyroData.Clear();
             AccelData.Clear();

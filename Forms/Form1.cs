@@ -238,7 +238,7 @@ namespace BatchProcess {
         private static void DetectMapperMarkerVisible(int myMarkerID, ref List<clsPGPoint> pts, bool useDatums) {
 
             double[] myMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myMarkerID, 0, myMatrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+            ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myMarkerID, 0, myMatrix, out double width, out double height, out int imageSizeX, out int imageSizeY, out int barcodeID);
 
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, barcodeID, mv)) {
@@ -278,7 +278,7 @@ namespace BatchProcess {
             return output;
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        private void btnImportDiagnostics_Click(object sender, EventArgs e)
         {
             OpenFileDialog myDlg = new OpenFileDialog();
             DialogResult ret;
@@ -711,6 +711,28 @@ namespace BatchProcess {
             sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
             mdlRecognise.ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.MarkerID + 1).ToString() + '\t' + p.SeenFromMarkerID));
             sw.Close();
+
+            MessageBox.Show("Finished");
+        }
+
+        private void btnImportDiagnostics3_Click(object sender, EventArgs e) {
+            OpenFileDialog myDlg = new OpenFileDialog();
+            DialogResult ret;
+            string myFile, myCalibFile;
+
+            myDlg.InitialDirectory = "C:\\Customer\\Stannah\\Photogrammetry\\BatchProcess\\Diagnostic Files";
+            myDlg.Filter = "Diagnostic Files (*.txt)|*.txt";
+            ret = myDlg.ShowDialog();
+            if (ret != DialogResult.OK) return;
+            myFile = myDlg.FileName;
+
+            myDlg.Filter = "Calibration Files (*.dat)|*.dat";
+            ret = myDlg.ShowDialog();
+            if (ret != DialogResult.OK) return;
+            myCalibFile = myDlg.FileName;
+
+            mdlRecognise.LoadSavedDataFile(myFile);
+            mdlRecognise.BatchBundleAdjust(myCalibFile);
 
             MessageBox.Show("Finished");
         }

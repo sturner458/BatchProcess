@@ -295,14 +295,14 @@ public class ARNativePlugin
     internal static extern void arwResetMapperTrackable(int gMapUID, string cfg);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void arwAddMappedMarkers(int gMapUID, int nMarkers, IntPtr thisTrans, IntPtr markerTrans, IntPtr uids);
+    internal static extern void arwAddMappedMarkers(int gMapUID, int GFMarkerID, int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     internal static extern void arwListTrackables(int gMapUID);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwGetTrackablePatternConfig(int trackableUID, int patternID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] double[] matrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+    internal static extern bool arwGetTrackablePatternConfig(int trackableUID, int patternID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] double[] matrix, out double width, out double height, out int imageSizeX, out int imageSizeY, out int barcodeID);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int arwGetTrackablePatternCount(int trackableUID);

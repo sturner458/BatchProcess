@@ -60,5 +60,24 @@ namespace BatchProcess
             }
         }
 
+        public double[] Trans() {
+            var trans = new double[Matrixes.Count * 12];
+            for (int i = 0; i < Matrixes.Count; i++) {
+                trans[i * 12] = Matrixes[i][0];
+                trans[i * 12 + 1] = Matrixes[i][4];
+                trans[i * 12 + 2] = Matrixes[i][8];
+                trans[i * 12 + 3] = Matrixes[i][12];
+                trans[i * 12 + 4] = -Matrixes[i][1];
+                trans[i * 12 + 5] = -Matrixes[i][5];
+                trans[i * 12 + 6] = -Matrixes[i][9];
+                trans[i * 12 + 7] = -Matrixes[i][13];
+                trans[i * 12 + 8] = -Matrixes[i][2];
+                trans[i * 12 + 9] = -Matrixes[i][6];
+                trans[i * 12 + 10] = -Matrixes[i][10];
+                trans[i * 12 + 11] = -Matrixes[i][14];
+            }
+            return trans;
+        }
+
     }
 }

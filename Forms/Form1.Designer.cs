@@ -37,6 +37,7 @@
             this.btnDetectDatums = new System.Windows.Forms.Button();
             this.btnBrightness = new System.Windows.Forms.Button();
             this.btnSimplePhotos = new System.Windows.Forms.Button();
+            this.btnImportDiagnostics3 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnCalibrate
@@ -70,7 +71,7 @@
             this.btnImportDiagnostics.TabIndex = 2;
             this.btnImportDiagnostics.Text = "Import Diagnostics";
             this.btnImportDiagnostics.UseVisualStyleBackColor = true;
-            this.btnImportDiagnostics.Click += new System.EventHandler(this.button3_Click);
+            this.btnImportDiagnostics.Click += new System.EventHandler(this.btnImportDiagnostics_Click);
             // 
             // lblStatus
             // 
@@ -168,6 +169,17 @@
             this.btnSimplePhotos.UseVisualStyleBackColor = true;
             this.btnSimplePhotos.Click += new System.EventHandler(this.btnSimplePhotos_Click);
             // 
+            // btnImportDiagnostics3
+            // 
+            this.btnImportDiagnostics3.Anchor = System.Windows.Forms.AnchorStyles.Top;
+            this.btnImportDiagnostics3.Location = new System.Drawing.Point(249, 100);
+            this.btnImportDiagnostics3.Name = "btnImportDiagnostics3";
+            this.btnImportDiagnostics3.Size = new System.Drawing.Size(86, 47);
+            this.btnImportDiagnostics3.TabIndex = 2;
+            this.btnImportDiagnostics3.Text = "Import Diagnostics";
+            this.btnImportDiagnostics3.UseVisualStyleBackColor = true;
+            this.btnImportDiagnostics3.Click += new System.EventHandler(this.btnImportDiagnostics3_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -180,6 +192,7 @@
             this.Controls.Add(this.btnReadCalibDat);
             this.Controls.Add(this.btnImportDiagnostics2);
             this.Controls.Add(this.lblStatus);
+            this.Controls.Add(this.btnImportDiagnostics3);
             this.Controls.Add(this.btnImportDiagnostics);
             this.Controls.Add(this.btnSimplePhotos);
             this.Controls.Add(this.btnProcessPhotos);
@@ -208,6 +221,7 @@
         private System.Windows.Forms.Button btnDetectDatums;
         private System.Windows.Forms.Button btnBrightness;
         private System.Windows.Forms.Button btnSimplePhotos;
+        private System.Windows.Forms.Button btnImportDiagnostics3;
     }
 }
 

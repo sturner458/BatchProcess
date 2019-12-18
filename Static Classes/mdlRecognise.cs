@@ -347,11 +347,11 @@ namespace BatchProcess
                         int k = -1;
                         for (int j = 0; j < n; j++) {
                             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                            ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(markerID, j, mv, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+                            ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(markerID, j, mv, out double width, out double height, out int imageSizeX, out int imageSizeY, out int barcodeID);
 
                             measurement.MarkerUIDs.Add(barcodeID);
                             var configMatrix = MatrixFromArray(mv);
-                            var totalMatrix = OpenTK.Matrix4d.Mult(matrix, configMatrix);
+                            var totalMatrix = OpenTK.Matrix4d.Mult(configMatrix, matrix);
                             mv = ArrayFromMatrix(totalMatrix);
                             measurement.Matrixes.Add(mv);
                             var corners = new List<clsPoint>();
@@ -610,7 +610,7 @@ namespace BatchProcess
                     }
                 }
 
-                if (n1 == -1 || !mySuspectedMarkers[n].Confirmed || pts1.Count < 10) {
+                if (n1 == -1 || !mySuspectedMarkers[n].Confirmed || imagesSeenIn.Count < 10) {
                     n = n + 1;
                     continue;
                 }
@@ -1322,6 +1322,76 @@ namespace BatchProcess
             return mv;
         }
 
+        public static void BatchBundleAdjust(string myCalibFile) {
+            myVideoWidth = 3264;
+            myVideoHeight = 2448;
+            ARToolKitFunctions.Instance.arwInitialiseAR();
+            StartTracking(myVideoWidth, myVideoHeight);
+            var arParams = mdlEmguCalibration.LoadCameraFromFile2(myCalibFile);
+
+            ARToolKitFunctions.Instance.arwSetPatternDetectionMode(AR_MATRIX_CODE_DETECTION);
+            ARToolKitFunctions.Instance.arwSetMatrixCodeType((int)AR_MATRIX_CODE_TYPE.AR_MATRIX_CODE_4x4);
+            ARToolKitFunctions.Instance.arwSetVideoThreshold(50);
+            ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
+            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(true);
+
+            myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/GFMarker.dat");
+
+            string sConfig = "multi_auto;121;80;";
+            var myMapperMarkerID = ARToolKitFunctions.Instance.arwAddMarker(sConfig);
+
+            foreach (var measurement in myMeasurements) {
+                ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myGFMarkerID, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray());
+            }
+
+            var pts = new List<clsPGPoint>();
+            for (int i = 2; i <= 100; i = i + 2) {
+                DetectMapperMarkerVisible(myMapperMarkerID, i, ref pts, false);
+            }
+
+            DetectMapperMarkerVisible(myMapperMarkerID, 121, ref pts, false);
+            DetectMapperMarkerVisible(myMapperMarkerID, 125, ref pts, false);
+
+            pts.Sort((p1, p2) => p1.z.CompareTo(p2.z));
+
+            var sw = new System.IO.StreamWriter("C:\\Temp\\points.txt");
+            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t' + p.z.ToString() + '\t' + (-p.y).ToString() + '\t' + (p.ID + 1).ToString() + '\t' + p.ParentID));
+            sw.Close();
+
+            sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
+            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t' + p.y.ToString() + '\t' + p.z.ToString() + '\t' + (p.ID + 1).ToString() + '\t' + p.ParentID));
+            sw.Close();
+
+        }
+
+        private static void DetectMapperMarkerVisible(int myMapperMarkerID, int myMarkerID, ref List<clsPGPoint> pts, bool useDatums) {
+            double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, myMarkerID, mv)) {
+
+                OpenTK.Matrix4d matrix = new OpenTK.Matrix4d(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
+                var pt = new OpenTK.Vector4d(mv[12], mv[13], mv[14], 0);
+                if (!useDatums) {
+                    if (myMarkerID < 50) {
+                        pt = new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1);
+                        pt = OpenTK.Vector4d.Transform(pt, matrix);
+                    } else if (myMarkerID < 100) {
+                        pt = new OpenTK.Vector4d(140.0, 45.0, 0.0f, 1);
+                        pt = OpenTK.Vector4d.Transform(pt, matrix);
+                    }
+                } else {
+                    if (myMarkerID - 2 >= 0 && myMarkerID - 2 < 50) {
+                        pt = new OpenTK.Vector4d(160.0f, -45.0f, 0.0f, 1);
+                        pt = OpenTK.Vector4d.Transform(pt, matrix);
+                    } else if (myMarkerID - 2 >= 50 && myMarkerID - 2 < 100) {
+                        pt = new OpenTK.Vector4d(160.0, 45.0, 0.0f, 1);
+                        pt = OpenTK.Vector4d.Transform(pt, matrix);
+                    }
+                }
+
+                pts.Add(new clsPGPoint(pt.X, pt.Y, pt.Z, myMarkerID));
+            }
+        }
+
     }
- 
+
 }
