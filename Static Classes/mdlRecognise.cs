@@ -1348,47 +1348,54 @@ namespace BatchProcess
             for (int i = 2; i <= 100; i = i + 2) {
                 DetectMapperMarkerVisible(myMapperMarkerID, i, ref pts, false);
             }
+            for (int i = 130; i <= 228; i = i + 2) {
+                DetectMapperMarkerVisible(myMapperMarkerID, i, ref pts, false);
+            }
 
-            DetectMapperMarkerVisible(myMapperMarkerID, 121, ref pts, false);
+            // DetectMapperMarkerVisible(myMapperMarkerID, 121, ref pts, false);
             DetectMapperMarkerVisible(myMapperMarkerID, 125, ref pts, false);
 
             pts.Sort((p1, p2) => p1.z.CompareTo(p2.z));
 
             var sw = new System.IO.StreamWriter("C:\\Temp\\points.txt");
-            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t' + p.z.ToString() + '\t' + (-p.y).ToString() + '\t' + (p.ID + 1).ToString() + '\t' + p.ParentID));
+            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t' + p.z.ToString() + '\t' + (-p.y).ToString() + '\t' + p.ID.ToString() + '\t' + p.ParentID));
             sw.Close();
 
             sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
-            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t' + p.y.ToString() + '\t' + p.z.ToString() + '\t' + (p.ID + 1).ToString() + '\t' + p.ParentID));
+            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t' + p.y.ToString() + '\t' + p.z.ToString() + '\t' + p.ID.ToString() + '\t' + p.ParentID));
             sw.Close();
 
         }
 
-        private static void DetectMapperMarkerVisible(int myMapperMarkerID, int myMarkerID, ref List<clsPGPoint> pts, bool useDatums) {
+        private static void DetectMapperMarkerVisible(int myMapperMarkerID, int myBarcodeID, ref List<clsPGPoint> pts, bool useDatums) {
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, myMarkerID, mv)) {
+            if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, myBarcodeID, mv)) {
 
                 OpenTK.Matrix4d matrix = new OpenTK.Matrix4d(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
                 var pt = new OpenTK.Vector4d(mv[12], mv[13], mv[14], 0);
                 if (!useDatums) {
-                    if (myMarkerID < 50) {
+                    int markerID = myBarcodeID;
+                    if (myBarcodeID == 125) {
+
+                    } else if (markerID <= 100) {
                         pt = new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1);
                         pt = OpenTK.Vector4d.Transform(pt, matrix);
-                    } else if (myMarkerID < 100) {
+                    } else {
                         pt = new OpenTK.Vector4d(140.0, 45.0, 0.0f, 1);
                         pt = OpenTK.Vector4d.Transform(pt, matrix);
                     }
                 } else {
-                    if (myMarkerID - 2 >= 0 && myMarkerID - 2 < 50) {
+                    int markerID = myBarcodeID;
+                    if (markerID - 2 >= 0 && markerID - 2 < 50) {
                         pt = new OpenTK.Vector4d(160.0f, -45.0f, 0.0f, 1);
                         pt = OpenTK.Vector4d.Transform(pt, matrix);
-                    } else if (myMarkerID - 2 >= 50 && myMarkerID - 2 < 100) {
+                    } else if (markerID - 2 >= 50 && markerID - 2 < 100) {
                         pt = new OpenTK.Vector4d(160.0, 45.0, 0.0f, 1);
                         pt = OpenTK.Vector4d.Transform(pt, matrix);
                     }
                 }
 
-                pts.Add(new clsPGPoint(pt.X, pt.Y, pt.Z, myMarkerID));
+                pts.Add(new clsPGPoint(pt.X, pt.Y, pt.Z, myBarcodeID));
             }
         }
 
