@@ -8,7 +8,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static BatchProcess.mdlDetectPhotos;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using static BatchProcess.mdlGlobals;
@@ -121,150 +120,7 @@ namespace BatchProcess {
 
         private void btnPhotos_Click(object sender, EventArgs e)
         {
-            FolderBrowserDialog myDlg = new FolderBrowserDialog();
-            DialogResult ret;
-            string myFolder;
-            List<string> myFiles = new List<string>();
-            int nFiles = 0;
-
-            InitGlobals();
-
-            bool USE_DATUMS = false;
-
-            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\Survey 2";
-            //myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\021219";
-            ret = myDlg.ShowDialog();
-            if (ret != DialogResult.OK) return;
-            myFolder = myDlg.SelectedPath;
-
-            if (File.Exists(Path.Combine(myFolder, "Calib.dat")) && File.Exists(Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"))) {
-                try {
-                    File.Delete(Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"));
-                } catch (Exception ex) {
-                    MessageBox.Show(ex.ToString());
-                    return;
-                }
-            }
-
-            try {
-                File.Copy(Path.Combine(myFolder, "Calib.dat"), Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"));
-            } catch (Exception ex) {
-                MessageBox.Show(ex.ToString());
-                return;
-            }
-
-            foreach (string myFile in Directory.GetFiles(myFolder)) {
-                if (myFile.ToLower().EndsWith("-debug.png")) {
-                    try {
-                        File.Delete(myFile);
-                    }
-                    catch (Exception ex) {
-                        string s = ex.ToString();
-                    }
-                }
-                if (Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("survey") && !myFile.ToLower().EndsWith("-adj.png")) {
-                    myFiles.Add(myFile);
-                    if (myVideoHeight == 0) {
-                        Image myImage = Image.FromFile(myFile);
-                        myVideoWidth = myImage.Width;
-                        myVideoHeight = myImage.Height;
-                        myVideoPixelSize = 4;
-                    }
-                }
-            }
-            ARToolKitFunctions.Instance.arwInitialiseAR();
-            StartTracking(myVideoWidth, myVideoHeight, USE_DATUMS);
-            string myCameraFile = "data\\calib.dat";
-            var arParams = mdlEmguCalibration.LoadCameraFromFile2(myCameraFile);
-
-            myFiles.Sort(new AlphaNumericCompare());
-
-            foreach (string myFile in myFiles) {
-                nFiles = nFiles + 1;
-                lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
-                try {
-                    var image = new Image<Gray, byte>(myFile);
-                    var size = image.Width * image.Height;
-                    byte[] imageBytes = new Byte[size];
-                    System.Buffer.BlockCopy(image.Data, 0, imageBytes, 0, size);
-                    Application.DoEvents();
-                    try {
-                        RecogniseMarkers(imageBytes, myFile, arParams);
-                    } catch (Exception ex) {
-                        Console.WriteLine(ex.ToString());
-                    }
-                } catch (Exception ex) {
-                    Console.WriteLine(ex.ToString());
-                }
-                Console.WriteLine("Processed " + nFiles + " out of " + myFiles.Count + " photos - " + Path.GetFileName(myFile));
-            }
-
-            var pts = new List<clsPGPoint>();
-            for (int i = 0; i <= myMarkerIDs.Count - 1; i++) {
-                DetectMapperMarkerVisible(myMarkerIDs[i], ref pts, USE_DATUMS);
-            }
-
-            DetectMapperMarkerVisible(myGFMarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myStepMarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myLeftBulkheadMarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myRightBulkheadMarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myDoorHingeRightMarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myDoorFrameRightMarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myDoorHingeLeftMarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myDoorFrameLeftMarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myObstruct1MarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myObstruct2MarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myObstruct3MarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myObstruct4MarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myWall1MarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myWall2MarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myWall3MarkerID, ref pts, USE_DATUMS);
-            DetectMapperMarkerVisible(myWall4MarkerID, ref pts, USE_DATUMS);
-
-            pts.Sort((p1, p2) => p1.z.CompareTo(p2.z));
-
-            var sw = new System.IO.StreamWriter("C:\\Temp\\points.txt");
-            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t'+ p.z.ToString() + '\t' + (-p.y).ToString() + '\t' + (p.ID + 1).ToString() + '\t' + p.ParentID));
-            sw.Close();
-
-            sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
-            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t' + p.y.ToString() + '\t' + p.z.ToString() + '\t' + (p.ID + 1).ToString() + '\t' + p.ParentID));
-            sw.Close();
-
-            //SaveSurvey();
-            MessageBox.Show("Finished");
-        }
-
-        private static void DetectMapperMarkerVisible(int myMarkerID, ref List<clsPGPoint> pts, bool useDatums) {
-
-            double[] myMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myMarkerID, 0, myMatrix, out double width, out double height, out int imageSizeX, out int imageSizeY, out int barcodeID);
-
-            double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, barcodeID, mv)) {
-
-                OpenTK.Matrix4d matrix = new OpenTK.Matrix4d(mv[0], mv[1], mv[2], mv[3], mv[4], mv[5], mv[6], mv[7], mv[8], mv[9], mv[10], mv[11], mv[12], mv[13], mv[14], mv[15]);
-                var pt = new OpenTK.Vector4d(mv[12], mv[13], mv[14], 0);
-                if (!useDatums) {
-                    if (myMarkerID < 50) {
-                        pt = new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1);
-                        pt = OpenTK.Vector4d.Transform(pt, matrix);
-                    } else if (myMarkerID < 100) {
-                        pt = new OpenTK.Vector4d(140.0, 45.0, 0.0f, 1);
-                        pt = OpenTK.Vector4d.Transform(pt, matrix);
-                    }
-                } else {
-                    if (myMarkerID - 2 >= 0 && myMarkerID - 2 < 50) {
-                        pt = new OpenTK.Vector4d(160.0f, -45.0f, 0.0f, 1);
-                        pt = OpenTK.Vector4d.Transform(pt, matrix);
-                    } else if (myMarkerID - 2 >= 50 && myMarkerID - 2 < 100) {
-                        pt = new OpenTK.Vector4d(160.0, 45.0, 0.0f, 1);
-                        pt = OpenTK.Vector4d.Transform(pt, matrix);
-                    }
-                }
-
-                pts.Add(new clsPGPoint(pt.X, pt.Y, pt.Z, myMarkerID, barcodeID));
-            }
+            mdlDetectPhotos.ProcessPhotos(lblStatus);
         }
 
         private Image ImageFromRawRgbaArray(byte[] arr, int width, int height)
@@ -292,45 +148,45 @@ namespace BatchProcess {
             if (ret != DialogResult.OK) return;
             myFile = myDlg.FileName;
 
-            LoadAutoSaveData(myFile);
+            mdlDetectPhotos.LoadAutoSaveData(myFile);
 
             //Temp fix for levelled markers
-            for (i = 0; i < ConfirmedMarkers.Count; i++) {
-                for (j = 0; j < ConfirmedMarkers[i].History.Count; j++) {
-                    if (ConfirmedMarkers[i].History[j].SeenFromMarkerID == myGFMarkerID) {
-                        RelevelMarkerFromGF(ConfirmedMarkers[i].History[j], true);
+            for (i = 0; i < mdlDetectPhotos.ConfirmedMarkers.Count; i++) {
+                for (j = 0; j < mdlDetectPhotos.ConfirmedMarkers[i].History.Count; j++) {
+                    if (mdlDetectPhotos.ConfirmedMarkers[i].History[j].SeenFromMarkerID == mdlDetectPhotos.myGFMarkerID) {
+                        mdlDetectPhotos.RelevelMarkerFromGF(mdlDetectPhotos.ConfirmedMarkers[i].History[j], true);
                     }
                 }
             }
 
-            ConfirmedMarkersCopy.Clear();
+            mdlDetectPhotos.ConfirmedMarkersCopy.Clear();
             for (k = 0; k < 2; k++) {
-                mySuspectedMarkers.Clear();
+                mdlDetectPhotos.mySuspectedMarkers.Clear();
 
-                for (i = 0; i < ConfirmedMarkers.Count; i++) {
-                    for (j = 0; j < ConfirmedMarkers[i].History.Count; j++) {
-                        mySuspectedMarkers.Add(ConfirmedMarkers[i].History[j].Copy());
+                for (i = 0; i < mdlDetectPhotos.ConfirmedMarkers.Count; i++) {
+                    for (j = 0; j < mdlDetectPhotos.ConfirmedMarkers[i].History.Count; j++) {
+                        mdlDetectPhotos.mySuspectedMarkers.Add(mdlDetectPhotos.ConfirmedMarkers[i].History[j].Copy());
                     }
                 }
-                ConfirmedMarkers.Clear();
+                mdlDetectPhotos.ConfirmedMarkers.Clear();
 
                 n = -1;
-                while (n < ConfirmedMarkers.Count && mySuspectedMarkers.Count > 0) {
-                    n = ConfirmedMarkers.Count;
-                    ProcessMarkers(true);
+                while (n < mdlDetectPhotos.ConfirmedMarkers.Count && mdlDetectPhotos.mySuspectedMarkers.Count > 0) {
+                    n = mdlDetectPhotos.ConfirmedMarkers.Count;
+                    mdlDetectPhotos.ProcessMarkers(true);
                 }
 
-                ConfirmedMarkersCopy.Clear();
-                for (i = 0; i < ConfirmedMarkers.Count; i++) {
-                    ConfirmedMarkersCopy.Add(ConfirmedMarkers[i].Copy());
+                mdlDetectPhotos.ConfirmedMarkersCopy.Clear();
+                for (i = 0; i < mdlDetectPhotos.ConfirmedMarkers.Count; i++) {
+                    mdlDetectPhotos.ConfirmedMarkersCopy.Add(mdlDetectPhotos.ConfirmedMarkers[i].Copy());
                 }
             }
 
-            for (i = 0; i < ConfirmedMarkers.Count; i++) {
-                RelevelMarkerFromGF(ConfirmedMarkers[i]);
+            for (i = 0; i < mdlDetectPhotos.ConfirmedMarkers.Count; i++) {
+                mdlDetectPhotos.RelevelMarkerFromGF(mdlDetectPhotos.ConfirmedMarkers[i]);
             }
 
-            SaveSurvey();
+            mdlDetectPhotos.SaveSurvey();
             MessageBox.Show("Finished");
         }
 
@@ -349,32 +205,32 @@ namespace BatchProcess {
             if (ret != DialogResult.OK) return;
             myFile = myDlg.FileName;
 
-            LoadAutoSaveData(myFile);
+            mdlDetectPhotos.LoadAutoSaveData(myFile);
 
-            ConfirmedMarkersCopy.Clear();
-            mySuspectedMarkers.Clear();
+            mdlDetectPhotos.ConfirmedMarkersCopy.Clear();
+            mdlDetectPhotos.mySuspectedMarkers.Clear();
 
-            for (i = 0; i < ConfirmedMarkers.Count; i++) {
-                for (j = 0; j < ConfirmedMarkers[i].History.Count; j++) {
-                    mySuspectedMarkers.Add(ConfirmedMarkers[i].History[j].Copy());
-                    if (mySuspectedMarkers.Last().SeenFromMarkerID == myGFMarkerID) {
-                        RelevelMarkerFromGF(mySuspectedMarkers.Last(), true);
+            for (i = 0; i < mdlDetectPhotos.ConfirmedMarkers.Count; i++) {
+                for (j = 0; j < mdlDetectPhotos.ConfirmedMarkers[i].History.Count; j++) {
+                    mdlDetectPhotos.mySuspectedMarkers.Add(mdlDetectPhotos.ConfirmedMarkers[i].History[j].Copy());
+                    if (mdlDetectPhotos.mySuspectedMarkers.Last().SeenFromMarkerID == mdlDetectPhotos.myGFMarkerID) {
+                        mdlDetectPhotos.RelevelMarkerFromGF(mdlDetectPhotos.mySuspectedMarkers.Last(), true);
                     }
                 }
             }
-            ConfirmedMarkers.Clear();
+            mdlDetectPhotos.ConfirmedMarkers.Clear();
 
             n = -1;
-            while (n < ConfirmedMarkers.Count && mySuspectedMarkers.Count > 0) {
-                n = ConfirmedMarkers.Count;
-                ProcessMarkers(true);
+            while (n < mdlDetectPhotos.ConfirmedMarkers.Count && mdlDetectPhotos.mySuspectedMarkers.Count > 0) {
+                n = mdlDetectPhotos.ConfirmedMarkers.Count;
+                mdlDetectPhotos.ProcessMarkers(true);
             }
 
-            for (i = 0; i < ConfirmedMarkers.Count; i++) {
-                RelevelMarkerFromGF(ConfirmedMarkers[i]);
+            for (i = 0; i < mdlDetectPhotos.ConfirmedMarkers.Count; i++) {
+                mdlDetectPhotos.RelevelMarkerFromGF(mdlDetectPhotos.ConfirmedMarkers[i]);
             }
 
-            SaveSurvey();
+            mdlDetectPhotos.SaveSurvey();
             MessageBox.Show("Finished");
         }
 
@@ -623,96 +479,7 @@ namespace BatchProcess {
         }
 
         private void btnSimplePhotos_Click(object sender, EventArgs e) {
-            FolderBrowserDialog myDlg = new FolderBrowserDialog();
-            DialogResult ret;
-            string myFolder;
-            List<string> myFiles = new List<string>();
-            int nFiles = 0;
-
-            InitGlobals();
-
-            bool USE_DATUMS = false;
-
-            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\Survey 2";
-            //myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Photos\\021219";
-            ret = myDlg.ShowDialog();
-            if (ret != DialogResult.OK) return;
-            myFolder = myDlg.SelectedPath;
-
-            if (File.Exists(Path.Combine(myFolder, "Calib.dat")) && File.Exists(Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"))) {
-                try {
-                    File.Delete(Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"));
-                } catch (Exception ex) {
-                    MessageBox.Show(ex.ToString());
-                    return;
-                }
-            }
-
-            try {
-                File.Copy(Path.Combine(myFolder, "Calib.dat"), Path.Combine(Path.Combine(myAppPath, "data"), "Calib.dat"));
-            } catch (Exception ex) {
-                MessageBox.Show(ex.ToString());
-                return;
-            }
-
-            foreach (string myFile in Directory.GetFiles(myFolder)) {
-                if (myFile.ToLower().EndsWith("-debug.png")) {
-                    try {
-                        File.Delete(myFile);
-                    } catch (Exception ex) {
-                        string s = ex.ToString();
-                    }
-                }
-                if (Path.GetFileNameWithoutExtension(myFile).ToLower().StartsWith("survey") && !myFile.ToLower().EndsWith("-adj.png")) {
-                    myFiles.Add(myFile);
-                    if (myVideoHeight == 0) {
-                        Image myImage = Image.FromFile(myFile);
-                        myVideoWidth = myImage.Width;
-                        myVideoHeight = myImage.Height;
-                        myVideoPixelSize = 4;
-                    }
-                }
-            }
-            ARToolKitFunctions.Instance.arwInitialiseAR();
-            mdlRecognise.StartTracking(myVideoWidth, myVideoHeight);
-            string myCameraFile = "data\\calib.dat";
-            var arParams = mdlEmguCalibration.LoadCameraFromFile2(myCameraFile);
-
-            myFiles.Sort(new AlphaNumericCompare());
-
-            foreach (string myFile in myFiles) {
-                nFiles = nFiles + 1;
-                lblStatus.Text = nFiles.ToString() + "/" + myFiles.Count().ToString();
-                try {
-                    var image = new Image<Gray, byte>(myFile);
-                    var size = image.Width * image.Height;
-                    byte[] imageBytes = new Byte[size];
-                    System.Buffer.BlockCopy(image.Data, 0, imageBytes, 0, size);
-                    Application.DoEvents();
-                    try {
-                        mdlRecognise.RecogniseMarkers(imageBytes);
-                    } catch (Exception ex) {
-                        Console.WriteLine(ex.ToString());
-                    }
-                } catch (Exception ex) {
-                    Console.WriteLine(ex.ToString());
-                }
-                Console.WriteLine("Processed " + nFiles + " out of " + myFiles.Count + " photos - " + Path.GetFileName(myFile));
-            }
-
-            mdlRecognise.ConfirmedMarkers.Sort(new MarkerPointComparer());
-
-            var res = mdlRecognise.SaveToString(false);
-
-            var sw = new System.IO.StreamWriter("C:\\Temp\\Output.txt");
-            sw.WriteLine(res);
-            sw.Close();
-
-            sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
-            mdlRecognise.ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.MarkerID + 1).ToString() + '\t' + p.SeenFromMarkerID));
-            sw.Close();
-
-            MessageBox.Show("Finished");
+            mdlRecognise.ProcessPhotos(lblStatus);
         }
 
         private void btnImportDiagnostics3_Click(object sender, EventArgs e) {
@@ -732,7 +499,7 @@ namespace BatchProcess {
             myCalibFile = myDlg.FileName;
 
             mdlRecognise.LoadSavedDataFile(myFile);
-            mdlRecognise.BatchBundleAdjust(myCalibFile);
+            mdlRecognise.BatchBundleAdjust(lblStatus, myCalibFile);
 
             MessageBox.Show("Finished");
         }

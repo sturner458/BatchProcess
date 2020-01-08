@@ -127,11 +127,6 @@ namespace BatchProcess
             myAngleOK = false;
             myAngle2OK = false;
 
-            //if (Matrixes.Count < 10) {
-            //    myErrString = Matrixes.Count.ToString() + "measurements (10 required)";
-            //    return false;
-            //}
-
             //-DEVELOPMENT CHANGE
             a1 = MaxDistance(ref maxAV1, ref maxAV2);
             if (a1 < 500) {
@@ -140,17 +135,20 @@ namespace BatchProcess
                 myAngleOK = true;
             }
 
-            //a1 = MaxAngle(ref maxAV1, ref maxAV2);
-            //if (a1 < 20 * PI / 180) {
-            //    myErrString = "Angle Range = " + Round(a1 * 180 / PI, 1) + " < 20°";
-            //} else {
-            //    myAngleOK = true;
-            //}
+            if (myAngleOK) {
+                myAngleOK = false;
+                a1 = MaxAngle(ref maxAV1, ref maxAV2);
+                if (a1 < 40 * PI / 180) {
+                    myErrString = "Angle Range = " + Round(a1 * 180 / PI, 1) + " < " + 40.ToString("0.##") + "°";
+                } else {
+                    myAngleOK = true;
+                }
+            }
 
             a2 = MaxAnglePerpendicular(ref maxAV3, ref maxAV4);
-            a2 = 25 * PI / 180;
-            if (a2 < 5 * PI / 180) {
-                if (myErrString == "") myErrString = "Perpendicular Angle Range = " + Round(a2 * 180 / PI, 1) + " < 20°";
+            //a2 = 25 * PI / 180;
+            if (a2 < 20 * PI / 180) {
+                if (myErrString == "") myErrString = "Perpendicular Angle Range = " + Round(a2 * 180 / PI, 1) + " < " + 20.ToString("0.##") + "°";
                 return false;
             } else {
                 myAngle2OK = true;
@@ -166,18 +164,16 @@ namespace BatchProcess
             double a;
             double maxA;
             clsPoint3d p1, p2;
-            clsPoint3d px, py, pz;
+            clsPoint3d px, pz;
 
             maxA = 0;
             pz = new clsPoint3d(0, 0, 1.0);
             for (int j = 0; j <= Matrixes.Count - 2; j++) {
                 for (int k = j + 1; k <= Matrixes.Count - 1; k++) {
-                    p1 = PointFromInvMatrix(Matrixes[j]);
-                    p2 = PointFromInvMatrix(Matrixes[k]);
-                    py = new clsPoint3d((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2, (p1.Z + p2.Z) / 2).Point2D().Point3d(0);
-                    if (IsSameDbl(py.Length, 0)) continue;
-                    py.Normalise();
-                    px = pz.Cross(py);
+                    p1 = CameraPoints[j];
+                    p2 = CameraPoints[k];
+                    px = new clsPoint3d(p2.X - p1.X, p2.Y - p1.Y, 0);
+                    if (IsSameDbl(px.Length, 0)) continue;
                     px.Normalise();
                     p1 = px * p1.Dot(px) + pz * p1.Dot(pz);
                     p1.Normalise();
@@ -199,7 +195,7 @@ namespace BatchProcess
             double d;
             double maxD;
             clsPoint3d p1, p2;
-            clsPoint3d px, py, pz;
+            clsPoint3d px, pz;
 
             maxD = 0;
             pz = new clsPoint3d(0, 0, 1.0);
@@ -208,10 +204,8 @@ namespace BatchProcess
                     p1 = CameraPoints[j];
                     p2 = CameraPoints[k];
                     d = p1.Dist(p2);
-                    py = new clsPoint3d((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2, (p1.Z + p2.Z) / 2).Point2D().Point3d(0);
-                    if (IsSameDbl(py.Length, 0)) continue;
-                    py.Normalise();
-                    px = pz.Cross(py);
+                    px = new clsPoint3d(p2.X - p1.X, p2.Y - p1.Y, 0);
+                    if (IsSameDbl(px.Length, 0)) continue;
                     px.Normalise();
                     p1 = px * p1.Dot(px) + pz * p1.Dot(pz);
                     p1.Normalise();
@@ -236,17 +230,19 @@ namespace BatchProcess
 
             if (MaxAngle(ref p3, ref p4) < myTol) return 0;
 
+            p3 = (p4 - p3).Point2D().Point3d(0);
+            if (IsSameDbl(p3.Length, 0)) return 0;
+            p3.Normalise();
             pz = new clsPoint3d(0, 0, 1.0);
             py = pz.Cross(p3);
-            if (IsSameDbl(py.Length, 0)) py = pz.Cross(p4);
             if (IsSameDbl(py.Length, 0)) return 0;
             py.Normalise();
 
             maxA = 0;
             for (int j = 0; j <= Matrixes.Count - 2; j++) {
                 for (int k = j + 1; k <= Matrixes.Count - 1; k++) {
-                    p1 = PointFromInvMatrix(Matrixes[j]);
-                    p2 = PointFromInvMatrix(Matrixes[k]);
+                    p1 = CameraPoints[j];
+                    p2 = CameraPoints[k];
                     p1 = py * py.Dot(p1) + pz * pz.Dot(p1);
                     p1.Normalise();
                     p2 = py * py.Dot(p2) + pz * pz.Dot(p2);

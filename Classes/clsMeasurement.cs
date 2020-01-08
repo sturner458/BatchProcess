@@ -79,5 +79,15 @@ namespace BatchProcess
             return trans;
         }
 
+        public void SaveCorners() {
+            var sw = new StreamWriter("C:\\Temp\\Corners.txt");
+            for (int i = 0; i < Corners.Count; i++) {
+                foreach (clsPoint p1 in Corners[i]) {
+                    sw.WriteLine(p1.x + "\t" + p1.y);
+                }
+            }
+            sw.Close();
+        }
+
     }
 }

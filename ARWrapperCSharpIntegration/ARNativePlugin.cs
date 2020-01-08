@@ -292,7 +292,10 @@ public class ARNativePlugin
     internal static extern bool arwQueryTrackableMapperTransformation(int gMapUID, int trackableUID, IntPtr matrix);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void arwResetMapperTrackable(int gMapUID, string cfg);
+    internal static extern int arwResetMapperTrackable(int gMapUID, string cfg);
+
+    [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void arwSetMappedMarkersVisible(int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     internal static extern void arwAddMappedMarkers(int gMapUID, int GFMarkerID, int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners);
