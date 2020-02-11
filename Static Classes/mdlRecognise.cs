@@ -87,6 +87,7 @@ namespace BatchProcess
         private static clsPoint3d myUncorrectedVerticalVector = null;
         private static clsPoint3d myVerticalVector = null;
         private static clsPoint3d myCorrectionVector = null;
+        private static List<string> DebugStringList = new List<string>();
 
         public static bool StartTracking(int hiResX, int hiResY, bool avoidAddingMarkers) {
 
@@ -124,7 +125,7 @@ namespace BatchProcess
 
             //mySuspectedMarkers.Clear()
             if (StepMarker.Confirmed == false) {
-                StepMarker = new clsMarkerPoint(myStepMarkerID, -1);
+                StepMarker = new clsMarkerPoint(myStepMarkerID);
             }
 
             return true;
@@ -319,7 +320,7 @@ namespace BatchProcess
             bool USE_DATUMS = false;
 
             FolderBrowserDialog myDlg = new FolderBrowserDialog();
-            myDlg.SelectedPath = "C:\\Customer\\Stannah\\PhotoGrammetry\\Photos\\191219\\Set1";
+            myDlg.SelectedPath = "C:\\Customer\\Stannah\\PhotoGrammetry\\Photos\\070220\\Survey 0.25\\Flight 1";
             var ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;
             var myFolder = myDlg.SelectedPath;
@@ -363,10 +364,12 @@ namespace BatchProcess
             ARToolKitFunctions.Instance.arwInitialiseAR();
             StartTracking(myVideoWidth, myVideoHeight, false);
 
+            int lastConfirmedMarker = 0;
+            clsMarkerPoint lastStepMarker = null;
+
             var pts = new List<clsPGPoint>();
+            var pts2 = new List<clsPGPoint>();
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            OpenTK.Matrix4d lastStepMarkerMatrix = OpenTK.Matrix4d.Identity;
-            OpenTK.Matrix4d nextStepMarkerMatrix = OpenTK.Matrix4d.Identity;
             while (ret == DialogResult.OK) {
                 myFiles.Sort(new AlphaNumericCompare());
 
@@ -381,40 +384,36 @@ namespace BatchProcess
                         Application.DoEvents();
                         try {
                             RecogniseMarkers(imageBytes);
-
-                            // Take a copy of the last seen step marker
-                            if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, 125, mv)) {
-                                nextStepMarkerMatrix = MatrixFromArray(mv);
-                            }
-
-                            if (!MapperMarkerVisible()) {
-                                Console.WriteLine("Mapper Marker not visible.");
-                            }
                         } catch (Exception ex) {
                             Console.WriteLine(ex.ToString());
                         }
+
+                        for (int i = 0; i < mySuspectedMarkers.Count; i++) {
+                            if (mySuspectedMarkers[i].MarkerID == 1) {
+                                Console.WriteLine(mySuspectedMarkers[i].Origin.x.ToString() + ", " + mySuspectedMarkers[i].Origin.y.ToString() + ", " + mySuspectedMarkers[i].Origin.z.ToString());
+                            }
+                        }
+
                     } catch (Exception ex) {
                         Console.WriteLine(ex.ToString());
                     }
-                    Console.WriteLine("Processed " + nFiles + " out of " + myFiles.Count + " photos - " + Path.GetFileName(myFile));
+                    //Console.WriteLine("Processed " + nFiles + " out of " + myFiles.Count + " photos - " + Path.GetFileName(myFile));
                 }
 
-                //ConfirmedMarkers.Sort(new MarkerPointComparer());
-                //sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
-                //ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.MarkerID + 1).ToString() + '\t' + p.SeenFromMarkerID));
-                //sw.Close();
-
-                for (int i = 2; i <= 100; i = i + 2) {
-                    DetectMapperMarkerVisible(myMapperMarkerID, i, ref pts, lastStepMarkerMatrix);
-                }
-                for (int i = 130; i <= 228; i = i + 2) {
-                    DetectMapperMarkerVisible(myMapperMarkerID, i, ref pts, lastStepMarkerMatrix);
+                for (int i = 0; i < mySuspectedMarkers.Count; i++) {
+                    mySuspectedMarkers[0].OKToConfirm(out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _);
                 }
 
-                // DetectMapperMarkerVisible(myMapperMarkerID, 121, ref pts, false);
-                // DetectMapperMarkerVisible(myMapperMarkerID, 125, ref pts, false);
+                if (lastConfirmedMarker > 0 && lastStepMarker != null) {
+                    for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++) {
+                        var p1 = ConfirmedMarkers[i].Point;
+                        ConfirmedMarkers[i].Point = lastStepMarker.Point + lastStepMarker.Vx * p1.X + lastStepMarker.Vy * p1.Y + lastStepMarker.Vz * p1.Z;
+                    }
+                }
+                lastStepMarker = StepMarker.Copy();
+                lastConfirmedMarker = ConfirmedMarkers.Count;
 
-                myDlg.SelectedPath = "C:\\Customer\\Stannah\\PhotoGrammetry\\Photos\\191219\\Set2";
+                myDlg.SelectedPath = "C:\\Customer\\Stannah\\PhotoGrammetry\\Photos\\070220\\Survey 0.25\\Flight 2";
                 ret = myDlg.ShowDialog();
                 if (ret == DialogResult.OK) {
                     myFolder = myDlg.SelectedPath;
@@ -425,33 +424,30 @@ namespace BatchProcess
                             myFiles.Add(myFile);
                         }
                     }
-                    var sConfig = "multi_auto;125;80;";
-                    myMapperMarkerID = ARToolKitFunctions.Instance.arwResetMapperTrackable(myMapperMarkerID, sConfig);
-                    lastStepMarkerMatrix = nextStepMarkerMatrix;
                     stitchingMeasurements.Add(myMeasurements.Count - 1);
+                    StartStitching();
                 }
             }
 
-            pts.Sort((p1, p2) => p1.z.CompareTo(p2.z));
-
+            ConfirmedMarkers.Sort(new MarkerPointComparer());
             var sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
-            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t' + p.y.ToString() + '\t' + p.z.ToString() + '\t' + (p.ID + 1).ToString() + '\t' + p.ParentID));
+            ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.ActualMarkerID + 1).ToString()));
             sw.Close();
-
-            var res = SaveToString(false);
-
-            sw = new System.IO.StreamWriter("C:\\Temp\\Output.txt");
-            sw.WriteLine(res);
-            sw.Close();
-
 
             MessageBox.Show("Finished");
         }
 
-        public static void RecogniseMarkers(byte[] grayscaleBytes) {
-            Data.Clear();
+        private static bool MapperMarkerVisible() {
+            double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            return (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners));
+        }
+
+        public static async void RecogniseMarkers(byte[] grayscaleBytes) {
 
             var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayscaleBytes, false);
+
+            Data.Clear();
 
             for (int i = 0; i <= myMarkerIDs.Count - 1; i++) {
                 DetectMarkerVisible(myMarkerIDs[i]);
@@ -511,29 +507,58 @@ namespace BatchProcess
                 myMeasurements.Add(measurement);
             }
 
-            AddNewSuspectedMarkers();
-            ConvertSuspectedToConfirmed();
-            numImagesProcessed = numImagesProcessed + 1;
+            //Update positions of confirmed markers by bundle adjustment
+            double[] modelMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] cornerCoords = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            SaveHiResSurveyPhoto = false;
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners)) {
+                SaveHiResSurveyPhoto = true;
+                AddNewSuspectedMarkers();
+                ConvertSuspectedToConfirmed();
+                UpdateConfirmedMarkersWithBundleAdjustment();
+            }
+
+            if (SaveHiResSurveyPhoto) {
+                numImagesProcessed = numImagesProcessed + 1;
+            }
 
             Data.GetMarkersCopy();
+
         }
 
-        private static bool MapperMarkerVisible() {
-            double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            return (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners));
+        private static void UpdateConfirmedMarkersWithBundleAdjustment() {
+            for (int i = 0; i < ConfirmedMarkers.Count; i++) {
+                if (ConfirmedMarkers[i].MarkerID == ConfirmedMarkers[i].ActualMarkerID) {
+                    double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                    ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(ConfirmedMarkers[i].MarkerID, 0, mv, out double width, out double height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+
+                    if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, barcodeID, mv)) {
+                        ConfirmedMarkers[i].ModelViewMatrix = mv;
+                        var pt = new OpenTK.Vector4d(mv[12], mv[13], mv[14], 0);
+                        ConfirmedMarkers[i].Origin = new clsPoint3d(pt.X, pt.Y, pt.Z);
+                        OpenTK.Matrix4d matrix = MatrixFromArray(mv);
+                        if (barcodeID == 125) {
+
+                        } else if (barcodeID <= 100) {
+                            pt = new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1);
+                            pt = OpenTK.Vector4d.Transform(pt, matrix);
+                        } else {
+                            pt = new OpenTK.Vector4d(140.0, 45.0, 0.0f, 1);
+                            pt = OpenTK.Vector4d.Transform(pt, matrix);
+                        }
+                        ConfirmedMarkers[i].Point = new clsPoint3d(pt.X, pt.Y, pt.Z);
+                    }
+                }
+            }
         }
 
         private static void DetectMarkerVisible(int myMarkerID) {
-
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMarkerID, mv, corners, out int numCorners)) {
-                clsPoint3d pt = new clsPoint3d(mv[12], mv[13], mv[14]);
+                var pt = new clsPoint3d(mv[12], mv[13], mv[14]);
                 if (pt.Length < 2000) {
-
-                    clsPoint3d myCameraPoint = PointFromInvMatrix(mv);
-
+                    var myCameraPoint = PointFromInvMatrix(mv);
                     if (IsSameDbl(myCameraPoint.Length, 0) == false) {
                         myCameraPoint.Normalise();
                         double a1 = Abs(myCameraPoint.AngleToHorizontal) * 180 / PI;
@@ -547,35 +572,96 @@ namespace BatchProcess
                             Data.Corners.Add(c);
                         }
                     }
-
                 }
             }
         }
 
         private static void AddNewSuspectedMarkers() {
-            int myMarkerID;
-            List<int> mySuspectConfirmedID = new List<int>();
+            string myErrorString = "";
 
             //Take a measurement of each of the markers
-            for (int i = 0; i <= Data.MarkersSeenID.Count - 1; i++) {
-                myMarkerID = Data.MarkersSeenID[i];
+            for (int index = 0; index <= Data.MarkersSeenID.Count - 1; index++) {
+                var myMarkerID = Data.MarkersSeenID[index];
 
                 if (myMarkerID == myGFMarkerID) continue; //Ignore the GF marker
-                if (ConfirmedMarkerIDs().Contains(myMarkerID)) continue; //Ignore confirmed markers
+                if (ConfirmedMarkers.Select(m => m.MarkerID).Contains(myMarkerID)) continue; //Ignore confirmed markers
                 if (myMarkerID == myStepMarkerID && StepMarker.Confirmed) continue; //Ignore the step marker
 
-                CheckSuspectedMarker(myMarkerID, i);
-            }
+                //Don't add new suspected markers for bulkheads or doors if they have just been measured
+                for (int i1 = 0; i1 < myBulkheadMarkers.Count; i1++) {
+                    if (myBulkheadMarkers[i1].Confirmed && myBulkheadMarkers[i1].MarkerID == myMarkerID) continue;
+                }
+                for (int i1 = 0; i1 < myDoorMarkers.Count; i1++) {
+                    if (myDoorMarkers[i1].Confirmed && myDoorMarkers[i1].MarkerID == myMarkerID) continue;
+                }
+                for (int i1 = 0; i1 < myObstructMarkers.Count; i1++) {
+                    if (myObstructMarkers[i1].Confirmed && myObstructMarkers[i1].MarkerID == myMarkerID) continue;
+                }
+                for (int i1 = 0; i1 < myWallMarkers.Count; i1++) {
+                    if (myWallMarkers[i1].Confirmed && myWallMarkers[i1].MarkerID == myMarkerID) continue;
+                }
 
-            //Now repeat, but from the suspected marker point of view
-            for (int i = 0; i <= Data.MarkersSeenID.Count - 1; i++) {
-                myMarkerID = Data.MarkersSeenID[i];
 
-                if (myMarkerID == myGFMarkerID) continue; //Ignore the GF marker
-                if (ConfirmedMarkerIDs().Contains(myMarkerID)) continue; //Ignore confirmed markers
-                if (myMarkerID == myStepMarkerID && StepMarker.Confirmed) continue; //Ignore the step marker
+                double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myMarkerID, 0, mv, out double width, out double height, out int imageSizeX, out int imageSizeY, out int barcodeID);
 
-                CheckSuspectedMarkerFromSuspectedMarkers(myMarkerID, i);
+                if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, barcodeID, mv)) {
+                    var cameraPoint = PointFromInvMatrix(Data.ModelViewMatrix[index]);
+                    var pt = new OpenTK.Vector4d(mv[12], mv[13], mv[14], 0);
+
+                    int k = mySuspectedMarkers.FindIndex(p => p.MarkerID == myMarkerID);
+                    if (k == -1) {
+                        mySuspectedMarkers.Add(new clsMarkerPoint(myMarkerID));
+                        k = mySuspectedMarkers.Count - 1;
+                    } else {
+                        mySuspectedMarkers[k].OKToConfirm(out myErrorString, out clsPoint3d v1, out clsPoint3d v2, out clsPoint3d v3, out clsPoint3d v4,
+                            out bool b1, out bool b2, out bool b3, out bool b4, out double a1, out double a2);
+                        var myStr = myMarkerIDs.IndexOf(myMarkerID) + 1 + " / " + mySuspectedMarkers[k].GTSAMMatrixes.Count + " - MaxD=" + Round(mySuspectedMarkers[k].MaxDistance(out v1, out v2)) + " - MaxA2=" + Round(mySuspectedMarkers[k].MaxAnglePerpendicular(out v1, out v2) * 180 / PI, 1);
+                        if (myStr != mySuspectedMarkers[k].Label) {
+                            mySuspectedMarkers[k].Label = myStr;
+                            mySuspectedMarkers[k].MarkerName = Convert.ToString(myMarkerIDs.IndexOf(myMarkerID) + 1);
+                            mySuspectedMarkers[k].MaximumAngleA = Convert.ToString(Round(mySuspectedMarkers[k].MaxDistance(out v1, out v2)));
+                            mySuspectedMarkers[k].MaximumAngleXY = Convert.ToString(Round(mySuspectedMarkers[k].MaxAnglePerpendicular(out v1, out v2) * 180 / PI, 1));
+                        }
+                    }
+
+                    mySuspectedMarkers[k].PhotoNumbers.Add(numImagesProcessed + 1);
+                    mySuspectedMarkers[k].Matrixes.Add(Data.ModelViewMatrix[index]);
+                    mySuspectedMarkers[k].GTSAMMatrixes.Add(mv);
+                    mySuspectedMarkers[k].CameraPoints.Add(cameraPoint);
+                    mySuspectedMarkers[k].Velocity.Add(0);
+                    mySuspectedMarkers[k].AngularVelocity.Add(0);
+
+                    mySuspectedMarkers[k].Origin = new clsPoint3d(pt.X, pt.Y, pt.Z);
+                    OpenTK.Matrix4d matrix = MatrixFromArray(mv);
+                    if (barcodeID == 125) {
+
+                    } else if (barcodeID <= 100) {
+                        pt = new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1);
+                        pt = OpenTK.Vector4d.Transform(pt, matrix);
+                    } else {
+                        pt = new OpenTK.Vector4d(140.0, 45.0, 0.0f, 1);
+                        pt = OpenTK.Vector4d.Transform(pt, matrix);
+                    }
+                    mySuspectedMarkers[k].Point = new clsPoint3d(pt.X, pt.Y, pt.Z);
+                    mySuspectedMarkers[k].ModelViewMatrix = mv;
+
+                    string mySeenMarker = "";
+                    if (myMarkerID == myGFMarkerID) {
+                        mySeenMarker = "GF";
+                    } else if (myMarkerID == myStepMarkerID) {
+                        mySeenMarker = "Step";
+                    } else {
+                        mySeenMarker = mySuspectedMarkers[k].NewMarkerID().ToString();
+                    }
+
+                    if (DebugStringList.Count == 0 || !DebugStringList[DebugStringList.Count - 1].StartsWith(mySeenMarker + " Measured")) {
+                        DebugStringList.Add(mySeenMarker + " Measured " + mySuspectedMarkers[k].GTSAMMatrixes.Count + " Times");
+                    } else {
+                        DebugStringList[DebugStringList.Count - 1] = mySeenMarker + " Measured " + mySuspectedMarkers[k].GTSAMMatrixes.Count + " Times";
+                    }
+
+                }
             }
 
             mySuspectedMarkers.Sort(new SuspectedMarkerPointComparer());
@@ -583,11 +669,8 @@ namespace BatchProcess
 
         private static void ConvertSuspectedToConfirmed() {
             clsMarkerPoint myConfirmedMarker;
-            int myMarkerID, mySeenFromMarkerID;
+            int myMarkerID;
             string myErrorString = "";
-            double a1 = 0, a2 = 0;
-            clsPoint3d v1 = null, v2 = null, v3 = null, v4 = null;
-            bool b1 = false, b2 = false;
             bool myMarkerConfirmed = false;
 
             //Convert the "confirmed" suspects to Confirmed
@@ -595,177 +678,33 @@ namespace BatchProcess
             while (n < mySuspectedMarkers.Count) {
                 myMarkerID = mySuspectedMarkers[n].MarkerID;
 
-                var pts1 = new List<clsPoint3d>();
-                var pts2 = new List<clsPoint3d>();
-                var pts3 = new List<clsPoint3d>();
-
-                var imagesSeenIn = new List<int>();
-
-                int n1 = -1;
-                for (int i = 0; i < mySuspectedMarkers.Count; i++) {
-                    if (mySuspectedMarkers[i].MarkerID != myMarkerID) continue;
-
-                    mySeenFromMarkerID = mySuspectedMarkers[i].SeenFromMarkerID;
-
-                    if (mySeenFromMarkerID == myGFMarkerID) {
-
-                        if (mySuspectedMarkers[i].Confirmed == false) {
-                            if (mySuspectedMarkers[i].OKToConfirm(ref myErrorString, ref v1, ref v2, ref v3, ref v4, ref b1, ref b2, ref a1, ref a2)) {
-                                mySuspectedMarkers[i].Confirmed = true;
-                            }
-                        }
-
-                        for (int j = 0; j < mySuspectedMarkers[i].PhotoNumbers.Count; j++) {
-                            if (!imagesSeenIn.Contains(mySuspectedMarkers[i].PhotoNumbers[j])) imagesSeenIn.Add(mySuspectedMarkers[i].PhotoNumbers[j]);
-                        }
-
-                        for (int j = 0; j < mySuspectedMarkers[i].Matrixes.Count; j++) {
-                            var matrix1 = MatrixFromArray(mySuspectedMarkers[i].Matrixes[j]);
-
-                            var vec = new OpenTK.Vector4d(0, 0, 0, 1.0);
-                            vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                            pts1.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-
-                            vec = new OpenTK.Vector4d(100.0, 0, 0, 1.0);
-                            vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                            pts2.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-
-                            vec = new OpenTK.Vector4d(0, 100.0, 0, 1.0);
-                            vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                            pts3.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-                        }
-
-                        if (n1 == -1) n1 = i;
-                    } else if (ConfirmedMarkers.Select(m => m.MarkerID).Contains(mySeenFromMarkerID)) {
-                        int k = ConfirmedMarkers.FindIndex(m => m.MarkerID == mySeenFromMarkerID);
-                        if (!myAllFeatureMarkerIDs.Contains(ConfirmedMarkers[k].ActualMarkerID) && !(ConfirmedMarkers[k].MarkerID == myStepMarkerID && StepMarker.Levelled == false)) {
-
-                            if (mySuspectedMarkers[i].Confirmed == false) {
-                                if (mySuspectedMarkers[i].OKToConfirm(ref myErrorString, ref v1, ref v2, ref v3, ref v4, ref b1, ref b2, ref a1, ref a2)) {
-                                    mySuspectedMarkers[i].Confirmed = true;
-                                }
-                            }
-
-                            for (int j = 0; j < mySuspectedMarkers[i].PhotoNumbers.Count; j++) {
-                                if (!imagesSeenIn.Contains(mySuspectedMarkers[i].PhotoNumbers[j])) imagesSeenIn.Add(mySuspectedMarkers[i].PhotoNumbers[j]);
-                            }
-
-                            for (int j = 0; j < mySuspectedMarkers[i].Matrixes.Count; j++) {
-                                var matrix1 = MatrixFromArray(mySuspectedMarkers[i].Matrixes[j]);
-                                var matrix2 = MatrixFromArray(ConfirmedMarkers[k].ModelViewMatrix);
-
-                                var vec = new OpenTK.Vector4d(0, 0, 0, 1.0);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix2);
-                                pts1.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-
-                                vec = new OpenTK.Vector4d(100.0, 0, 0, 1.0);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix2);
-                                pts2.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-
-                                vec = new OpenTK.Vector4d(0, 100.0, 0, 1.0);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix2);
-                                pts3.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-                            }
-
-                            if (n1 == -1) n1 = i;
-                        }
-                    }
-
-                    //For Door markers, allow them to be seen from other Door markers
-                    if (myDoorMarkerIDs.Contains(myMarkerID) && myDoorMarkers.Select(m => m.MarkerID).Contains(mySeenFromMarkerID)) {
-                        int k = myDoorMarkers.FindIndex(m => m.MarkerID == mySeenFromMarkerID);
-                        if (myDoorMarkers[k].MarkerID != myMarkerID && myDoorMarkers[k].Confirmed) {
-
-                            if (mySuspectedMarkers[i].Confirmed == false) {
-                                if (mySuspectedMarkers[i].OKToConfirm(ref myErrorString, ref v1, ref v2, ref v3, ref v4, ref b1, ref b2, ref a1, ref a2)) {
-                                    mySuspectedMarkers[i].Confirmed = true;
-                                }
-                            }
-
-                            for (int j = 0; j < mySuspectedMarkers[i].PhotoNumbers.Count; j++) {
-                                if (!imagesSeenIn.Contains(mySuspectedMarkers[i].PhotoNumbers[j])) imagesSeenIn.Add(mySuspectedMarkers[i].PhotoNumbers[j]);
-                            }
-
-                            for (int j = 0; j < mySuspectedMarkers[i].Matrixes.Count; j++) {
-                                var matrix1 = MatrixFromArray(mySuspectedMarkers[i].Matrixes[j]);
-                                var matrix2 = MatrixFromArray(myDoorMarkers[k].ModelViewMatrix);
-
-                                var vec = new OpenTK.Vector4d(0, 0, 0, 1.0);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix2);
-                                pts1.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-
-                                vec = new OpenTK.Vector4d(100.0, 0, 0, 1.0);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix2);
-                                pts2.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-
-                                vec = new OpenTK.Vector4d(0, 100.0, 0, 1.0);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix2);
-                                pts3.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-                            }
-
-                            if (n1 == -1) n1 = i;
-                        }
-                    }
-
-                    //For Obstruction markers, allow them to be seen from other confirmed Obstruction markers
-                    if (myObstructMarkerIDs.Contains(myMarkerID) && myObstructMarkers.Select(m => m.MarkerID).Contains(mySeenFromMarkerID)) {
-                        int k = myObstructMarkers.FindIndex(m => m.MarkerID == mySeenFromMarkerID);
-                        if (myObstructMarkers[k].MarkerID != myMarkerID && myObstructMarkers[k].Confirmed) {
-
-                            if (mySuspectedMarkers[i].Confirmed == false) {
-                                if (mySuspectedMarkers[i].OKToConfirm(ref myErrorString, ref v1, ref v2, ref v3, ref v4, ref b1, ref b2, ref a1, ref a2)) {
-                                    mySuspectedMarkers[i].Confirmed = true;
-                                }
-                            }
-
-                            for (int j = 0; j < mySuspectedMarkers[i].PhotoNumbers.Count; j++) {
-                                if (!imagesSeenIn.Contains(mySuspectedMarkers[i].PhotoNumbers[j])) imagesSeenIn.Add(mySuspectedMarkers[i].PhotoNumbers[j]);
-                            }
-
-                            for (int j = 0; j < mySuspectedMarkers[i].Matrixes.Count; j++) {
-                                var matrix1 = MatrixFromArray(mySuspectedMarkers[i].Matrixes[j]);
-                                var matrix2 = MatrixFromArray(myObstructMarkers[k].ModelViewMatrix);
-
-                                var vec = new OpenTK.Vector4d(0, 0, 0, 1.0);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix2);
-                                pts1.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-
-                                vec = new OpenTK.Vector4d(100.0, 0.0, 0, 1.0);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix2);
-                                pts2.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-
-                                vec = new OpenTK.Vector4d(0, 100.0, 0, 1.0);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix1);
-                                vec = OpenTK.Vector4d.Transform(vec, matrix2);
-                                pts3.Add(new clsPoint3d(vec.X, vec.Y, vec.Z));
-                            }
-
-                            if (n1 == -1) n1 = i;
-                        }
-                    }
-                }
-
-                if (n1 == -1 || !mySuspectedMarkers[n].Confirmed || imagesSeenIn.Count < 10) {
+                if (mySuspectedMarkers[n].OKToConfirm(out myErrorString, out clsPoint3d v1, out clsPoint3d v2, out clsPoint3d v3, out clsPoint3d v4,
+                    out bool b1, out bool b2, out bool b3, out bool b4, out double a1, out double a2)) {
+                    mySuspectedMarkers[n].Confirmed = true;
+                } else {
                     n = n + 1;
                     continue;
                 }
 
-                mySeenFromMarkerID = mySuspectedMarkers[n1].SeenFromMarkerID;
+                var matrix1 = MatrixFromArray(mySuspectedMarkers[n].GTSAMMatrixes.Last());
 
-                var pt1 = new clsPoint3d(pts1.Average(p => p.X), pts1.Average(p => p.Y), pts1.Average(p => p.Z));
-                var vx = AverageAxisSimple(pts1, pts2);
+                var vec = new OpenTK.Vector4d(0, 0, 0, 1.0);
+                vec = OpenTK.Vector4d.Transform(vec, matrix1);
+                var pt1 = new clsPoint3d(vec.X, vec.Y, vec.Z);
+
+                vec = new OpenTK.Vector4d(100.0, 0, 0, 1.0);
+                vec = OpenTK.Vector4d.Transform(vec, matrix1);
+                var pt2 = new clsPoint3d(vec.X, vec.Y, vec.Z);
+
+                vec = new OpenTK.Vector4d(0, 100.0, 0, 1.0);
+                vec = OpenTK.Vector4d.Transform(vec, matrix1);
+                var pt3 = new clsPoint3d(vec.X, vec.Y, vec.Z);
+
+                var vx = pt2 - pt1;
                 if (IsSameDbl(vx.Length, 0)) continue;
-                var vy = AverageAxisSimple(pts1, pts3);
-                if (IsSameDbl(vy.Length, 0)) continue;
                 vx.Normalise();
+                var vy = pt3 - pt1;
+                if (IsSameDbl(vy.Length, 0)) continue;
                 vy.Normalise();
                 var vz = vx.Cross(vy);
                 if (IsSameDbl(vz.Length, 0)) continue;
@@ -791,7 +730,6 @@ namespace BatchProcess
                     myConfirmedMarker = StepMarker.Copy();
                     UpdateStepMarkerIDs();
                     myConfirmedMarker.MarkerID = myStepMarkerID;
-                    myConfirmedMarker.SeenFromMarkerID = mySeenFromMarkerID;
                     myConfirmedMarker.ActualMarkerID = myStepMarkerID;
                     myConfirmedMarker.VerticalVect = StepMarker.VerticalVect?.Copy();
                     myConfirmedMarker.ConfirmedImageNumber = myMeasurements.Count - 1;
@@ -799,7 +737,7 @@ namespace BatchProcess
 
                 } else if (myBulkheadMarkerIDs.Contains(myMarkerID)) {
                     myMarkerConfirmed = true; //So we can auto-save
-                    myConfirmedMarker = new clsMarkerPoint(myMarkerID, mySeenFromMarkerID);
+                    myConfirmedMarker = new clsMarkerPoint(myMarkerID);
                     myConfirmedMarker.Confirmed = true;
                     myConfirmedMarker.Origin = pt1.Copy();
                     myConfirmedMarker.Vx = vx.Copy();
@@ -814,7 +752,7 @@ namespace BatchProcess
 
                 } else if (myDoorMarkerIDs.Contains(myMarkerID)) {
                     myMarkerConfirmed = true; //So we can auto-save
-                    myConfirmedMarker = new clsMarkerPoint(myMarkerID, mySeenFromMarkerID);
+                    myConfirmedMarker = new clsMarkerPoint(myMarkerID);
                     myConfirmedMarker.Confirmed = true;
                     myConfirmedMarker.Origin = pt1.Copy();
                     myConfirmedMarker.Vx = vx.Copy();
@@ -826,7 +764,7 @@ namespace BatchProcess
 
                 } else if (myObstructMarkerIDs.Contains(myMarkerID)) {
                     myMarkerConfirmed = true; //So we can auto-save
-                    myConfirmedMarker = new clsMarkerPoint(myMarkerID, mySeenFromMarkerID);
+                    myConfirmedMarker = new clsMarkerPoint(myMarkerID);
                     myConfirmedMarker.Confirmed = true;
                     myConfirmedMarker.Origin = pt1.Copy();
                     myConfirmedMarker.Vx = vx.Copy();
@@ -850,7 +788,7 @@ namespace BatchProcess
 
                 } else if (myWallMarkerIDs.Contains(myMarkerID)) {
                     myMarkerConfirmed = true; //So we can auto-save
-                    myConfirmedMarker = new clsMarkerPoint(myMarkerID, mySeenFromMarkerID);
+                    myConfirmedMarker = new clsMarkerPoint(myMarkerID);
                     myConfirmedMarker.Confirmed = true;
                     myConfirmedMarker.Origin = pt1.Copy();
                     myConfirmedMarker.Vx = vx.Copy();
@@ -862,7 +800,7 @@ namespace BatchProcess
 
                 } else {
                     myMarkerConfirmed = true; //So we can auto-save
-                    myConfirmedMarker = new clsMarkerPoint(myMarkerID, mySeenFromMarkerID);
+                    myConfirmedMarker = new clsMarkerPoint(myMarkerID);
                     myConfirmedMarker.Confirmed = true;
                     myConfirmedMarker.Origin = pt1.Copy();
                     myConfirmedMarker.Vx = vx.Copy();
@@ -873,16 +811,10 @@ namespace BatchProcess
                     ConfirmedMarkers.Add(myConfirmedMarker);
                 }
 
-                int j1 = 0;
-                while (j1 <= mySuspectedMarkers.Count - 1) {
-                    if (mySuspectedMarkers[j1].MarkerID == myMarkerID) {
-                        mySuspectedMarkers.RemoveAt(j1);
-                    } else {
-                        j1 = j1 + 1;
-                    }
-                }
+                mySuspectedMarkers.RemoveAt(n);
             }
 
+            if (myMarkerConfirmed) ConfirmedMarkersUpdated?.Invoke();
         }
 
         private static bool SuspectedMarkerIsConfirmedObstruction(int myMarkerID) {
@@ -1214,159 +1146,6 @@ namespace BatchProcess
             return pt;
         }
 
-        private static bool CheckSuspectedMarker(int myMarkerID, int myMarkerIndex) {
-            bool suspectedMarkerAdded = false;
-
-            var cameraPoint = PointFromInvMatrix(Data.ModelViewMatrix[myMarkerIndex]);
-
-            if (Data.GetMarkerVisible(myGFMarkerID)) {
-                var i1 = Data.GetMarkerIndex(myGFMarkerID);
-                var matrix1 = OpenTK.Matrix4d.Invert(MatrixFromArray(Data.ModelViewMatrix[i1]));
-                var matrix2 = MatrixFromArray(Data.ModelViewMatrix[myMarkerIndex]);
-                var matrix3 = OpenTK.Matrix4d.Mult(matrix2, matrix1);
-                var ret = AddSuspectedMarker(myMarkerID, myGFMarkerID, ArrayFromMatrix(matrix3), cameraPoint);
-                suspectedMarkerAdded = suspectedMarkerAdded | ret;
-            }
-
-            for (int k = 0; k <= ConfirmedMarkers.Count - 1; k++) {
-                if (myAllFeatureMarkerIDs.Contains(ConfirmedMarkers[k].ActualMarkerID)) continue; //Not from obstruction markers
-
-                if (ConfirmedMarkers[k].MarkerID == myStepMarkerID && StepMarker.Levelled == false) continue;
-
-                if (Data.GetMarkerVisible(ConfirmedMarkers[k].MarkerID)) {
-                    var i1 = Data.GetMarkerIndex(ConfirmedMarkers[k].MarkerID);
-                    var matrix1 = OpenTK.Matrix4d.Invert(MatrixFromArray(Data.ModelViewMatrix[i1]));
-                    var matrix2 = MatrixFromArray(Data.ModelViewMatrix[myMarkerIndex]);
-                    var matrix3 = OpenTK.Matrix4d.Mult(matrix2, matrix1);
-                    var ret = AddSuspectedMarker(myMarkerID, ConfirmedMarkers[k].MarkerID, ArrayFromMatrix(matrix3), cameraPoint);
-                    suspectedMarkerAdded = suspectedMarkerAdded | ret;
-                }
-            }
-
-            //For Door markers, allow them to be seen from other Door markers
-            if (myDoorMarkerIDs.Contains(myMarkerID)) {
-                for (int k = 0; k <= myDoorMarkers.Count - 1; k++) {
-                    if (myDoorMarkers[k].MarkerID == myMarkerID) continue;
-                    if (!myDoorMarkers[k].Confirmed) continue;
-
-                    if (Data.GetMarkerVisible(myDoorMarkers[k].MarkerID)) {
-                        var i1 = Data.GetMarkerIndex(myDoorMarkers[k].MarkerID);
-                        var matrix1 = OpenTK.Matrix4d.Invert(MatrixFromArray(Data.ModelViewMatrix[i1]));
-                        var matrix2 = MatrixFromArray(Data.ModelViewMatrix[myMarkerIndex]);
-                        var matrix3 = OpenTK.Matrix4d.Mult(matrix2, matrix1);
-                        var ret = AddSuspectedMarker(myMarkerID, myDoorMarkers[k].MarkerID, ArrayFromMatrix(matrix3), cameraPoint);
-                        suspectedMarkerAdded = suspectedMarkerAdded | ret;
-                    }
-                }
-            }
-
-            //For Obstruction markers, allow them to be seen from other Obstruction markers
-            if (myObstructMarkerIDs.Contains(myMarkerID)) {
-                for (int k = 0; k <= myObstructMarkers.Count - 1; k++) {
-                    if (myObstructMarkers[k].MarkerID == myMarkerID) continue;
-                    if (!myObstructMarkers[k].Confirmed) continue;
-
-                    if (Data.GetMarkerVisible(myObstructMarkers[k].MarkerID)) {
-                        var i1 = Data.GetMarkerIndex(myObstructMarkers[k].MarkerID);
-                        var matrix1 = OpenTK.Matrix4d.Invert(MatrixFromArray(Data.ModelViewMatrix[i1]));
-                        var matrix2 = MatrixFromArray(Data.ModelViewMatrix[myMarkerIndex]);
-                        var matrix3 = OpenTK.Matrix4d.Mult(matrix2, matrix1);
-                        var ret = AddSuspectedMarker(myMarkerID, myObstructMarkers[k].MarkerID, ArrayFromMatrix(matrix3), cameraPoint);
-                        suspectedMarkerAdded = suspectedMarkerAdded | ret;
-                    }
-                }
-            }
-
-            return suspectedMarkerAdded;
-        }
-
-        private static bool CheckSuspectedMarkerFromSuspectedMarkers(int myMarkerID, int myMarkerIndex) {
-            bool suspectedMarkerAdded = false;
-            var suspectedMarkerIDs = new List<int>();
-
-            var cameraPoint = PointFromInvMatrix(Data.ModelViewMatrix[myMarkerIndex]);
-            for (int k = 0; k <= mySuspectedMarkers.Count - 1; k++) {
-                if (suspectedMarkerIDs.Contains(mySuspectedMarkers[k].MarkerID)) continue;
-                suspectedMarkerIDs.Add(mySuspectedMarkers[k].MarkerID);
-                if (mySuspectedMarkers[k].MarkerID == myMarkerID) continue;
-                if (myAllFeatureMarkerIDs.Contains(mySuspectedMarkers[k].ActualMarkerID)) continue; //Not from obstruction markers
-
-                if (mySuspectedMarkers[k].MarkerID == myStepMarkerID && StepMarker.Levelled == false) continue;
-
-                if (Data.GetMarkerVisible(mySuspectedMarkers[k].MarkerID)) {
-                    var i1 = Data.GetMarkerIndex(mySuspectedMarkers[k].MarkerID);
-                    var matrix1 = OpenTK.Matrix4d.Invert(MatrixFromArray(Data.ModelViewMatrix[i1]));
-                    var matrix2 = MatrixFromArray(Data.ModelViewMatrix[myMarkerIndex]);
-                    var matrix3 = OpenTK.Matrix4d.Mult(matrix2, matrix1);
-                    var ret = AddSuspectedMarker(myMarkerID, mySuspectedMarkers[k].MarkerID, ArrayFromMatrix(matrix3), cameraPoint);
-                    suspectedMarkerAdded = suspectedMarkerAdded & ret;
-                }
-            }
-
-            return suspectedMarkerAdded;
-        }
-
-        private static bool AddSuspectedMarker(int myMarkerID, int mySeenFromMarkerID, double[] mv, clsPoint3d CameraPoint) {
-            string myStr;
-            string myErrorString = "";
-            int i;
-            clsPoint3d v1 = null, v2 = null, v3 = null, v4 = null;
-            bool b1 = false, b2 = false;
-            double a1 = 0, a2 = 0;
-
-            //Don't add new suspected markers for bulkheads or doors if they have just been measured
-            for (i = 0; i < myBulkheadMarkers.Count; i++) {
-                if (myBulkheadMarkers[i].Confirmed && myBulkheadMarkers[i].MarkerID == myMarkerID) return false;
-            }
-            for (i = 0; i < myDoorMarkers.Count; i++) {
-                if (myDoorMarkers[i].Confirmed && myDoorMarkers[i].MarkerID == myMarkerID) return false;
-            }
-            for (i = 0; i < myObstructMarkers.Count; i++) {
-                if (myObstructMarkers[i].Confirmed && myObstructMarkers[i].MarkerID == myMarkerID) return false;
-            }
-            for (i = 0; i < myWallMarkers.Count; i++) {
-                if (myWallMarkers[i].Confirmed && myWallMarkers[i].MarkerID == myMarkerID) return false;
-            }
-
-            int k = mySuspectedMarkers.FindIndex(p => p.MarkerID == myMarkerID && p.SeenFromMarkerID == mySeenFromMarkerID);
-            if (k == -1) {
-                mySuspectedMarkers.Add(new clsMarkerPoint(myMarkerID, mySeenFromMarkerID));
-                k = mySuspectedMarkers.Count - 1;
-            } else {
-                mySuspectedMarkers[k].OKToConfirm(ref myErrorString, ref v1, ref v2, ref v3, ref v4, ref b1, ref b2, ref a1, ref a2);
-                myStr = myMarkerIDs.IndexOf(myMarkerID) + 1 + " / " + mySuspectedMarkers[k].Matrixes.Count + " - MaxD=" + Round(mySuspectedMarkers[k].MaxDistance(ref v1, ref v2)) + " - MaxA2=" + Round(mySuspectedMarkers[k].MaxAnglePerpendicular(ref v1, ref v2) * 180 / PI, 1);
-                if (myStr != mySuspectedMarkers[k].Label) {
-                    mySuspectedMarkers[k].Label = myStr;
-                    mySuspectedMarkers[k].MarkerName = Convert.ToString(myMarkerIDs.IndexOf(myMarkerID) + 1);
-                    mySuspectedMarkers[k].MaximumAngleA = Convert.ToString(Round(mySuspectedMarkers[k].MaxDistance(ref v1, ref v2)));
-                    mySuspectedMarkers[k].MaximumAngleXY = Convert.ToString(Round(mySuspectedMarkers[k].MaxAnglePerpendicular(ref v1, ref v2) * 180 / PI, 1));
-                }
-            }
-
-            mySuspectedMarkers[k].PhotoNumbers.Add(numImagesProcessed + 1);
-            mySuspectedMarkers[k].Matrixes.Add(mv);
-            mySuspectedMarkers[k].CameraPoints.Add(CameraPoint);
-            mySuspectedMarkers[k].Velocity.Add(0);
-            mySuspectedMarkers[k].AngularVelocity.Add(0);
-
-            SaveHiResSurveyPhoto = true;
-
-            return true;
-        }
-
-        private static clsPoint3d AverageAxisSimple(List<clsPoint3d> axisStartPoints, List<clsPoint3d> axisEndPoints) {
-            if (axisStartPoints == null || axisEndPoints == null) throw new ArgumentNullException("Axis start or end point lists are null.");
-            if (axisStartPoints.Count != axisEndPoints.Count) throw new ArgumentException("Axis start and end point lists are not matched.");
-
-            var points = new List<clsPoint3d>();
-            for (var i = 0; i <= axisStartPoints.Count - 1; i++) {
-                points.Add(axisEndPoints[i] - axisStartPoints[i]);
-            }
-
-            // Return the point (if we have more than 7 points within the tolerance)
-            return new clsPoint3d(points.Average(p => p.X), points.Average(p => p.Y), points.Average(p => p.Z));
-        }
-
         public static void ResetMeasurements() {
             myMeasurements.Clear();
             mySuspectedMarkers.Clear();
@@ -1402,7 +1181,7 @@ namespace BatchProcess
         public static void StopTracking() {
             mySuspectedMarkers.Clear();
             if (StepMarker.Confirmed == false) {
-                StepMarker = new clsMarkerPoint(myStepMarkerID, -1);
+                StepMarker = new clsMarkerPoint(myStepMarkerID);
             }
             //ARToolKitFunctions.Instance.arwRegisterLogCallback(null);
             ARToolKitFunctions.Instance.arwShutdownAR();
@@ -1524,27 +1303,24 @@ namespace BatchProcess
             StartTracking(myVideoWidth, myVideoHeight, false);
 
             //DEBUG
-            stitchingMeasurements.Add(139);
-            stitchingMeasurements.Add(269);
-            stitchingMeasurements.Add(493);
+            //stitchingMeasurements.Add(139);
+            //stitchingMeasurements.Add(269);
+            //stitchingMeasurements.Add(493);
 
-            var pts = new List<clsPGPoint>();
-            double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            OpenTK.Matrix4d lastStepMarkerMatrix = OpenTK.Matrix4d.Identity;
-            OpenTK.Matrix4d nextStepMarkerMatrix = OpenTK.Matrix4d.Identity;
+            int lastConfirmedMarker = 0;
+            clsMarkerPoint lastStepMarker = null;
             foreach (var measurement in myMeasurements) {
                 ARToolKitFunctions.Instance.arwSetMappedMarkersVisible(measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray());
 
-                RecogniseMarkersFromMeasurements();
+                RecogniseMarkersFromMeasurements(measurement);
 
-                if (SaveHiResSurveyPhoto) {
-                    ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myGFMarkerID, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray());
-
-                    // Take a copy of the last seen step marker
-                    if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, 125, mv)) {
-                        nextStepMarkerMatrix = MatrixFromArray(mv);
+                for (int i = 0; i < mySuspectedMarkers.Count; i++) {
+                    if (mySuspectedMarkers[i].MarkerID == 1) {
+                        Console.WriteLine(mySuspectedMarkers[i].Origin.x.ToString() + ", " + mySuspectedMarkers[i].Origin.y.ToString() + ", " + mySuspectedMarkers[i].Origin.z.ToString());
                     }
-                } else {
+                }
+
+                if (!SaveHiResSurveyPhoto) {
                     var n = myMeasurements.IndexOf(measurement);
                     Console.WriteLine(n.ToString());
                 }
@@ -1553,45 +1329,62 @@ namespace BatchProcess
                 Application.DoEvents();
 
                 if (stitchingMeasurements.Contains(myMeasurements.IndexOf(measurement))) {
-                    for (int i = 2; i <= 100; i = i + 2) {
-                        DetectMapperMarkerVisible(myMapperMarkerID, i, ref pts, lastStepMarkerMatrix);
+                    if (lastConfirmedMarker > 0 && lastStepMarker != null) {
+                        for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++ ) {
+                            var p1 = ConfirmedMarkers[i].Point;
+                            ConfirmedMarkers[i].Point = lastStepMarker.Point + lastStepMarker.Vx * p1.x + lastStepMarker.Vy * p1.y + lastStepMarker.Vz * p1.z;
+                        }
                     }
-                    for (int i = 130; i <= 228; i = i + 2) {
-                        DetectMapperMarkerVisible(myMapperMarkerID, i, ref pts, lastStepMarkerMatrix);
-                    }
-                    lastStepMarkerMatrix = nextStepMarkerMatrix;
-
-                    ARToolKitFunctions.Instance.arwRemoveMarker(myGFMarkerID);
-                    myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/StepMarker.dat");
-
-                    var sConfig = "multi_auto;125;80;";
-                    myMapperMarkerID = ARToolKitFunctions.Instance.arwResetMapperTrackable(myMapperMarkerID, sConfig);
+                    lastStepMarker = StepMarker.Copy();
+                    lastConfirmedMarker = ConfirmedMarkers.Count;
+                    StartStitching();
                 }
             }
 
-            for (int i = 2; i <= 100; i = i + 2) {
-                DetectMapperMarkerVisible(myMapperMarkerID, i, ref pts, lastStepMarkerMatrix);
+            if (lastConfirmedMarker > 0 && lastStepMarker != null) {
+                for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++) {
+                    var p1 = ConfirmedMarkers[i].Point;
+                    ConfirmedMarkers[i].Point = lastStepMarker.Point + lastStepMarker.Vx * p1.x + lastStepMarker.Vy * p1.y + lastStepMarker.Vz * p1.z;
+                }
             }
-            for (int i = 130; i <= 228; i = i + 2) {
-                DetectMapperMarkerVisible(myMapperMarkerID, i, ref pts, lastStepMarkerMatrix);
-            }
 
-            // DetectMapperMarkerVisible(myMapperMarkerID, 121, ref pts, false);
-            // DetectMapperMarkerVisible(myMapperMarkerID, 125, ref pts, false);
-
-            pts.Sort((p1, p2) => p1.z.CompareTo(p2.z));
-
-            var sw = new System.IO.StreamWriter("C:\\Temp\\points.txt");
-            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t' + p.z.ToString() + '\t' + (-p.y).ToString() + '\t' + p.ID.ToString() + '\t' + p.ParentID));
-            sw.Close();
-
-            sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
-            pts.ForEach(p => sw.WriteLine(p.x.ToString() + '\t' + p.y.ToString() + '\t' + p.z.ToString() + '\t' + p.ID.ToString() + '\t' + p.ParentID));
+            var sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
+            ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + p.MarkerID.ToString()));
             sw.Close();
 
         }
 
-        public static void RecogniseMarkersFromMeasurements() {
+        public static void StartStitching() {
+            int i;
+            int maxConfirmedID = myMaximumMarkerID - 1;
+            List<int> myReplacedIDs = new List<int>();
+            List<int> myReplacements = new List<int>();
+
+            for (i = 0; i < ConfirmedMarkers.Count; i++) {
+                if (ConfirmedMarkers[i].MarkerID > maxConfirmedID) maxConfirmedID = ConfirmedMarkers[i].MarkerID;
+            }
+            maxConfirmedID = maxConfirmedID + 1;
+
+            for (i = 0; i < ConfirmedMarkers.Count; i++) {
+                if (ConfirmedMarkers[i].MarkerID < myMaximumMarkerID && ConfirmedMarkers[i].MarkerID != myStepMarkerID) {
+                    myReplacedIDs.Add(ConfirmedMarkers[i].MarkerID);
+                    myReplacements.Add(maxConfirmedID);
+                    ConfirmedMarkers[i].MarkerID = maxConfirmedID;
+                    maxConfirmedID = maxConfirmedID + 1;
+                }
+            }
+
+            var sConfig = "multi_auto;125;80;";
+            myMapperMarkerID = ARToolKitFunctions.Instance.arwResetMapperTrackable(myMapperMarkerID, sConfig);
+            ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARToolKitFunctions.ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
+
+            StepMarker.Stitched = true;
+            mySuspectedMarkers.Clear();
+            myGFMarkerID = myStepMarkerID;
+        }
+
+        public static void RecogniseMarkersFromMeasurements(clsMeasurement measurement) {
+
             Data.Clear();
 
             for (int i = 0; i <= myMarkerIDs.Count - 1; i++) {
@@ -1614,17 +1407,25 @@ namespace BatchProcess
             DetectMarkerVisible(myWall3MarkerID);
             DetectMarkerVisible(myWall4MarkerID);
 
-            SaveHiResSurveyPhoto = false;
-            AddNewSuspectedMarkers();
-            ConvertSuspectedToConfirmed();
+            ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myGFMarkerID, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray());
 
-            SaveHiResSurveyPhoto = true;
+            //Update positions of confirmed markers by bundle adjustment
+            double[] modelMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] cornerCoords = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            SaveHiResSurveyPhoto = false;
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners)) {
+                SaveHiResSurveyPhoto = true;
+                AddNewSuspectedMarkers();
+                ConvertSuspectedToConfirmed();
+                UpdateConfirmedMarkersWithBundleAdjustment();
+            }
 
             if (SaveHiResSurveyPhoto) {
                 numImagesProcessed = numImagesProcessed + 1;
             }
 
             Data.GetMarkersCopy();
+
         }
 
         private static double[] ARTransFromMatrix(double[] matrix) {
@@ -1696,6 +1497,14 @@ namespace BatchProcess
                 pt = OpenTK.Vector4d.Transform(pt, extraTransform);
                 pts.Add(new clsPGPoint(pt.X, pt.Y, pt.Z, myBarcodeID));
             }
+        }
+
+        private static clsPGPoint DetectMapperMarkerVisible(int myMapperMarkerID, int myBarcodeID) {
+            double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, myBarcodeID, mv)) {
+                return new clsPGPoint(mv[12], mv[13], mv[14], myBarcodeID);
+            }
+            return null;
         }
 
     }

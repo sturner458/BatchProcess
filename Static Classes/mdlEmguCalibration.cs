@@ -1129,20 +1129,24 @@ namespace BatchProcess {
             mBoardSize = new Size(13, 17);
             res = CvInvoke.FindChessboardCorners(grayImage, mBoardSize, cornerPoints);
 
-            if (res) {
-                CvInvoke.CornerSubPix(grayImage, cornerPoints, new Size(5, 5), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100, 0.1));
-                for (int i = 0; i < 17; i++) {
-                    CvInvoke.Line(imageCopy, new Point((int)cornerPoints[i * 13].X, (int)cornerPoints[i * 13].Y), new Point((int)cornerPoints[i * 13 + 12].X, (int)cornerPoints[i * 13 + 12].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 1);
+            try {
+                if (res) {
+                    CvInvoke.CornerSubPix(grayImage, cornerPoints, new Size(5, 5), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100, 0.1));
+                    for (int i = 0; i < 17; i++) {
+                        CvInvoke.Line(imageCopy, new Point((int)cornerPoints[i * 13].X, (int)cornerPoints[i * 13].Y), new Point((int)cornerPoints[i * 13 + 12].X, (int)cornerPoints[i * 13 + 12].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 1);
+                    }
+                    for (int i = 0; i < 13; i++) {
+                        CvInvoke.Line(imageCopy, new Point((int)cornerPoints[i].X, (int)cornerPoints[i].Y), new Point((int)cornerPoints[i + 208].X, (int)cornerPoints[i + 208].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 1);
+                    }
                 }
-                for (int i = 0; i < 13; i++) {
-                    CvInvoke.Line(imageCopy, new Point((int)cornerPoints[i].X, (int)cornerPoints[i].Y), new Point((int)cornerPoints[i + 208].X, (int)cornerPoints[i + 208].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 1);
-                }
-            }
 
-            if (cornersToDraw != null) {
-                for (int i = 0; i < cornersToDraw.Size; i++) {
-                    CvInvoke.Line(imageCopy, new Point((int)cornersToDraw[i].X, (int)cornersToDraw[i].Y), new Point((int)cornersToDraw[i].X, (int)cornersToDraw[i].Y), new Bgr(System.Drawing.Color.Green).MCvScalar, 4);
+                if (cornersToDraw != null) {
+                    for (int i = 0; i < cornersToDraw.Size; i++) {
+                        CvInvoke.Line(imageCopy, new Point((int)cornersToDraw[i].X, (int)cornersToDraw[i].Y), new Point((int)cornersToDraw[i].X, (int)cornersToDraw[i].Y), new Bgr(System.Drawing.Color.Green).MCvScalar, 4);
+                    }
                 }
+            } catch {
+
             }
 
             CvInvoke.Imwrite(outFileName, imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 5));

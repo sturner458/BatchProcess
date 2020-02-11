@@ -11,7 +11,6 @@ namespace BatchProcess
     public class clsMarkerPoint
     {
         public int MarkerID { get; set; }
-        public int SeenFromMarkerID { get; set; }
         public int ActualMarkerID { get; set; } //For when we renumber the markers, e.g. due to stitching a new flight
         public int ConfirmedImageNumber { get; set; }
 
@@ -29,6 +28,7 @@ namespace BatchProcess
         public double[] ModelViewMatrix { get; set; } = new double[16]; // Matrix of this marker with respect to the origin marker
 
         public List<double[]> Matrixes { get; } = new List<double[]>(); // Model View Matrices as recorded by ARToolkit
+        public List<double[]> GTSAMMatrixes { get; } = new List<double[]>(); // Model View Matrices as recorded by GTSAM
         public List<int> PhotoNumbers { get; } = new List<int>();
         public List<clsPoint3d> CameraPoints { get; } = new List<clsPoint3d>();
 
@@ -80,26 +80,27 @@ namespace BatchProcess
         public List<double> Velocity { get; } = new List<double>();
         public List<double> AngularVelocity { get; } = new List<double>();
 
-        public int NewMarkerID() {
+        public int NewMarkerID(int oldMarkerID = -1) {
             int newMarkerID;
-            if (BatchProcess.mdlRecognise.UseDatumMarkers) {
-                newMarkerID = MarkerID - 1;
+            if (oldMarkerID == -1) oldMarkerID = ActualMarkerID;
+            if (UseDatumMarkers) {
+                newMarkerID = oldMarkerID - 1;
                 if (newMarkerID <= 25) {
                     //Do Nothing
                 } else if (newMarkerID <= 50) {
                     return newMarkerID + 25;
-                } else if (MarkerID <= 75) {
+                } else if (oldMarkerID <= 75) {
                     return newMarkerID - 25;
                 } else if (newMarkerID <= 100) {
                     //Do Nothing
                 }
             } else {
-                newMarkerID = MarkerID + 1;
+                newMarkerID = oldMarkerID + 1;
                 if (newMarkerID <= 25) {
                     //Do Nothing
                 } else if (newMarkerID <= 50) {
                     return newMarkerID + 25;
-                } else if (MarkerID <= 75) {
+                } else if (oldMarkerID <= 75) {
                     return newMarkerID - 25;
                 } else if (newMarkerID <= 100) {
                     //Do Nothing
@@ -112,23 +113,21 @@ namespace BatchProcess
         public clsMarkerPoint() {
         }
 
-        //Public Sub New(aMarkerID As Integer)
-        //    MarkerID = aMarkerID
-        //End Sub
-
-        public clsMarkerPoint(int aMarkerID, int seenFromMarkerID) {
+        public clsMarkerPoint(int aMarkerID) {
             MarkerID = aMarkerID;
             ActualMarkerID = MarkerID;
-            SeenFromMarkerID = seenFromMarkerID;
         }
 
-        public bool OKToConfirm(ref string myErrString, ref clsPoint3d maxAV1, ref clsPoint3d maxAV2, ref clsPoint3d maxAV3, ref clsPoint3d maxAV4, ref bool myAngleOK, ref bool myAngle2OK, ref double a1, ref double a2) {
+        public bool OKToConfirm(out string myErrString, out clsPoint3d maxAV1, out clsPoint3d maxAV2, out clsPoint3d maxAV3, out clsPoint3d maxAV4, out bool myAngleOK, out bool myAngle2OK, out bool myNumImagesOK, out bool myGTSAMOK, out double a1, out double a2) {
             myErrString = "";
+
             myAngleOK = false;
             myAngle2OK = false;
+            myNumImagesOK = false;
+            myGTSAMOK = false;
 
             //-DEVELOPMENT CHANGE
-            a1 = MaxDistance(ref maxAV1, ref maxAV2);
+            a1 = MaxDistance(out maxAV1, out maxAV2);
             if (a1 < 500) {
                 myErrString = "Distance = " + Round(a1) + " < 500mm";
             } else {
@@ -137,7 +136,7 @@ namespace BatchProcess
 
             if (myAngleOK) {
                 myAngleOK = false;
-                a1 = MaxAngle(ref maxAV1, ref maxAV2);
+                a1 = MaxAngle(out maxAV1, out maxAV2);
                 if (a1 < 40 * PI / 180) {
                     myErrString = "Angle Range = " + Round(a1 * 180 / PI, 1) + " < " + 40.ToString("0.##") + "°";
                 } else {
@@ -145,31 +144,49 @@ namespace BatchProcess
                 }
             }
 
-            a2 = MaxAnglePerpendicular(ref maxAV3, ref maxAV4);
+            a2 = MaxAnglePerpendicular(out maxAV3, out maxAV4);
             //a2 = 25 * PI / 180;
-            if (a2 < 20 * PI / 180) {
-                if (myErrString == "") myErrString = "Perpendicular Angle Range = " + Round(a2 * 180 / PI, 1) + " < " + 20.ToString("0.##") + "°";
+            if (a2 < 1 * PI / 180) {
+                if (myErrString == "") myErrString = "2nd Angle Range = " + Round(a2 * 180 / PI, 1) + " < " + 1.ToString("0.##") + "°";
                 return false;
             } else {
                 myAngle2OK = true;
             }
 
-            //Make sure that if we are using bundle adjustment, then this marker has been recorded by GTSAM
-            //if (myAngleOK && myAngle2OK && Stannah_API.AppPreferences.GTSAMBundleAdjustment && !HasMarkerBeenSeenByGTSAM(MarkerID)) return false;
+            if (GTSAMMatrixes.Count < 10 && GTSAMMatrixes.Count < 10) {
+                if (myErrString == "") myErrString = "Too few photos (" + GTSAMMatrixes.Count + "/" + 10 + ")";
+                return false;
+            } else {
+                myNumImagesOK = true;
+            }
 
-            return (myAngleOK && myAngle2OK);
+            myGTSAMOK = true;
+            for (int i = GTSAMMatrixes.Count - 6; i < GTSAMMatrixes.Count - 1; i++) {
+                var p1 = new clsPoint3d(GTSAMMatrixes[i][12], GTSAMMatrixes[i][13], GTSAMMatrixes[i][14]);
+                var p2 = new clsPoint3d(GTSAMMatrixes[i + 1][12], GTSAMMatrixes[i + 1][13], GTSAMMatrixes[i + 1][14]);
+                if (p1.Dist(p2) > 0.25) {
+                    myGTSAMOK = false;
+                    if (myErrString == "") myErrString = "No convergence";
+                    break;
+                }
+            }
+
+            return (myAngleOK && myAngle2OK && myNumImagesOK && myGTSAMOK);
         }
 
-        public double MaxAngle(ref clsPoint3d maxAV1, ref clsPoint3d maxAV2) {
+        public double MaxAngle(out clsPoint3d maxAV1, out clsPoint3d maxAV2) {
             double a;
             double maxA;
             clsPoint3d p1, p2;
             clsPoint3d px, pz;
 
+            maxAV1 = new clsPoint3d();
+            maxAV2 = new clsPoint3d();
+
             maxA = 0;
             pz = new clsPoint3d(0, 0, 1.0);
-            for (int j = 0; j <= Matrixes.Count - 2; j++) {
-                for (int k = j + 1; k <= Matrixes.Count - 1; k++) {
+            for (int j = 0; j <= CameraPoints.Count - 2; j++) {
+                for (int k = j + 1; k <= CameraPoints.Count - 1; k++) {
                     p1 = CameraPoints[j];
                     p2 = CameraPoints[k];
                     px = new clsPoint3d(p2.X - p1.X, p2.Y - p1.Y, 0);
@@ -191,11 +208,14 @@ namespace BatchProcess
             return maxA;
         }
 
-        public double MaxDistance(ref clsPoint3d maxAV1, ref clsPoint3d maxAV2) {
+        public double MaxDistance(out clsPoint3d maxAV1, out clsPoint3d maxAV2) {
             double d;
             double maxD;
             clsPoint3d p1, p2;
             clsPoint3d px, pz;
+
+            maxAV1 = new clsPoint3d();
+            maxAV2 = new clsPoint3d();
 
             maxD = 0;
             pz = new clsPoint3d(0, 0, 1.0);
@@ -222,13 +242,16 @@ namespace BatchProcess
             return maxD;
         }
 
-        public double MaxAnglePerpendicular(ref clsPoint3d maxAV1, ref clsPoint3d maxAV2) {
+        public double MaxAnglePerpendicular(out clsPoint3d maxAV1, out clsPoint3d maxAV2) {
             double a;
             double maxA;
             clsPoint3d py, pz;
-            clsPoint3d p1 = null, p2 = null, p3 = null, p4 = null;
+            clsPoint3d p1, p2, p3, p4;
 
-            if (MaxAngle(ref p3, ref p4) < myTol) return 0;
+            maxAV1 = new clsPoint3d();
+            maxAV2 = new clsPoint3d();
+
+            if (MaxAngle(out p3, out p4) < myTol) return 0;
 
             p3 = (p4 - p3).Point2D().Point3d(0);
             if (IsSameDbl(p3.Length, 0)) return 0;
@@ -239,8 +262,8 @@ namespace BatchProcess
             py.Normalise();
 
             maxA = 0;
-            for (int j = 0; j <= Matrixes.Count - 2; j++) {
-                for (int k = j + 1; k <= Matrixes.Count - 1; k++) {
+            for (int j = 0; j <= CameraPoints.Count - 2; j++) {
+                for (int k = j + 1; k <= CameraPoints.Count - 1; k++) {
                     p1 = CameraPoints[j];
                     p2 = CameraPoints[k];
                     p1 = py * py.Dot(p1) + pz * pz.Dot(p1);
@@ -278,7 +301,6 @@ namespace BatchProcess
             clsMarkerPoint myCopy = new clsMarkerPoint();
 
             myCopy.MarkerID = MarkerID;
-            myCopy.SeenFromMarkerID = SeenFromMarkerID;
             myCopy.ActualMarkerID = ActualMarkerID;
             myCopy.ConfirmedImageNumber = ConfirmedImageNumber;
             myCopy.Origin = Origin.Copy();
@@ -296,6 +318,10 @@ namespace BatchProcess
 
             for (int i = 0; i < Matrixes.Count; i++) {
                 myCopy.Matrixes.Add(Matrixes[i].ToArray());
+            }
+
+            for (int i = 0; i < GTSAMMatrixes.Count; i++) {
+                myCopy.GTSAMMatrixes.Add(GTSAMMatrixes[i].ToArray());
             }
 
             myCopy.CameraPoints.AddRange(CameraPoints.Select(p => p.Copy()).ToArray());
@@ -319,7 +345,6 @@ namespace BatchProcess
         public void Save(System.IO.StreamWriter sw) {
             sw.WriteLine("MARKER_POINT_SETTINGS");
             sw.WriteLine("MarkerID," + MarkerID.ToString());
-            sw.WriteLine("SeenFromMarkerID," + SeenFromMarkerID.ToString());
             sw.WriteLine("ActualMarkerID," + ActualMarkerID.ToString());
             sw.WriteLine("ConfirmedImageNumber," + ConfirmedImageNumber.ToString());
             if (VerticalVect != null) {
@@ -359,6 +384,13 @@ namespace BatchProcess
                 }
             }
 
+            sw.WriteLine(GTSAMMatrixes.Count);
+            for (int i = 0; i < GTSAMMatrixes.Count; i++) {
+                for (int j = 0; j < 16; j++) {
+                    sw.WriteLine(GTSAMMatrixes[i][j].ToString());
+                }
+            }
+
             sw.WriteLine(CameraPoints.Count);
             for (int i = 0; i < CameraPoints.Count; i++) {
                 CameraPoints[i].Save(sw);
@@ -390,7 +422,6 @@ namespace BatchProcess
                     var mySplit = myLine.Split(',');
                     if (mySplit.GetUpperBound(0) == 1) {
                         if (mySplit[0] == "MarkerID") MarkerID = Convert.ToInt32(mySplit[1]);
-                        if (mySplit[0] == "SeenFromMarkerID") SeenFromMarkerID = Convert.ToInt32(mySplit[1]);
                         if (mySplit[0] == "ActualMarkerID") ActualMarkerID = Convert.ToInt32(mySplit[1]);
                         if (mySplit[0] == "ConfirmedImageNumber") ConfirmedImageNumber = Convert.ToInt32(mySplit[1]);
                         if (mySplit[0] == "PhotoNumber") PhotoNumbers.Add(Convert.ToInt32(mySplit[1]));
@@ -439,6 +470,14 @@ namespace BatchProcess
             }
 
             n = Convert.ToInt32(sr.ReadLine());
+            for (int i = 0; i < n; i++) {
+                GTSAMMatrixes.Add(new double[16]);
+                for (int j = 0; j < 16; j++) {
+                    GTSAMMatrixes.Last()[j] = Convert.ToDouble(sr.ReadLine());
+                }
+            }
+
+            n = Convert.ToInt32(sr.ReadLine());
             for (var i = 1; i <= n; i++) {
                 p1 = new clsPoint3d();
                 p1.Load(sr);
@@ -465,11 +504,11 @@ namespace BatchProcess
             EndXAxis = Origin + Vx;
             EndYAxis = Origin + Vy;
             SetEndPoint();
-            ModelViewMatrix = GetMatrixFromVectorsAndPoint(Origin, Vx, Vy, Vz);
+            ModelViewMatrix = new double[] { Vx.X, Vx.Y, Vx.Z, 0, Vy.X, Vy.Y, Vy.Z, 0, Vz.X, Vz.Y, Vz.Z, 0, Origin.X, Origin.Y, Origin.Z, 1.0 };
         }
 
         public void SetEndPoint() {
-            if (BatchProcess.mdlRecognise.UseDatumMarkers) {
+            if (UseDatumMarkers) {
                 if (ActualMarkerID == myGFMarkerID || ActualMarkerID <= myStepMarkerID) { //GF, Step & Bulkhead Markers
                     Point = Origin.Copy();
                 } else if (ActualMarkerID < myLeftBulkheadMarkerID) {
@@ -608,6 +647,7 @@ namespace BatchProcess
             PhotoNumbers.Clear();
             ModelViewMatrix = new double[16];
             Matrixes.Clear();
+            GTSAMMatrixes.Clear();
             CameraPoints.Clear();
             GyroData.Clear();
             AccelData.Clear();
@@ -644,17 +684,7 @@ namespace BatchProcess
             if (myItem1.MarkerID < myItem2.MarkerID) {
                 return -1;
             } else if (myItem1.MarkerID == myItem2.MarkerID) {
-                if (myItem1.SeenFromMarkerID == myGFMarkerID) {
-                    return -1;
-                } else if (myItem2.SeenFromMarkerID == myGFMarkerID) {
-                    return 1;
-                } else if (myItem1.SeenFromMarkerID < myItem2.SeenFromMarkerID) {
-                    return -1;
-                } else if (myItem1.SeenFromMarkerID == myItem2.SeenFromMarkerID) {
-                    return 0;
-                } else {
-                    return 1;
-                }
+                return 0;
             } else {
                 return 1;
             }
