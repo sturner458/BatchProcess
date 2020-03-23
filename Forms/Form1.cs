@@ -499,6 +499,7 @@ namespace BatchProcess {
             myCalibFile = myDlg.FileName;
 
             mdlRecognise.LoadSavedDataFile(myFile);
+            //mdlRecognise.TempFixPoints();
             mdlRecognise.BatchBundleAdjust(lblStatus, myCalibFile);
 
             MessageBox.Show("Finished");

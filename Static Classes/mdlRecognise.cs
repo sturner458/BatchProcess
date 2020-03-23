@@ -68,6 +68,7 @@ namespace BatchProcess
         static List<int> myWallMarkerIDs = new List<int>();
         static List<int> myAllFeatureMarkerIDs = new List<int>();
         public static List<int> stitchingMeasurements = new List<int>();
+        public static List<clsPoint3d> stitchingVectors = new List<clsPoint3d>();
 
         public static List<int> myMarkerIDs = new List<int>();
         public static clsMarkerPoint myGFMarker = new clsMarkerPoint();
@@ -1009,6 +1010,9 @@ namespace BatchProcess
                 myMarkerPoint = new clsMarkerPoint();
                 myMarkerPoint.Load(sr);
                 ConfirmedMarkers.Add(myMarkerPoint);
+                if (ConfirmedMarkers.Last().ActualMarkerID == myStepMarkerID) {
+                    stitchingVectors.Add(ConfirmedMarkers.Last().VerticalVect);
+                }
             }
 
             if (sr.Peek() == -1) return;
@@ -1067,6 +1071,22 @@ namespace BatchProcess
             return true;
         }
 
+        public static void TempFixPoints() {
+
+            var lastStepMarker = ConfirmedMarkers.Where(m => m.ActualMarkerID == myStepMarkerID).LastOrDefault();
+            var lastConfirmedMarker = ConfirmedMarkers.IndexOf(lastStepMarker) + 1;
+            if (lastConfirmedMarker > 0 && lastStepMarker != null) {
+                for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++) {
+                    var p1 = ConfirmedMarkers[i].Point;
+                    ConfirmedMarkers[i].Point = lastStepMarker.Point + lastStepMarker.Vx * p1.X + lastStepMarker.Vy * p1.Y + lastStepMarker.Vz * p1.Z;
+                }
+            }
+
+            var sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
+            ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + p.MarkerID.ToString()));
+            sw.Close();
+        }
+
         public static clsPoint3d PointFromInvMatrix(int n, bool lowRes = false) {
             double[] mv = new double[16];
 
@@ -1083,7 +1103,6 @@ namespace BatchProcess
         }
 
         public static void RelevelMarkerFromGF(clsMarkerPoint myMarker, bool goBack = false) {
-            int j;
             clsPoint3d p1 = myVerticalVector.Copy();
             if (p1.Z < 0) p1.Scale(-1);
             p1.Normalise();
@@ -1107,27 +1126,8 @@ namespace BatchProcess
             }
         }
 
-        public static void RelevelPointFromGF(clsPoint3d myPt, bool goBack = false) {
-            int j;
-            clsPoint3d p1 = myVerticalVector.Copy();
-            if (p1.Z < 0) p1.Scale(-1);
-            p1.Normalise();
-            if (p1.Length < 0.9) return;
-            double a = p1.AngleToHorizontal;
-
-            if (IsSameAngle(a, PI / 2) == false) {
-                double b = -(PI / 2 - a);
-                if (goBack) b = -b;
-                clsPoint3d p2 = new clsPoint3d(p1.X, p1.Y, 0);
-                p2.Normalise();
-                clsPoint3d p3 = p1.Cross(p2);
-                p3.Normalise();
-
-                myPt.RotateAboutLine(p3.Line(), b);
-            }
-        }
-
-        public static clsPoint3d RelevelVerticalVector(clsPoint3d pt, clsPoint3d p1) {
+        public static clsPoint3d RelevelVerticalAboutOrigin(clsPoint3d pt) {
+            var p1 = myVerticalVector.Copy();
             if (p1.Z < 0) p1.Scale(-1);
             p1.Normalise();
             if (p1.Length < 0.9) return pt;
@@ -1136,14 +1136,42 @@ namespace BatchProcess
 
             if (IsSameDbl(a, PI / 2) == false) {
                 double b = -(PI / 2 - a);
-                clsPoint3d p2 = new clsPoint3d(p1.X, p1.Y, 0);
+                var p2 = new clsPoint3d(p1.X, p1.Y, 0);
                 p2.Normalise();
-                clsPoint3d p3 = p1.Cross(p2);
+                var p3 = p1.Cross(p2);
                 p3.Normalise();
+
+                var vz = new clsPoint3d(0, 0, 1);
+                vz.RotateAboutLine(p3.Line(), b);
+                if (vz.Dot(p2) > 0) b = -b;
 
                 pt.RotateAboutLine(p3.Line(), b);
             }
             return pt;
+        }
+
+        public static void RelevelStepMarker(clsPoint3d verticalVector, ref clsMarkerPoint stepMarker) {
+            var p1 = stepMarker.Vx * verticalVector.x + stepMarker.Vy * verticalVector.y + stepMarker.Vz * verticalVector.z;
+            if (p1.Z < 0) p1.Scale(-1);
+            p1.Normalise();
+            if (p1.Length < 0.9) return;
+            double a = p1.AngleToHorizontal;
+
+            if (IsSameDbl(a, PI / 2) == false) {
+                double b = -(PI / 2 - a);
+                var p2 = new clsPoint3d(p1.X, p1.Y, 0);
+                p2.Normalise();
+                var p3 = p1.Cross(p2);
+                p3.Normalise();
+
+                var vz = new clsPoint3d(0, 0, 1);
+                vz.RotateAboutLine(p3.Line(), b);
+                if (vz.Dot(p2) > 0) b = -b;
+
+                stepMarker.Vx.RotateAboutLine(p3.Line(), b);
+                stepMarker.Vy.RotateAboutLine(p3.Line(), b);
+                stepMarker.Vz.RotateAboutLine(p3.Line(), b);
+            }
         }
 
         public static void ResetMeasurements() {
@@ -1161,6 +1189,7 @@ namespace BatchProcess
             StepMarker.VerticalVect = null;
             numImagesProcessed = 0;
             stitchingMeasurements.Clear();
+            stitchingVectors.Clear();
         }
 
         public static void ResetMeasurements2() {
@@ -1170,7 +1199,6 @@ namespace BatchProcess
             myDoorMarkers.Clear();
             myObstructMarkers.Clear();
             myWallMarkers.Clear();
-            myVerticalVector = null;
             StepMarker.Confirmed = false;
             StepMarker.Levelled = false;
             StepMarker.Stitched = false;
@@ -1330,9 +1358,17 @@ namespace BatchProcess
 
                 if (stitchingMeasurements.Contains(myMeasurements.IndexOf(measurement))) {
                     if (lastConfirmedMarker > 0 && lastStepMarker != null) {
-                        for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++ ) {
+                        //stitchingVectors[stitchingMeasurements.IndexOf(myMeasurements.IndexOf(measurement)) - 1] = new clsPoint3d(0, 0, 1);
+                        RelevelStepMarker(stitchingVectors[stitchingMeasurements.IndexOf(myMeasurements.IndexOf(measurement)) - 1], ref lastStepMarker);
+                        for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++) {
                             var p1 = ConfirmedMarkers[i].Point;
                             ConfirmedMarkers[i].Point = lastStepMarker.Point + lastStepMarker.Vx * p1.x + lastStepMarker.Vy * p1.y + lastStepMarker.Vz * p1.z;
+                        }
+                    } else {
+                        //myVerticalVector = new clsPoint3d(0, 0, 1);
+                        foreach (var pt in ConfirmedMarkers) {
+                            var p1 = pt.Point;
+                            pt.Point = RelevelVerticalAboutOrigin(p1);
                         }
                     }
                     lastStepMarker = StepMarker.Copy();
@@ -1342,11 +1378,14 @@ namespace BatchProcess
             }
 
             if (lastConfirmedMarker > 0 && lastStepMarker != null) {
+                //stitchingVectors[stitchingVectors.Count - 1] = new clsPoint3d(0, 0, 1);
+                RelevelStepMarker(stitchingVectors.Last(), ref lastStepMarker);
                 for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++) {
                     var p1 = ConfirmedMarkers[i].Point;
                     ConfirmedMarkers[i].Point = lastStepMarker.Point + lastStepMarker.Vx * p1.x + lastStepMarker.Vy * p1.y + lastStepMarker.Vz * p1.z;
                 }
             }
+
 
             var sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
             ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + p.MarkerID.ToString()));
@@ -1357,8 +1396,6 @@ namespace BatchProcess
         public static void StartStitching() {
             int i;
             int maxConfirmedID = myMaximumMarkerID - 1;
-            List<int> myReplacedIDs = new List<int>();
-            List<int> myReplacements = new List<int>();
 
             for (i = 0; i < ConfirmedMarkers.Count; i++) {
                 if (ConfirmedMarkers[i].MarkerID > maxConfirmedID) maxConfirmedID = ConfirmedMarkers[i].MarkerID;
@@ -1366,9 +1403,8 @@ namespace BatchProcess
             maxConfirmedID = maxConfirmedID + 1;
 
             for (i = 0; i < ConfirmedMarkers.Count; i++) {
-                if (ConfirmedMarkers[i].MarkerID < myMaximumMarkerID && ConfirmedMarkers[i].MarkerID != myStepMarkerID) {
-                    myReplacedIDs.Add(ConfirmedMarkers[i].MarkerID);
-                    myReplacements.Add(maxConfirmedID);
+                //if (ConfirmedMarkers[i].MarkerID < myMaximumMarkerID && ConfirmedMarkers[i].MarkerID != myStepMarkerID) {
+                if (ConfirmedMarkers[i].MarkerID < myMaximumMarkerID) {
                     ConfirmedMarkers[i].MarkerID = maxConfirmedID;
                     maxConfirmedID = maxConfirmedID + 1;
                 }

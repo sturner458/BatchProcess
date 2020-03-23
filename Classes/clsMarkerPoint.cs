@@ -164,7 +164,7 @@ namespace BatchProcess
             for (int i = GTSAMMatrixes.Count - 6; i < GTSAMMatrixes.Count - 1; i++) {
                 var p1 = new clsPoint3d(GTSAMMatrixes[i][12], GTSAMMatrixes[i][13], GTSAMMatrixes[i][14]);
                 var p2 = new clsPoint3d(GTSAMMatrixes[i + 1][12], GTSAMMatrixes[i + 1][13], GTSAMMatrixes[i + 1][14]);
-                if (p1.Dist(p2) > 0.25) {
+                if (p1.Dist(p2) > 0.5) {
                     myGTSAMOK = false;
                     if (myErrString == "") myErrString = "No convergence";
                     break;
