@@ -1388,7 +1388,7 @@ namespace BatchProcess
 
 
             var sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
-            ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + p.MarkerID.ToString()));
+            ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.ActualMarkerID + 1).ToString()));
             sw.Close();
 
         }
