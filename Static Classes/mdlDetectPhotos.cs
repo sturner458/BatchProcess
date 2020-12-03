@@ -834,6 +834,7 @@ namespace BatchProcess {
                         StepMarker.Confirmed = true;
                         StepMarker.Levelled = false;
                         StepMarker.Stitched = false;
+                        ConfirmedMarkers.ForEach(m => m.Stitched = false);
                         myConfirmedMarker = StepMarker.Copy();
 
                         PopulateMarkerPoint(ref myConfirmedMarker, mySeenFromMarkerID, myOriginPts, myXAxisPts, myYAxisPts, mySeenFromMarkerIDs, myHistoricMarkers);

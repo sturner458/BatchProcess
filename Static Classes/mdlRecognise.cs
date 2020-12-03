@@ -720,6 +720,7 @@ namespace BatchProcess
                     StepMarker.Confirmed = true;
                     StepMarker.Levelled = false;
                     StepMarker.Stitched = false;
+                    ConfirmedMarkers.ForEach(m => m.Stitched = false);
 
                     //Set the Stepmarker coordinates so we can use it to recognise other markers
                     StepMarker.Origin = pt1.Copy();
@@ -812,6 +813,14 @@ namespace BatchProcess
                     ConfirmedMarkers.Add(myConfirmedMarker);
                 }
 
+                //var lastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.Stitched);
+                //if (lastStepMarkerIndex > -1 && lastStepMarkerIndex < ConfirmedMarkers.Count) {
+                //    var m = ConfirmedMarkers[lastStepMarkerIndex];
+                //    var p1 = myConfirmedMarker.Point;
+                //    myConfirmedMarker.Point = m.Point + m.Vx * p1.X + m.Vy * p1.Y + m.Vz * p1.Z;
+                //}
+
+                myConfirmedMarker.GTSAMMatrixes.AddRange(mySuspectedMarkers[n].GTSAMMatrixes);
                 mySuspectedMarkers.RemoveAt(n);
             }
 
@@ -1415,6 +1424,9 @@ namespace BatchProcess
             ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARToolKitFunctions.ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
 
             StepMarker.Stitched = true;
+            var lastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.ActualMarkerID == myStepMarkerID);
+            if (lastStepMarkerIndex > -1) ConfirmedMarkers[lastStepMarkerIndex].Stitched = true;
+
             mySuspectedMarkers.Clear();
             myGFMarkerID = myStepMarkerID;
         }
