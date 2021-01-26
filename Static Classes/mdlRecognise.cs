@@ -668,7 +668,7 @@ namespace BatchProcess
             mySuspectedMarkers.Sort(new SuspectedMarkerPointComparer());
         }
 
-        private static void ConvertSuspectedToConfirmed() {
+        private static void ConvertSuspectedToConfirmed(bool forceOK = false) {
             clsMarkerPoint myConfirmedMarker;
             int myMarkerID;
             string myErrorString = "";
@@ -680,7 +680,7 @@ namespace BatchProcess
                 myMarkerID = mySuspectedMarkers[n].MarkerID;
 
                 if (mySuspectedMarkers[n].OKToConfirm(out myErrorString, out clsPoint3d v1, out clsPoint3d v2, out clsPoint3d v3, out clsPoint3d v4,
-                    out bool b1, out bool b2, out bool b3, out bool b4, out double a1, out double a2)) {
+                    out bool b1, out bool b2, out bool b3, out bool b4, out double a1, out double a2, forceOK)) {
                     mySuspectedMarkers[n].Confirmed = true;
                 } else {
                     n = n + 1;
@@ -953,6 +953,8 @@ namespace BatchProcess
 
         public static void LoadFromStreamReader(StreamReader sr) {
             ResetMeasurements();
+            stitchingMeasurements.Clear();
+            stitchingVectors.Clear();
             string myPGLoadedVersion = "1.1";
 
             var myLine = sr.ReadLine();
@@ -1143,19 +1145,17 @@ namespace BatchProcess
             double a = p1.AngleToHorizontal;
             pt = pt.Copy();
 
-            if (IsSameDbl(a, PI / 2) == false) {
-                double b = -(PI / 2 - a);
-                var p2 = new clsPoint3d(p1.X, p1.Y, 0);
-                p2.Normalise();
-                var p3 = p1.Cross(p2);
-                p3.Normalise();
+            double b = -(PI / 2 - a);
+            var p2 = new clsPoint3d(p1.X, p1.Y, 0);
+            p2.Normalise();
+            var p3 = p1.Cross(p2);
+            p3.Normalise();
 
-                var vz = new clsPoint3d(0, 0, 1);
-                vz.RotateAboutLine(p3.Line(), b);
-                if (vz.Dot(p2) > 0) b = -b;
+            var vz = new clsPoint3d(0, 0, 1);
+            vz.RotateAboutLine(p3.Line(), b);
+            if (vz.Dot(p2) > 0) b = -b;
 
-                pt.RotateAboutLine(p3.Line(), b);
-            }
+            pt.RotateAboutLine(p3.Line(), b);
             return pt;
         }
 
@@ -1197,8 +1197,6 @@ namespace BatchProcess
             StepMarker.Stitched = false;
             StepMarker.VerticalVect = null;
             numImagesProcessed = 0;
-            stitchingMeasurements.Clear();
-            stitchingVectors.Clear();
         }
 
         public static void ResetMeasurements2() {
@@ -1306,7 +1304,7 @@ namespace BatchProcess
             return mv;
         }
 
-        public static void BatchBundleAdjust(Label lblStatus, string cameraCalibFile) {
+        public static void BatchBundleAdjust(Label lblStatus, string myFile, string cameraCalibFile) {
             InitGlobals();
 
             ResetMeasurements2();
@@ -1334,8 +1332,17 @@ namespace BatchProcess
                 return;
             }
 
-            myVideoWidth = 3264;
-            myVideoHeight = 2448;
+            var param = ReadCameraCalibrationFile(cameraCalibFile);
+
+            myVideoWidth = param.xsize;
+            myVideoHeight = param.ysize;
+            //myVideoWidth = 3264;
+            //myVideoHeight = 2448;
+            //myVideoWidth = 4032;
+            //myVideoHeight = 3024;
+
+
+
             ARToolKitFunctions.Instance.arwInitialiseAR();
             StartTracking(myVideoWidth, myVideoHeight, false);
 
@@ -1366,8 +1373,14 @@ namespace BatchProcess
                 Application.DoEvents();
 
                 if (stitchingMeasurements.Contains(myMeasurements.IndexOf(measurement))) {
-                    if (lastConfirmedMarker > 0 && lastStepMarker != null) {
-                        //stitchingVectors[stitchingMeasurements.IndexOf(myMeasurements.IndexOf(measurement)) - 1] = new clsPoint3d(0, 0, 1);
+
+                    // Move the landing marker to the end of the list:
+                    var lastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.ActualMarkerID == myStepMarkerID);
+                    ConfirmedMarkers.Add(ConfirmedMarkers[lastStepMarkerIndex]);
+                    ConfirmedMarkers.RemoveAt(lastStepMarkerIndex);
+                    var thisStepMarker = ConfirmedMarkers.Last();
+
+                    if (lastConfirmedMarker > 0) {
                         RelevelStepMarker(stitchingVectors[stitchingMeasurements.IndexOf(myMeasurements.IndexOf(measurement)) - 1], ref lastStepMarker);
                         for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++) {
                             var p1 = ConfirmedMarkers[i].Point;
@@ -1380,23 +1393,30 @@ namespace BatchProcess
                             pt.Point = RelevelVerticalAboutOrigin(p1);
                         }
                     }
-                    lastStepMarker = StepMarker.Copy();
+
+                    lastStepMarker = thisStepMarker.Copy();
                     lastConfirmedMarker = ConfirmedMarkers.Count;
                     StartStitching();
                 }
             }
 
-            if (lastConfirmedMarker > 0 && lastStepMarker != null) {
-                //stitchingVectors[stitchingVectors.Count - 1] = new clsPoint3d(0, 0, 1);
+            //ConvertSuspectedToConfirmed(true);
+            StopTracking();
+
+            if (lastConfirmedMarker > 0) {
                 RelevelStepMarker(stitchingVectors.Last(), ref lastStepMarker);
                 for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++) {
                     var p1 = ConfirmedMarkers[i].Point;
                     ConfirmedMarkers[i].Point = lastStepMarker.Point + lastStepMarker.Vx * p1.x + lastStepMarker.Vy * p1.y + lastStepMarker.Vz * p1.z;
                 }
+            } else {
+                foreach (var pt in ConfirmedMarkers) {
+                    var p1 = pt.Point;
+                    pt.Point = RelevelVerticalAboutOrigin(p1);
+                }
             }
 
-
-            var sw = new System.IO.StreamWriter("C:\\Temp\\points.3dm");
+            var sw = new System.IO.StreamWriter(myFile.Replace(".txt",".3dm"));
             ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.ActualMarkerID + 1).ToString()));
             sw.Close();
 
@@ -1553,6 +1573,26 @@ namespace BatchProcess
                 return new clsPGPoint(mv[12], mv[13], mv[14], myBarcodeID);
             }
             return null;
+        }
+
+        public static ARParam ReadCameraCalibrationFile(string myFile) {
+            FileStream sr = File.Open(myFile, FileMode.Open, FileAccess.Read);
+            BinaryReader br = new BinaryReader(sr);
+
+            ARParam param = new ARParam();
+            param.xsize = byteSwapInt(br.ReadInt32());
+            param.ysize = byteSwapInt(br.ReadInt32());
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 4; j++) {
+                    param.mat[i, j] = byteSwapDouble(br.ReadDouble());
+                }
+            }
+            for (int i = 0; i < 17; i++) {
+                if (br.PeekChar() != -1) param.dist_factor[i] = byteSwapDouble(br.ReadDouble());
+            }
+            br.Close();
+            sr.Close();
+            return param;
         }
 
     }

@@ -263,7 +263,6 @@ public class ARToolKitFunctions
     /// <remarks>For any square template (pattern) markers, the number of rows and columns in the template defaults to AR_PATT_SIZE1 and the maximum number of markers that may be loaded for a single matching pass defaults to AR_PATT_NUM_MAX.</remarks>
     /// <seealso cref="arwShutdownAR"/>
     public bool arwInitialiseAR() {
-
         string dllDir = "";
         dllDir = Environment.GetEnvironmentVariable("ARTOOLKIT5_ROOT64");
         if (string.IsNullOrEmpty(dllDir)) dllDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);

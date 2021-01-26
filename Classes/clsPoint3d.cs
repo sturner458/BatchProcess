@@ -240,11 +240,8 @@ namespace BatchProcess
         //Used when we are pretending that a point in the plane represents a vector from the origin
         public void Normalise()
         {
-            double d = 0;
-
-			d = Sqrt(Pow(x, 2) + Pow(y, 2) + Pow(z, 2));
-			if (d < mdlGeometry.myTol / 10)
-                return;
+            double d = Sqrt(Pow(x, 2) + Pow(y, 2) + Pow(z, 2));
+			if (Abs(d) < double.Epsilon) return;
             x = x / d;
             y = y / d;
             z = z / d;
@@ -417,13 +414,12 @@ namespace BatchProcess
         {
             get
             {
-                double x = 0;
-                x = Point2D().Length;
+                var d = Sqrt(Pow(myX, 2) + Pow(myY, 2));
 
-				if (mdlGeometry.IsSameDbl(x, 0))
-					return PI / 2;
+				if (Abs(d) < double.Epsilon) 
+                    return PI / 2;
 				else
-					return Atan(myZ / x);
+					return Atan(myZ / d);
             }
         }
         

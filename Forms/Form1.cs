@@ -239,7 +239,6 @@ namespace BatchProcess {
             OpenFileDialog myDlg = new OpenFileDialog();
             DialogResult ret;
             string myFile;
-            int i, j;
 
             myDlg.InitialDirectory = "C:\\Temp";
             myDlg.Filter = "Dat Files (*.dat)|*.dat";
@@ -247,23 +246,7 @@ namespace BatchProcess {
             if (ret != DialogResult.OK) return;
             myFile = myDlg.FileName;
 
-
-            FileStream sr = File.Open(myFile, FileMode.Open, FileAccess.Read);
-            BinaryReader br = new BinaryReader(sr);
-
-            ARParam param = new ARParam();
-            param.xsize = byteSwapInt(br.ReadInt32());
-            param.ysize = byteSwapInt(br.ReadInt32());
-            for (i = 0; i < 3; i++) {
-                for (j = 0; j < 4; j++) {
-                    param.mat[i, j] = byteSwapDouble(br.ReadDouble());
-                }
-            }
-            for (i = 0; i < 17; i++) {
-                if (br.PeekChar() != -1) param.dist_factor[i] = byteSwapDouble(br.ReadDouble());
-            }
-            br.Close();
-            sr.Close();
+            var param = mdlRecognise.ReadCameraCalibrationFile(myFile);
 
             System.Diagnostics.Debug.Print("Filename\t" + System.IO.Path.GetFileName(myFile));
             System.Diagnostics.Debug.Print("xSize\t" + param.xsize.ToString());
@@ -271,7 +254,7 @@ namespace BatchProcess {
             System.Diagnostics.Debug.Print("Mat[3][4]\t" + param.mat[0, 0].ToString() + "\t" + param.mat[0, 1].ToString() + "\t" + param.mat[0, 2].ToString() + "\t" + param.mat[0, 3].ToString());
             System.Diagnostics.Debug.Print("\t" + param.mat[1, 0].ToString() + "\t" + param.mat[1, 1].ToString() + "\t" + param.mat[1, 2].ToString() + "\t" + param.mat[1, 3].ToString());
             System.Diagnostics.Debug.Print("\t" + param.mat[2, 0].ToString() + "\t" + param.mat[2, 1].ToString() + "\t" + param.mat[2, 2].ToString() + "\t" + param.mat[2, 3].ToString());
-            for (i = 0; i < 17; i++) {
+            for (int i = 0; i < 17; i++) {
                 System.Diagnostics.Debug.Print("dist_factor[" + i.ToString() + "]\t" + param.dist_factor[i].ToString());
             }
         }
@@ -500,9 +483,37 @@ namespace BatchProcess {
 
             mdlRecognise.LoadSavedDataFile(myFile);
             //mdlRecognise.TempFixPoints();
-            mdlRecognise.BatchBundleAdjust(lblStatus, myCalibFile);
+            mdlRecognise.BatchBundleAdjust(lblStatus, myFile, myCalibFile);
 
             MessageBox.Show("Finished");
+        }
+
+        private void btnBatchImport_Click(object sender, EventArgs e) {
+            var folderDialog = new FolderBrowserDialog();
+            folderDialog.RootFolder = Environment.SpecialFolder.MyComputer;
+            folderDialog.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Model Files\\Mezz staircase for reprocessing"; // C:\Customer\Stannah\PhotoGrammetry\Model Files\Mezz staircase for reprocessingg
+            var ret = folderDialog.ShowDialog();
+            if (ret != DialogResult.OK) return;
+            var folder = folderDialog.SelectedPath;
+
+            foreach (var sf in Directory.GetDirectories(folder)) {
+                var calibFile = "";
+                foreach (var file in Directory.GetFiles(sf)) {
+                    if (file.EndsWith(".dat")) calibFile = file;
+                    if (file.StartsWith("ATT") && file.EndsWith(".txt")) {
+                        try {
+                            File.Delete(file);
+                        } catch {
+
+                        }
+                    }
+                }
+                var diagFile = sf + "\\Diagnostics.txt";
+                if (!File.Exists(sf + "\\Diagnostics.3dm") && File.Exists(calibFile) && File.Exists(diagFile)) {
+                    mdlRecognise.LoadSavedDataFile(diagFile);
+                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
+                }
+            }
         }
     }
 

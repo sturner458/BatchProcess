@@ -118,7 +118,7 @@ namespace BatchProcess
             ActualMarkerID = MarkerID;
         }
 
-        public bool OKToConfirm(out string myErrString, out clsPoint3d maxAV1, out clsPoint3d maxAV2, out clsPoint3d maxAV3, out clsPoint3d maxAV4, out bool myAngleOK, out bool myAngle2OK, out bool myNumImagesOK, out bool myGTSAMOK, out double a1, out double a2) {
+        public bool OKToConfirm(out string myErrString, out clsPoint3d maxAV1, out clsPoint3d maxAV2, out clsPoint3d maxAV3, out clsPoint3d maxAV4, out bool myAngleOK, out bool myAngle2OK, out bool myNumImagesOK, out bool myGTSAMOK, out double a1, out double a2, bool forceOK = false) {
             myErrString = "";
 
             myAngleOK = false;
@@ -155,7 +155,7 @@ namespace BatchProcess
 
             if (GTSAMMatrixes.Count < 10 && GTSAMMatrixes.Count < 10) {
                 if (myErrString == "") myErrString = "Too few photos (" + GTSAMMatrixes.Count + "/" + 10 + ")";
-                return false;
+                if (!forceOK) return false;
             } else {
                 myNumImagesOK = true;
             }
@@ -169,6 +169,12 @@ namespace BatchProcess
                     if (myErrString == "") myErrString = "No convergence";
                     break;
                 }
+            }
+            if (forceOK) {
+                myAngleOK = true;
+                myAngle2OK = true;
+                myNumImagesOK = true;
+                myGTSAMOK = true;
             }
 
             return (myAngleOK && myAngle2OK && myNumImagesOK && myGTSAMOK);
