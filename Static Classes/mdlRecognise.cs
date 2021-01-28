@@ -1137,11 +1137,11 @@ namespace BatchProcess
             }
         }
 
-        public static clsPoint3d RelevelVerticalAboutOrigin(clsPoint3d pt) {
+        public static void RelevelVerticalAboutOrigin(ref clsMarkerPoint pt) {
             var p1 = myVerticalVector.Copy();
             if (p1.Z < 0) p1.Scale(-1);
             p1.Normalise();
-            if (p1.Length < 0.9) return pt;
+            if (p1.Length < 0.9) return;
             double a = p1.AngleToHorizontal;
             pt = pt.Copy();
 
@@ -1155,8 +1155,11 @@ namespace BatchProcess
             vz.RotateAboutLine(p3.Line(), b);
             if (vz.Dot(p2) > 0) b = -b;
 
-            pt.RotateAboutLine(p3.Line(), b);
-            return pt;
+            pt.Point.RotateAboutLine(p3.Line(), b);
+            pt.Vx.RotateAboutLine(p3.Line(), b);
+            pt.Vy.RotateAboutLine(p3.Line(), b);
+            pt.Vz.RotateAboutLine(p3.Line(), b);
+            return;
         }
 
         public static void RelevelStepMarker(clsPoint3d verticalVector, ref clsMarkerPoint stepMarker) {
@@ -1180,6 +1183,30 @@ namespace BatchProcess
                 stepMarker.Vx.RotateAboutLine(p3.Line(), b);
                 stepMarker.Vy.RotateAboutLine(p3.Line(), b);
                 stepMarker.Vz.RotateAboutLine(p3.Line(), b);
+            }
+        }
+
+        public static void RelevelMarkersOnPreviousFlightByHalfAngle(clsPoint3d originPt, clsPoint3d verticalVector, clsMarkerPoint lastStepMarker, ref clsMarkerPoint marker) {
+            var p1 = lastStepMarker.Vx * verticalVector.x + lastStepMarker.Vy * verticalVector.y + lastStepMarker.Vz * verticalVector.z;
+            if (p1.Z < 0) p1.Scale(-1);
+            p1.Normalise();
+            if (p1.Length < 0.9) return;
+            double a = p1.AngleToHorizontal;
+
+            if (IsSameDbl(a, PI / 2) == false) {
+                double b = -(PI / 2 - a);
+                var p2 = new clsPoint3d(p1.X, p1.Y, 0);
+                p2.Normalise();
+                var p3 = p1.Cross(p2);
+                p3.Normalise();
+
+                var vz = new clsPoint3d(0, 0, 1);
+                vz.RotateAboutLine(p3.Line(), b);
+                if (vz.Dot(p2) > 0) b = -b;
+
+                var vect = new clsLine3d(originPt, originPt + p3);
+                marker.Origin.RotateAboutLine(vect, b / 2);
+                marker.Point.RotateAboutLine(vect, b / 2);
             }
         }
 
@@ -1352,6 +1379,7 @@ namespace BatchProcess
             //stitchingMeasurements.Add(493);
 
             int lastConfirmedMarker = 0;
+            int lastLastConfirmedMarker = -1;
             clsMarkerPoint lastStepMarker = null;
             foreach (var measurement in myMeasurements) {
                 ARToolKitFunctions.Instance.arwSetMappedMarkersVisible(measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray());
@@ -1381,20 +1409,32 @@ namespace BatchProcess
                     var thisStepMarker = ConfirmedMarkers.Last();
 
                     if (lastConfirmedMarker > 0) {
-                        RelevelStepMarker(stitchingVectors[stitchingMeasurements.IndexOf(myMeasurements.IndexOf(measurement)) - 1], ref lastStepMarker);
+                        var stepMarker = ConfirmedMarkers[lastConfirmedMarker - 1].Copy();
+                        for (int i = lastLastConfirmedMarker + 1; i < lastConfirmedMarker; i++) {
+                            clsPoint3d originPt = new clsPoint3d(0, 0, 0);
+                            if (lastLastConfirmedMarker >= 0) originPt = ConfirmedMarkers[lastLastConfirmedMarker].Origin;
+                            var marker = ConfirmedMarkers[i];
+                            RelevelMarkersOnPreviousFlightByHalfAngle(originPt, stitchingVectors[stitchingMeasurements.IndexOf(myMeasurements.IndexOf(measurement)) - 1], stepMarker, ref marker);
+                            ConfirmedMarkers[i] = marker;
+                        }
+                        stepMarker = ConfirmedMarkers[lastConfirmedMarker - 1].Copy();
                         for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++) {
-                            var p1 = ConfirmedMarkers[i].Point;
-                            ConfirmedMarkers[i].Point = lastStepMarker.Point + lastStepMarker.Vx * p1.x + lastStepMarker.Vy * p1.y + lastStepMarker.Vz * p1.z;
+                            var p1 = ConfirmedMarkers[i].Origin;
+                            ConfirmedMarkers[i].Origin = stepMarker.Origin + stepMarker.Vx * p1.x + stepMarker.Vy * p1.y + stepMarker.Vz * p1.z;
+                            p1 = ConfirmedMarkers[i].Point;
+                            ConfirmedMarkers[i].Point = stepMarker.Point + stepMarker.Vx * p1.x + stepMarker.Vy * p1.y + stepMarker.Vz * p1.z;
                         }
                     } else {
                         //myVerticalVector = new clsPoint3d(0, 0, 1);
-                        foreach (var pt in ConfirmedMarkers) {
-                            var p1 = pt.Point;
-                            pt.Point = RelevelVerticalAboutOrigin(p1);
+                        for (int i = 0; i < ConfirmedMarkers.Count; i++) {
+                            var pt = ConfirmedMarkers[i];
+                            RelevelVerticalAboutOrigin(ref pt);
+                            ConfirmedMarkers[i] = pt;
                         }
                     }
 
                     lastStepMarker = thisStepMarker.Copy();
+                    lastLastConfirmedMarker = lastConfirmedMarker - 1;
                     lastConfirmedMarker = ConfirmedMarkers.Count;
                     StartStitching();
                 }
@@ -1404,15 +1444,27 @@ namespace BatchProcess
             StopTracking();
 
             if (lastConfirmedMarker > 0) {
-                RelevelStepMarker(stitchingVectors.Last(), ref lastStepMarker);
+                var stepMarker = ConfirmedMarkers[lastConfirmedMarker - 1].Copy();
+                for (int i = lastLastConfirmedMarker + 1; i < lastConfirmedMarker; i++) {
+                    clsPoint3d originPt = new clsPoint3d(0, 0, 0);
+                    if (lastLastConfirmedMarker >= 0) originPt = ConfirmedMarkers[lastLastConfirmedMarker].Origin;
+                    var marker = ConfirmedMarkers[i];
+                    RelevelMarkersOnPreviousFlightByHalfAngle(originPt, stitchingVectors.Last(), stepMarker, ref marker);
+                    ConfirmedMarkers[i] = marker;
+                }
+                stepMarker = ConfirmedMarkers[lastConfirmedMarker - 1].Copy();
+                RelevelStepMarker(stitchingVectors.Last(), ref stepMarker);
                 for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++) {
-                    var p1 = ConfirmedMarkers[i].Point;
-                    ConfirmedMarkers[i].Point = lastStepMarker.Point + lastStepMarker.Vx * p1.x + lastStepMarker.Vy * p1.y + lastStepMarker.Vz * p1.z;
+                    var p1 = ConfirmedMarkers[i].Origin;
+                    ConfirmedMarkers[i].Origin = stepMarker.Origin + stepMarker.Vx * p1.x + stepMarker.Vy * p1.y + stepMarker.Vz * p1.z;
+                    p1 = ConfirmedMarkers[i].Point;
+                    ConfirmedMarkers[i].Point = stepMarker.Point + stepMarker.Vx * p1.x + stepMarker.Vy * p1.y + stepMarker.Vz * p1.z;
                 }
             } else {
-                foreach (var pt in ConfirmedMarkers) {
-                    var p1 = pt.Point;
-                    pt.Point = RelevelVerticalAboutOrigin(p1);
+                for (int i = 0; i < ConfirmedMarkers.Count; i++) {
+                    var pt = ConfirmedMarkers[i];
+                    RelevelVerticalAboutOrigin(ref pt);
+                    ConfirmedMarkers[i] = pt;
                 }
             }
 
