@@ -1113,32 +1113,8 @@ namespace BatchProcess
             return new clsPoint3d(modelViewInv.M41, modelViewInv.M42, modelViewInv.M43);
         }
 
-        public static void RelevelMarkerFromGF(clsMarkerPoint myMarker, bool goBack = false) {
-            clsPoint3d p1 = myVerticalVector.Copy();
-            if (p1.Z < 0) p1.Scale(-1);
-            p1.Normalise();
-            double a = p1.AngleToHorizontal;
-
-            if (IsSameAngle(a, PI / 2) == false) {
-                double b = -(PI / 2 - a);
-                if (goBack) b = -b;
-                clsPoint3d p2 = new clsPoint3d(p1.X, p1.Y, 0);
-                p2.Normalise();
-                clsPoint3d p3 = p1.Cross(p2);
-                p3.Normalise();
-
-                myMarker.Origin.RotateAboutLine(p3.Line(), b);
-                myMarker.EndXAxis.RotateAboutLine(p3.Line(), b);
-                myMarker.EndYAxis.RotateAboutLine(p3.Line(), b);
-                myMarker.Vx.RotateAboutLine(p3.Line(), b);
-                myMarker.Vy.RotateAboutLine(p3.Line(), b);
-                myMarker.Vz.RotateAboutLine(p3.Line(), b);
-                myMarker.Point.RotateAboutLine(p3.Line(), b);
-            }
-        }
-
-        public static void RelevelVerticalAboutOrigin(ref clsMarkerPoint pt) {
-            var p1 = myVerticalVector.Copy();
+        public static void RelevelVerticalAboutOrigin(clsPoint3d verticalVector, ref clsMarkerPoint pt) {
+            var p1 = verticalVector.Copy();
             if (p1.Z < 0) p1.Scale(-1);
             p1.Normalise();
             if (p1.Length < 0.9) return;
@@ -1155,6 +1131,7 @@ namespace BatchProcess
             vz.RotateAboutLine(p3.Line(), b);
             if (vz.Dot(p2) > 0) b = -b;
 
+            pt.Origin.RotateAboutLine(p3.Line(), b);
             pt.Point.RotateAboutLine(p3.Line(), b);
             pt.Vx.RotateAboutLine(p3.Line(), b);
             pt.Vy.RotateAboutLine(p3.Line(), b);
@@ -1162,30 +1139,43 @@ namespace BatchProcess
             return;
         }
 
+        // Make the step marker flat and then tilt it to match the accelerometer reading
         public static void RelevelStepMarker(clsPoint3d verticalVector, ref clsMarkerPoint stepMarker) {
-            var p1 = stepMarker.Vx * verticalVector.x + stepMarker.Vy * verticalVector.y + stepMarker.Vz * verticalVector.z;
+            stepMarker.Vz = new clsPoint3d(0, 0, 1);
+            stepMarker.Vy = stepMarker.Vz.Cross(stepMarker.Vx);
+            stepMarker.Vy.Normalise();
+            stepMarker.Vx = stepMarker.Vy.Cross(stepMarker.Vz);
+            stepMarker.Vx.Normalise();
+
+            var p1 = verticalVector.Copy();
             if (p1.Z < 0) p1.Scale(-1);
             p1.Normalise();
             if (p1.Length < 0.9) return;
             double a = p1.AngleToHorizontal;
+            double b = -(PI / 2 - a);
+            var p2 = new clsPoint3d(p1.X, p1.Y, 0);
+            p2.Normalise();
+            var p3 = p1.Cross(p2);
+            p3.Normalise();
 
-            if (IsSameDbl(a, PI / 2) == false) {
-                double b = -(PI / 2 - a);
-                var p2 = new clsPoint3d(p1.X, p1.Y, 0);
-                p2.Normalise();
-                var p3 = p1.Cross(p2);
-                p3.Normalise();
+            var vz = new clsPoint3d(0, 0, 1);
+            vz.RotateAboutLine(p3.Line(), b);
+            if (vz.Dot(p2) > 0) b = -b;
 
-                var vz = new clsPoint3d(0, 0, 1);
-                vz.RotateAboutLine(p3.Line(), b);
-                if (vz.Dot(p2) > 0) b = -b;
-
-                stepMarker.Vx.RotateAboutLine(p3.Line(), b);
-                stepMarker.Vy.RotateAboutLine(p3.Line(), b);
-                stepMarker.Vz.RotateAboutLine(p3.Line(), b);
-            }
+            stepMarker.Vx.RotateAboutLine(p3.Line(), b);
+            stepMarker.Vy.RotateAboutLine(p3.Line(), b);
+            stepMarker.Vz.RotateAboutLine(p3.Line(), b);
+            return;
         }
 
+        // We have measured that the landing board is tilted at the wrong angle
+        // Assuming that the previous flight was correct at the start, and wrong by that angle at the end
+        // On average, it is out by half that angle
+
+        // How this works:
+        // We believe that (0, 0, 1) is in the direction of gravity
+        // However, after taking a measurement with the accelerometer, we know it is in the direction of p1
+        // So we simply rotate the landing board by the angle between (0, 0, 1) and p1
         public static void RelevelMarkersOnPreviousFlightByHalfAngle(clsPoint3d originPt, clsPoint3d verticalVector, clsMarkerPoint lastStepMarker, ref clsMarkerPoint marker) {
             var p1 = lastStepMarker.Vx * verticalVector.x + lastStepMarker.Vy * verticalVector.y + lastStepMarker.Vz * verticalVector.z;
             if (p1.Z < 0) p1.Scale(-1);
@@ -1380,7 +1370,6 @@ namespace BatchProcess
 
             int lastConfirmedMarker = 0;
             int lastLastConfirmedMarker = -1;
-            clsMarkerPoint lastStepMarker = null;
             foreach (var measurement in myMeasurements) {
                 ARToolKitFunctions.Instance.arwSetMappedMarkersVisible(measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray());
 
@@ -1404,36 +1393,13 @@ namespace BatchProcess
 
                     // Move the landing marker to the end of the list:
                     var lastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.ActualMarkerID == myStepMarkerID);
-                    ConfirmedMarkers.Add(ConfirmedMarkers[lastStepMarkerIndex]);
-                    ConfirmedMarkers.RemoveAt(lastStepMarkerIndex);
-                    var thisStepMarker = ConfirmedMarkers.Last();
-
-                    if (lastConfirmedMarker > 0) {
-                        var stepMarker = ConfirmedMarkers[lastConfirmedMarker - 1].Copy();
-                        for (int i = lastLastConfirmedMarker + 1; i < lastConfirmedMarker; i++) {
-                            clsPoint3d originPt = new clsPoint3d(0, 0, 0);
-                            if (lastLastConfirmedMarker >= 0) originPt = ConfirmedMarkers[lastLastConfirmedMarker].Origin;
-                            var marker = ConfirmedMarkers[i];
-                            RelevelMarkersOnPreviousFlightByHalfAngle(originPt, stitchingVectors[stitchingMeasurements.IndexOf(myMeasurements.IndexOf(measurement)) - 1], stepMarker, ref marker);
-                            ConfirmedMarkers[i] = marker;
-                        }
-                        stepMarker = ConfirmedMarkers[lastConfirmedMarker - 1].Copy();
-                        for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++) {
-                            var p1 = ConfirmedMarkers[i].Origin;
-                            ConfirmedMarkers[i].Origin = stepMarker.Origin + stepMarker.Vx * p1.x + stepMarker.Vy * p1.y + stepMarker.Vz * p1.z;
-                            p1 = ConfirmedMarkers[i].Point;
-                            ConfirmedMarkers[i].Point = stepMarker.Point + stepMarker.Vx * p1.x + stepMarker.Vy * p1.y + stepMarker.Vz * p1.z;
-                        }
-                    } else {
-                        //myVerticalVector = new clsPoint3d(0, 0, 1);
-                        for (int i = 0; i < ConfirmedMarkers.Count; i++) {
-                            var pt = ConfirmedMarkers[i];
-                            RelevelVerticalAboutOrigin(ref pt);
-                            ConfirmedMarkers[i] = pt;
-                        }
+                    if (lastStepMarkerIndex != ConfirmedMarkers.Count - 1) {
+                        ConfirmedMarkers.Add(ConfirmedMarkers[lastStepMarkerIndex]);
+                        ConfirmedMarkers.RemoveAt(lastStepMarkerIndex);
                     }
 
-                    lastStepMarker = thisStepMarker.Copy();
+                    ModifyPreviousFlightCoordinates(ref lastConfirmedMarker, ref lastLastConfirmedMarker, stitchingMeasurements.IndexOf(myMeasurements.IndexOf(measurement)) - 1);
+
                     lastLastConfirmedMarker = lastConfirmedMarker - 1;
                     lastConfirmedMarker = ConfirmedMarkers.Count;
                     StartStitching();
@@ -1443,34 +1409,55 @@ namespace BatchProcess
             //ConvertSuspectedToConfirmed(true);
             StopTracking();
 
+            ModifyPreviousFlightCoordinates(ref lastConfirmedMarker, ref lastLastConfirmedMarker, stitchingMeasurements.Count - 1);
+
+            var sw = new System.IO.StreamWriter(myFile.Replace(".txt",".3dm"));
+            ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.ActualMarkerID + 1).ToString()));
+            sw.Close();
+
+        }
+
+        private static void ModifyPreviousFlightCoordinates(ref int lastConfirmedMarker, ref int lastLastConfirmedMarker, int stitchingIndex) {
+
             if (lastConfirmedMarker > 0) {
+
+                // Correct the previous flight by half the angle error of the step marker
                 var stepMarker = ConfirmedMarkers[lastConfirmedMarker - 1].Copy();
                 for (int i = lastLastConfirmedMarker + 1; i < lastConfirmedMarker; i++) {
                     clsPoint3d originPt = new clsPoint3d(0, 0, 0);
                     if (lastLastConfirmedMarker >= 0) originPt = ConfirmedMarkers[lastLastConfirmedMarker].Origin;
                     var marker = ConfirmedMarkers[i];
-                    RelevelMarkersOnPreviousFlightByHalfAngle(originPt, stitchingVectors.Last(), stepMarker, ref marker);
+                    RelevelMarkersOnPreviousFlightByHalfAngle(originPt, stitchingVectors[stitchingIndex], stepMarker, ref marker);
                     ConfirmedMarkers[i] = marker;
                 }
-                stepMarker = ConfirmedMarkers[lastConfirmedMarker - 1].Copy();
-                RelevelStepMarker(stitchingVectors.Last(), ref stepMarker);
+
+                // Flatten this step marker and then take into account the accelerometer reading
+                // Keep the X axis constant (in plan view)
+                stepMarker = ConfirmedMarkers[lastConfirmedMarker - 1];
+                RelevelStepMarker(stitchingVectors[stitchingIndex], ref stepMarker);
+                ConfirmedMarkers[lastConfirmedMarker - 1] = stepMarker;
+
+                // Add the coordinates of the previously confirmed step marker onto the coordinates of all subsequent markers
                 for (int i = lastConfirmedMarker; i < ConfirmedMarkers.Count; i++) {
                     var p1 = ConfirmedMarkers[i].Origin;
                     ConfirmedMarkers[i].Origin = stepMarker.Origin + stepMarker.Vx * p1.x + stepMarker.Vy * p1.y + stepMarker.Vz * p1.z;
                     p1 = ConfirmedMarkers[i].Point;
                     ConfirmedMarkers[i].Point = stepMarker.Point + stepMarker.Vx * p1.x + stepMarker.Vy * p1.y + stepMarker.Vz * p1.z;
+                    p1 = ConfirmedMarkers[i].Vx;
+                    ConfirmedMarkers[i].Vx = stepMarker.Vx * p1.x + stepMarker.Vy * p1.y + stepMarker.Vz * p1.z;
+                    p1 = ConfirmedMarkers[i].Vy;
+                    ConfirmedMarkers[i].Vy = stepMarker.Vx * p1.x + stepMarker.Vy * p1.y + stepMarker.Vz * p1.z;
+                    p1 = ConfirmedMarkers[i].Vz;
+                    ConfirmedMarkers[i].Vz = stepMarker.Vx * p1.x + stepMarker.Vy * p1.y + stepMarker.Vz * p1.z;
                 }
             } else {
+                //myVerticalVector = new clsPoint3d(0, 0, 1);
                 for (int i = 0; i < ConfirmedMarkers.Count; i++) {
                     var pt = ConfirmedMarkers[i];
-                    RelevelVerticalAboutOrigin(ref pt);
+                    RelevelVerticalAboutOrigin(myVerticalVector, ref pt);
                     ConfirmedMarkers[i] = pt;
                 }
             }
-
-            var sw = new System.IO.StreamWriter(myFile.Replace(".txt",".3dm"));
-            ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.ActualMarkerID + 1).ToString()));
-            sw.Close();
 
         }
 
