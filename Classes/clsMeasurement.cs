@@ -9,13 +9,35 @@ namespace BatchProcess
     public class clsMeasurement
     {
         public int MeasurementNumber { get; set; }
+        public float minISO { get; set; }
+        public float currentISO { get; set; }
+        public float maxISO { get; set; }
+        public float currentExposureDuration { get; set; }
 
         public List<int> MarkerUIDs { get; } = new List<int>();
         public List<double[]> Matrixes { get; } = new List<double[]>(); // Model View Matrices as recorded by ARToolkit
         public List<List<clsPoint>> Corners { get; } = new List<List<clsPoint>>(); // Image corner points (in Ideal coordinates)
 
         public void Load(StreamReader sr) {
-            MeasurementNumber = Convert.ToInt32(sr.ReadLine());
+            var myLine = sr.ReadLine();
+
+            if (myLine == "SETTINGS") {
+                myLine = sr.ReadLine();
+                while (myLine != "END_SETTINGS") {
+                    var mySplit = myLine.Split(',');
+                    if (mySplit.GetUpperBound(0) == 1) {
+                        if (mySplit[0] == "MeasurementNumber") MeasurementNumber = Convert.ToInt32(mySplit[1]);
+                        if (mySplit[0] == "MinISO") minISO = Convert.ToSingle(mySplit[1]);
+                        if (mySplit[0] == "CurrentISO") currentISO = Convert.ToSingle(mySplit[1]);
+                        if (mySplit[0] == "MaxISO") maxISO = Convert.ToSingle(mySplit[1]);
+                        if (mySplit[0] == "CurrentExposureDuration") currentExposureDuration = Convert.ToSingle(mySplit[1]);
+                    }
+                    myLine = sr.ReadLine();
+                }
+            } else {
+                MeasurementNumber = Convert.ToInt32(myLine);
+            }
+
             var n = Convert.ToInt32(sr.ReadLine());
             for (int i = 0; i < n; i++) {
                 MarkerUIDs.Add(Convert.ToInt32(sr.ReadLine()));

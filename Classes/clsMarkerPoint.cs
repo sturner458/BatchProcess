@@ -137,7 +137,7 @@ namespace BatchProcess
             if (myAngleOK) {
                 myAngleOK = false;
                 a1 = MaxAngle(out maxAV1, out maxAV2);
-                if (a1 < 40 * PI / 180) {
+                if (a1 < GTSAMAngleTolerance1 * PI / 180) {
                     myErrString = "Angle Range = " + Round(a1 * 180 / PI, 1) + " < " + 40.ToString("0.##") + "°";
                 } else {
                     myAngleOK = true;
@@ -146,14 +146,14 @@ namespace BatchProcess
 
             a2 = MaxAnglePerpendicular(out maxAV3, out maxAV4);
             //a2 = 25 * PI / 180;
-            if (a2 < 1 * PI / 180) {
+            if (a2 < GTSAMAngleTolerance2 * PI / 180) {
                 if (myErrString == "") myErrString = "2nd Angle Range = " + Round(a2 * 180 / PI, 1) + " < " + 1.ToString("0.##") + "°";
                 return false;
             } else {
                 myAngle2OK = true;
             }
 
-            if (GTSAMMatrixes.Count < 10 && GTSAMMatrixes.Count < 10) {
+            if (GTSAMMatrixes.Count < 10 && GTSAMMatrixes.Count < GTSAMMinimumPhotos) {
                 if (myErrString == "") myErrString = "Too few photos (" + GTSAMMatrixes.Count + "/" + 10 + ")";
                 if (!forceOK) return false;
             } else {
@@ -164,7 +164,7 @@ namespace BatchProcess
             for (int i = GTSAMMatrixes.Count - 6; i < GTSAMMatrixes.Count - 1; i++) {
                 var p1 = new clsPoint3d(GTSAMMatrixes[i][12], GTSAMMatrixes[i][13], GTSAMMatrixes[i][14]);
                 var p2 = new clsPoint3d(GTSAMMatrixes[i + 1][12], GTSAMMatrixes[i + 1][13], GTSAMMatrixes[i + 1][14]);
-                if (p1.Dist(p2) > 0.5) {
+                if (p1.Dist(p2) > GTSAMTolerance) {
                     myGTSAMOK = false;
                     if (myErrString == "") myErrString = "No convergence";
                     break;
@@ -317,6 +317,8 @@ namespace BatchProcess
             myCopy.Vy = Vy.Copy();
             myCopy.Vz = Vz.Copy();
             if (includeConfirmedFlag) myCopy.SetConfirmedFlag(_confirmed);
+            myCopy.Stitched = Stitched;
+            myCopy.Levelled = Levelled;
 
             myCopy.PhotoNumbers.AddRange(PhotoNumbers.ToArray());
 
@@ -369,6 +371,8 @@ namespace BatchProcess
                 sw.WriteLine("AngularVelocity," + v.ToString());
             }
             sw.WriteLine("Confirmed," + (_confirmed ? "1" : "0"));
+            sw.WriteLine("Levelled," + (_levelled ? "1" : "0"));
+            sw.WriteLine("Stitched," + (_stitched ? "1" : "0"));
             sw.WriteLine("END_MARKER_POINT_SETTINGS");
 
             Origin.Save(sw);
@@ -450,6 +454,12 @@ namespace BatchProcess
                         }
                         if (mySplit[0] == "Confirmed") {
                             _confirmed = (mySplit[1] == "1");
+                        }
+                        if (mySplit[0] == "Levelled") {
+                            _levelled = (mySplit[1] == "1");
+                        }
+                        if (mySplit[0] == "Stitched") {
+                            _stitched = (mySplit[1] == "1");
                         }
                     }
                 }
