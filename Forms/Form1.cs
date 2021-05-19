@@ -470,7 +470,7 @@ namespace BatchProcess {
             DialogResult ret;
             string myFile, myCalibFile;
 
-            myDlg.InitialDirectory = "C:\\Customer\\Stannah\\Photogrammetry\\BatchProcess\\Diagnostic Files";
+            myDlg.InitialDirectory = "C:\\Customer\\Stannah\\Photogrammetry\\Model Files\\Testing";
             myDlg.Filter = "Diagnostic Files (*.txt)|*.txt";
             ret = myDlg.ShowDialog();
             if (ret != DialogResult.OK) return;
@@ -491,7 +491,7 @@ namespace BatchProcess {
         private void btnBatchImport_Click(object sender, EventArgs e) {
             var folderDialog = new FolderBrowserDialog();
             folderDialog.RootFolder = Environment.SpecialFolder.MyComputer;
-            folderDialog.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Model Files\\Mezz staircase for reprocessing"; // C:\Customer\Stannah\PhotoGrammetry\Model Files\Mezz staircase for reprocessingg
+            folderDialog.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Model Files\\Testing"; // C:\Customer\Stannah\PhotoGrammetry\Model Files\Mezz staircase for reprocessingg
             var ret = folderDialog.ShowDialog();
             if (ret != DialogResult.OK) return;
             var folder = folderDialog.SelectedPath;
@@ -508,8 +508,8 @@ namespace BatchProcess {
                         }
                     }
                 }
-                var diagFile = sf + "\\Diagnostics.txt";
-                if (!File.Exists(sf + "\\Diagnostics.3dm") && File.Exists(calibFile) && File.Exists(diagFile)) {
+                var diagFile = sf + "\\" + Path.GetFileNameWithoutExtension(sf) + ".txt";
+                if (!File.Exists(sf + "\\" + Path.GetFileNameWithoutExtension(sf) + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile)) {
                     mdlRecognise.LoadSavedDataFile(diagFile);
                     mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
                 }

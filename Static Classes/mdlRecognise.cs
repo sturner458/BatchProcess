@@ -38,6 +38,7 @@ namespace BatchProcess
         public static event BlankEventHandler ConfirmedMarkersVisibleChanged;
 
         public static List<clsMeasurement> myMeasurements = new List<clsMeasurement>();
+        public static int measurementNumber;
         public static List<clsMarkerPoint> mySuspectedMarkers = new List<clsMarkerPoint>();
         public static List<clsMarkerPoint> myBulkheadMarkers = new List<clsMarkerPoint>();
         public static List<clsMarkerPoint> myDoorMarkers = new List<clsMarkerPoint>();
@@ -740,11 +741,12 @@ namespace BatchProcess
                     myConfirmedMarker.MarkerID = myLastDatumId == myGFMarkerID ? myStepMarkerID : myGFMarkerID;
                     myConfirmedMarker.ActualMarkerID = myConfirmedMarker.MarkerID;
                     myConfirmedMarker.VerticalVect = null;
-                    myConfirmedMarker.ConfirmedImageNumber = myMeasurements.Count - 1;
+                    myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
                     ConfirmedMarkers.Add(myConfirmedMarker);
 
                     if (stitchingVectorIndex < stitchingVectors.Count) {
                         myConfirmedMarker.VerticalVect = stitchingVectors[stitchingVectorIndex];
+                        myConfirmedMarker.Levelled = true;
                         stitchingVectorIndex++;
                     }
 
@@ -756,7 +758,7 @@ namespace BatchProcess
                     myConfirmedMarker.Vx = vx.Copy();
                     myConfirmedMarker.Vy = vy.Copy();
                     myConfirmedMarker.Vz = vz.Copy();
-                    myConfirmedMarker.ConfirmedImageNumber = myMeasurements.Count - 1;
+                    myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
                     myConfirmedMarker.SetEndPointBasedOnZVectors();
                     myBulkheadMarkers.Add(myConfirmedMarker);
 
@@ -771,7 +773,7 @@ namespace BatchProcess
                     myConfirmedMarker.Vx = vx.Copy();
                     myConfirmedMarker.Vy = vy.Copy();
                     myConfirmedMarker.Vz = vz.Copy();
-                    myConfirmedMarker.ConfirmedImageNumber = myMeasurements.Count - 1;
+                    myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
                     myConfirmedMarker.SetEndPointBasedOnZVectors();
                     myDoorMarkers.Add(myConfirmedMarker);
 
@@ -783,7 +785,7 @@ namespace BatchProcess
                     myConfirmedMarker.Vx = vx.Copy();
                     myConfirmedMarker.Vy = vy.Copy();
                     myConfirmedMarker.Vz = vz.Copy();
-                    myConfirmedMarker.ConfirmedImageNumber = myMeasurements.Count - 1;
+                    myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
                     myConfirmedMarker.SetEndPointBasedOnZVectors();
                     myObstructMarkers.Add(myConfirmedMarker);
 
@@ -807,7 +809,7 @@ namespace BatchProcess
                     myConfirmedMarker.Vx = vx.Copy();
                     myConfirmedMarker.Vy = vy.Copy();
                     myConfirmedMarker.Vz = vz.Copy();
-                    myConfirmedMarker.ConfirmedImageNumber = myMeasurements.Count - 1;
+                    myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
                     myConfirmedMarker.SetEndPointBasedOnZVectors();
                     myWallMarkers.Add(myConfirmedMarker);
 
@@ -819,7 +821,7 @@ namespace BatchProcess
                     myConfirmedMarker.Vx = vx.Copy();
                     myConfirmedMarker.Vy = vy.Copy();
                     myConfirmedMarker.Vz = vz.Copy();
-                    myConfirmedMarker.ConfirmedImageNumber = myMeasurements.Count - 1;
+                    myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
                     myConfirmedMarker.SetEndPointBasedOnZVectors();
                     ConfirmedMarkers.Add(myConfirmedMarker);
                 }
@@ -1022,6 +1024,7 @@ namespace BatchProcess
             }
 
             myMeasurements.Clear();
+            measurementNumber = 0;
             ConfirmedMarkers.Clear();
             myBulkheadMarkers.Clear();
             myDoorMarkers.Clear();
@@ -1144,9 +1147,9 @@ namespace BatchProcess
             p1.Normalise();
             if (p1.Length < 0.9) return;
             double a = p1.AngleToHorizontal;
-            pt = pt.Copy();
 
             double b = -(PI / 2 - a);
+
             var p2 = new clsPoint3d(p1.X, p1.Y, 0);
             p2.Normalise();
             var p3 = p1.Cross(p2);
@@ -1155,6 +1158,8 @@ namespace BatchProcess
             var vz = new clsPoint3d(0, 0, 1);
             vz.RotateAboutLine(p3.Line(), b);
             if (vz.Dot(p2) > 0) b = -b;
+
+            //b = -b; //DEBUGxxx
 
             pt.Origin.RotateAboutLine(p3.Line(), b);
             pt.Point.RotateAboutLine(p3.Line(), b);
@@ -1178,6 +1183,7 @@ namespace BatchProcess
             if (p1.Length < 0.9) return;
             double a = p1.AngleToHorizontal;
             double b = -(PI / 2 - a);
+
             var p2 = new clsPoint3d(p1.X, p1.Y, 0);
             p2.Normalise();
             var p3 = p1.Cross(p2);
@@ -1186,6 +1192,8 @@ namespace BatchProcess
             var vz = new clsPoint3d(0, 0, 1);
             vz.RotateAboutLine(p3.Line(), b);
             if (vz.Dot(p2) > 0) b = -b;
+
+            //b = -b; //DEBUGxxx
 
             stepMarker.Vx.RotateAboutLine(p3.Line(), b);
             stepMarker.Vy.RotateAboutLine(p3.Line(), b);
@@ -1201,15 +1209,16 @@ namespace BatchProcess
         // We believe that (0, 0, 1) is in the direction of gravity
         // However, after taking a measurement with the accelerometer, we know it is in the direction of p1
         // So we simply rotate the landing board by the angle between (0, 0, 1) and p1
-        public static void RelevelMarkersOnPreviousFlightByHalfAngle(clsPoint3d originPt, clsMarkerPoint lastStepMarker, ref clsMarkerPoint marker) {
+        public static double RelevelMarkersOnPreviousFlightByHalfAngle(clsPoint3d originPt, clsMarkerPoint lastStepMarker, ref clsMarkerPoint marker) {
             var p1 = lastStepMarker.Vx * lastStepMarker.VerticalVect.x + lastStepMarker.Vy * lastStepMarker.VerticalVect.y + lastStepMarker.Vz * lastStepMarker.VerticalVect.z;
             if (p1.Z < 0) p1.Scale(-1);
             p1.Normalise();
-            if (p1.Length < 0.9) return;
+            if (p1.Length < 0.9) return 0;
             double a = p1.AngleToHorizontal;
 
             if (IsSameDbl(a, PI / 2) == false) {
                 double b = -(PI / 2 - a);
+
                 var p2 = new clsPoint3d(p1.X, p1.Y, 0);
                 p2.Normalise();
                 var p3 = p1.Cross(p2);
@@ -1219,14 +1228,19 @@ namespace BatchProcess
                 vz.RotateAboutLine(p3.Line(), b);
                 if (vz.Dot(p2) > 0) b = -b;
 
+                //b = -b; //DEBUGxxx
+
                 var vect = new clsLine3d(originPt, originPt + p3);
                 marker.Origin.RotateAboutLine(vect, b / 2);
                 marker.Point.RotateAboutLine(vect, b / 2);
+                return b * 180 / PI;
             }
+            return 0;
         }
 
         public static void ResetMeasurements() {
             myMeasurements.Clear();
+            measurementNumber = 0;
             mySuspectedMarkers.Clear();
             ConfirmedMarkers.Clear();
             myBulkheadMarkers.Clear();
@@ -1242,6 +1256,7 @@ namespace BatchProcess
         }
 
         public static void ResetMeasurements2() {
+            measurementNumber = 0;
             mySuspectedMarkers.Clear();
             ConfirmedMarkers.Clear();
             myBulkheadMarkers.Clear();
@@ -1393,6 +1408,7 @@ namespace BatchProcess
             //stitchingMeasurements.Add(269);
             //stitchingMeasurements.Add(493);
 
+            measurementNumber = 0;
             foreach (var measurement in myMeasurements) {
                 ARToolKitFunctions.Instance.arwSetMappedMarkersVisible(measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray());
 
@@ -1415,6 +1431,8 @@ namespace BatchProcess
                 if (stitchingMeasurements.Contains(myMeasurements.IndexOf(measurement))) {
                     StartStitching();
                 }
+
+                measurementNumber++;
             }
 
             //ConvertSuspectedToConfirmed(true);
@@ -1424,10 +1442,11 @@ namespace BatchProcess
             var lastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.ActualMarkerID == myGFMarkerID || m.ActualMarkerID == myStepMarkerID);
             if (lastStepMarkerIndex != -1) {
                 var lastStepMarker = ConfirmedMarkers[lastStepMarkerIndex];
-                var lastLastStepMarker = ConfirmedMarkers.FindLastIndex(m => m.MarkerID != lastStepMarker.MarkerID && (m.ActualMarkerID == myStepMarkerID || m.ActualMarkerID == myGFMarkerID));
+                var lastLastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.MarkerID != lastStepMarker.MarkerID && (m.ActualMarkerID == myStepMarkerID || m.ActualMarkerID == myGFMarkerID));
                 if (!lastStepMarker.Stitched) {
-                    if (lastLastStepMarker == -1) RelevelFromGFMarker();
-                    if (lastStepMarker.Levelled) ModifyPreviousFlightCoordinates(lastLastStepMarker + 1, lastStepMarkerIndex);
+                    if (lastLastStepMarkerIndex == -1) RelevelFromGFMarker();
+                    if (lastStepMarker.Levelled) ModifyPreviousFlightCoordinates(lastLastStepMarkerIndex + 1, lastStepMarkerIndex);
+                    if (lastLastStepMarkerIndex != -1 && ConfirmedMarkers[lastLastStepMarkerIndex].Stitched) AddMarkersOntoLastStepMarker(lastLastStepMarkerIndex);
                 } else {
                     AddMarkersOntoLastStepMarker(lastStepMarkerIndex);
                 }
@@ -1435,8 +1454,11 @@ namespace BatchProcess
                 RelevelFromGFMarker();
             }
 
+            var sortedMarkers = ConfirmedMarkers.Select(m => m.Copy()).ToList();
+            sortedMarkers.Sort(new MarkerPointComparer()); //Order by Z value and then by ID
+
             var sw = new System.IO.StreamWriter(myFile.Replace(".txt",".3dm"));
-            ConfirmedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.ActualMarkerID + 1).ToString()));
+            sortedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.ActualMarkerID + 1).ToString() + ((p.ActualMarkerID == myGFMarkerID || p.ActualMarkerID == myStepMarkerID) ? '\t' + p.CorrectionAngle.ToString() + '\t' + p.ConfirmedImageNumber.ToString() : string.Empty)));
             sw.Close();
 
         }
@@ -1486,6 +1508,7 @@ namespace BatchProcess
         }
 
         public static void ModifyPreviousFlightCoordinates(int lastConfirmedMarker, int stepMarkerIndex) {
+            double correctionAngle = 0;
 
             // Correct the previous flight by half the angle error of the step marker
             var stepMarker = ConfirmedMarkers[stepMarkerIndex].Copy();
@@ -1493,22 +1516,20 @@ namespace BatchProcess
                 clsPoint3d originPt = new clsPoint3d(0, 0, 0);
                 //if (lastLastConfirmedMarker >= 0) originPt = ConfirmedMarkers[lastLastConfirmedMarker].Origin;
                 var marker = ConfirmedMarkers[i];
-                RelevelMarkersOnPreviousFlightByHalfAngle(originPt, stepMarker, ref marker);
-                ConfirmedMarkers[i] = marker;
+                correctionAngle = RelevelMarkersOnPreviousFlightByHalfAngle(originPt, stepMarker, ref marker);
             }
 
             // Flatten this step marker and then take into account the accelerometer reading
             // Keep the X axis constant (in plan view)
             stepMarker = ConfirmedMarkers[stepMarkerIndex];
+            stepMarker.CorrectionAngle = correctionAngle;
             RelevelStepMarker(ref stepMarker);
-            ConfirmedMarkers[stepMarkerIndex] = stepMarker;
         }
 
         public static void RelevelFromGFMarker() {
             for (int i = 0; i < ConfirmedMarkers.Count; i++) {
                 var pt = ConfirmedMarkers[i];
                 RelevelVerticalAboutOrigin(myVerticalVector, ref pt);
-                ConfirmedMarkers[i] = pt;
             }
         }
 
@@ -1516,6 +1537,10 @@ namespace BatchProcess
         public static void AddMarkersOntoLastStepMarker(int lastStepMarker) {
             if (lastStepMarker > -1) {
                 var stepMarker = ConfirmedMarkers[lastStepMarker];
+
+                var pt = new clsPoint3d(-0.0083333753266945, 0.00480327880875209, 0.99995374061421);
+                var pt2 = stepMarker.Vx * pt.X + stepMarker.Vy * pt.Y + stepMarker.Vz * pt.Z;
+
                 for (int i = lastStepMarker + 1; i < ConfirmedMarkers.Count; i++) {
                     var p1 = ConfirmedMarkers[i].Origin;
                     ConfirmedMarkers[i].Origin = stepMarker.Origin + stepMarker.Vx * p1.X + stepMarker.Vy * p1.Y + stepMarker.Vz * p1.Z;

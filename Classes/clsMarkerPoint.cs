@@ -73,6 +73,7 @@ namespace BatchProcess
         public string MaximumAngleA { get; set; }
         public string MaximumAngleXY { get; set; }
         public double BulkheadHeight { get; set; }
+        public double CorrectionAngle { get; set; }
 
 
         public List<clsPoint3d> GyroData { get; } = new List<clsPoint3d>();
@@ -346,6 +347,7 @@ namespace BatchProcess
             if (VerticalVect != null) myCopy.VerticalVect = VerticalVect.Copy();
 
             myCopy.BulkheadHeight = BulkheadHeight;
+            myCopy.CorrectionAngle = CorrectionAngle;
 
             return myCopy;
         }
@@ -361,6 +363,7 @@ namespace BatchProcess
                 sw.WriteLine("VerticalVectorZ," + VerticalVect.Z.ToString());
             }
             sw.WriteLine("BulkheadHeight," + BulkheadHeight.ToString());
+            sw.WriteLine("CorrectionAngle," + CorrectionAngle.ToString());
             foreach (int myID in PhotoNumbers) {
                 sw.WriteLine("PhotoNumbers," + myID.ToString());
             }
@@ -451,6 +454,9 @@ namespace BatchProcess
                         }
                         if (mySplit[0] == "BulkheadHeight") {
                             BulkheadHeight = Convert.ToDouble(mySplit[1]);
+                        }
+                        if (mySplit[0] == "CorrectionAngle") {
+                            CorrectionAngle = Convert.ToDouble(mySplit[1]);
                         }
                         if (mySplit[0] == "Confirmed") {
                             _confirmed = (mySplit[1] == "1");
@@ -674,13 +680,24 @@ namespace BatchProcess
     {
 
         int System.Collections.Generic.IComparer<clsMarkerPoint>.Compare(clsMarkerPoint myItem1, clsMarkerPoint myItem2) {
-            double myZTol;
+            double myZTol = 25;
 
-            myZTol = 25;
-            if (Abs(myItem1.Point.Z - myItem2.Point.Z) < myZTol) {
-                if (myItem1.MarkerID < myItem2.MarkerID) {
+            if ((myItem1.ActualMarkerID == myGFMarkerID || myItem1.ActualMarkerID == myStepMarkerID) && (myItem2.ActualMarkerID == myGFMarkerID || myItem2.ActualMarkerID == myStepMarkerID)) {
+                if (myItem1.ConfirmedImageNumber < myItem2.ConfirmedImageNumber) {
                     return -1;
-                } else if (myItem1.MarkerID == myItem2.MarkerID) {
+                } else {
+                    return 1;
+                }
+            } else if (myItem1.ActualMarkerID == myGFMarkerID || myItem1.ActualMarkerID == myStepMarkerID) {
+                return 1;
+            } else if (myItem2.ActualMarkerID == myGFMarkerID || myItem2.ActualMarkerID == myStepMarkerID) {
+                return -1;
+            }
+
+            if (Abs(myItem1.Point.Z - myItem2.Point.Z) < myZTol) {
+                if (myItem1.ConfirmedImageNumber < myItem2.ConfirmedImageNumber) {
+                    return -1;
+                } else if (myItem1.ConfirmedImageNumber == myItem2.ConfirmedImageNumber) {
                     return 0;
                 } else {
                     return 1;
