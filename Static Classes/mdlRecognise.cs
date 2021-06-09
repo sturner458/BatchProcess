@@ -985,6 +985,9 @@ namespace BatchProcess
                 if (mySplit.GetUpperBound(0) >= 1) myPGLoadedVersion = mySplit[1];
                 myLine = sr.ReadLine();
             }
+
+            clsPoint3d _correctionVector = new clsPoint3d(0, 0, 0);
+
             if (myLine == "SETTINGS") {
                 myLine = sr.ReadLine();
                 while (myLine != "END_SETTINGS") {
@@ -1002,6 +1005,9 @@ namespace BatchProcess
                             if (myVerticalVector == null) myVerticalVector = new clsPoint3d(0, 0, 0);
                             myVerticalVector.Z = Convert.ToDouble(mySplit[1]);
                         }
+                        if (mySplit[0] == "CorrectionVectorX") _correctionVector.X = Convert.ToDouble(mySplit[1]);
+                        if (mySplit[0] == "CorrectionVectorY") _correctionVector.Y = Convert.ToDouble(mySplit[1]);
+                        if (mySplit[0] == "CorrectionVectorZ") _correctionVector.Z = Convert.ToDouble(mySplit[1]);
                         if (mySplit[0] == "StitchingMeasurement") {
                             stitchingMeasurements.Add(Convert.ToInt32(mySplit[1]));
                         }
@@ -1159,7 +1165,8 @@ namespace BatchProcess
             vz.RotateAboutLine(p3.Line(), b);
             if (vz.Dot(p2) > 0) b = -b;
 
-            //b = -b; //DEBUGxxx
+            //b = -b; // Levelling Debug
+            //b = -0; // Levelling Debug
 
             pt.Origin.RotateAboutLine(p3.Line(), b);
             pt.Point.RotateAboutLine(p3.Line(), b);
@@ -1193,7 +1200,8 @@ namespace BatchProcess
             vz.RotateAboutLine(p3.Line(), b);
             if (vz.Dot(p2) > 0) b = -b;
 
-            //b = -b; //DEBUGxxx
+            //b = -b; // Levelling Debug
+            //b = -0; // Levelling Debug
 
             stepMarker.Vx.RotateAboutLine(p3.Line(), b);
             stepMarker.Vy.RotateAboutLine(p3.Line(), b);
@@ -1228,7 +1236,8 @@ namespace BatchProcess
                 vz.RotateAboutLine(p3.Line(), b);
                 if (vz.Dot(p2) > 0) b = -b;
 
-                //b = -b; //DEBUGxxx
+                //b = -b; // Levelling Debug
+                //b = -0; // Levelling Debug
 
                 var vect = new clsLine3d(originPt, originPt + p3);
                 marker.Origin.RotateAboutLine(vect, b / 2);

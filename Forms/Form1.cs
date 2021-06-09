@@ -476,10 +476,17 @@ namespace BatchProcess {
             if (ret != DialogResult.OK) return;
             myFile = myDlg.FileName;
 
-            myDlg.Filter = "Calibration Files (*.dat)|*.dat";
-            ret = myDlg.ShowDialog();
-            if (ret != DialogResult.OK) return;
-            myCalibFile = myDlg.FileName;
+            var datFiles = Directory.GetFiles(Path.GetDirectoryName(myFile), "*.dat");
+            if (datFiles.Count() == 1) {
+                myCalibFile = datFiles.First();
+            } else {
+                myDlg.InitialDirectory = Path.GetDirectoryName(myDlg.FileName);
+                myDlg.FileName = "";
+                myDlg.Filter = "Calibration Files (*.dat)|*.dat";
+                ret = myDlg.ShowDialog();
+                if (ret != DialogResult.OK) return;
+                myCalibFile = myDlg.FileName;
+            }
 
             mdlRecognise.LoadSavedDataFile(myFile);
             //mdlRecognise.TempFixPoints();
@@ -508,9 +515,14 @@ namespace BatchProcess {
                         }
                     }
                 }
-                var diagFile = sf + "\\" + Path.GetFileNameWithoutExtension(sf) + ".txt";
-                if (!File.Exists(sf + "\\" + Path.GetFileNameWithoutExtension(sf) + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile)) {
+                var parentFolderName = Path.GetFileName(sf);
+                var diagFile = sf + "\\" + parentFolderName + ".txt";
+                var diagFile2 = sf + "\\Diagnostics.txt";
+                if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile)) {
                     mdlRecognise.LoadSavedDataFile(diagFile);
+                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
+                } else if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile2)) {
+                    mdlRecognise.LoadSavedDataFile(diagFile2);
                     mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
                 }
             }
