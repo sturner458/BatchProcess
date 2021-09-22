@@ -285,7 +285,7 @@ public class ARNativePlugin
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwQueryTrackableVisibilityAndTransformation(int markerID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] double[] matrix, [MarshalAs(UnmanagedType.LPArray, SizeConst = 32)] double[] corners, out int numCorners);
+    internal static extern bool arwQueryTrackableVisibilityAndTransformation(int markerID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] double[] matrix, [MarshalAs(UnmanagedType.LPArray, SizeConst = 32)] double[] corners, out int numCorners, [MarshalAs(UnmanagedType.LPArray, SizeConst = 12)] double[] datums, out int numDatums);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
@@ -320,7 +320,7 @@ public class ARNativePlugin
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwUpdateARToolKit(IntPtr imageBytes, bool doDatums);
+    internal static extern bool arwUpdateARToolKit(IntPtr imageBytes, bool doDatums, int markerType, int numberOfDatums);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     internal static extern bool arwInitChessboardCorners(int nHorizontal, int nVertical, float patternSpacing, int calibImageNum, int xsize, int ysize);

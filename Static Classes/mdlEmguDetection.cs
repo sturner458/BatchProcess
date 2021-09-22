@@ -168,7 +168,7 @@ namespace BatchProcess {
                             if (averageDist < 1.5 && furthestDist < 4) {
                                 if (area > largestArea) largestArea = area;
                                 centerPoints.Push(new PointF[] { rect.Center });
-                                DrawContoursOnImage(imageCopy, contours[i]);
+                                DrawContoursOnImage(imageCopy, contours[i], System.Drawing.Color.Red);
                                 // CvInvoke.Ellipse(imageCopy, rect, new Bgr(System.Drawing.Color.Red).MCvScalar);
                                 CvInvoke.Line(imageCopy, new Point((int)rect.GetVertices()[0].X, (int)rect.GetVertices()[0].Y), new Point((int)rect.GetVertices()[1].X, (int)rect.GetVertices()[1].Y), new Bgr(System.Drawing.Color.Red).MCvScalar);
                                 CvInvoke.Line(imageCopy, new Point((int)rect.GetVertices()[1].X, (int)rect.GetVertices()[1].Y), new Point((int)rect.GetVertices()[2].X, (int)rect.GetVertices()[2].Y), new Bgr(System.Drawing.Color.Red).MCvScalar);
@@ -176,174 +176,16 @@ namespace BatchProcess {
                                 CvInvoke.Line(imageCopy, new Point((int)rect.GetVertices()[3].X, (int)rect.GetVertices()[3].Y), new Point((int)rect.GetVertices()[0].X, (int)rect.GetVertices()[0].Y), new Bgr(System.Drawing.Color.Red).MCvScalar);
                             }
                         }
+                        DrawContoursOnImage(imageCopy, contours[i], System.Drawing.Color.DarkMagenta);
                     }
+                    //DrawContoursOnImage(imageCopy, contours[i], System.Drawing.Color.DarkMagenta);
                 }
             }
 
             return centerPoints;
         }
 
-        public static void DetectDatums(string myFile) {
-            var grayImage = new Image<Gray, byte>(myFile);
-
-            Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
-            byte[] grayImageBytes = new byte[grayImage.Data.Length];
-            Buffer.BlockCopy(grayImage.Data, 0, grayImageBytes, 0, grayImage.Data.Length);
-            myVideoWidth = grayImage.Width;
-            myVideoHeight = grayImage.Height;
-
-            //var thresh = grayImage.Clone();
-            //double otsuThreshold = CvInvoke.Threshold(grayImage, thresh, 128.0, 255.0, Emgu.CV.CvEnum.ThresholdType.Otsu);
-            //CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-threshold" + Path.GetExtension(myFile), thresh, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
-
-            //Detect the AR Marker first
-
-            // Initialise AR
-            string myCameraFile = "data\\calib.dat";
-            var arParams = LoadCameraFromFile(myCameraFile);
-            // string myVConf = "-module=Image -preset=photo -format=BGRA";
-            string myVConf = "-module=Image -width=" + myVideoWidth + " -height=" + myVideoHeight + " -format=MONO";
-            ARToolKitFunctions.Instance.arwInitialiseAR();
-            ARToolKitFunctions.Instance.arwInitARToolKit(myVConf, myCameraFile);
-            string artkVersion = ARToolKitFunctions.Instance.arwGetARToolKitVersion();
-            string pixelFormat = string.Empty;
-            ARToolKitFunctions.Instance.arwSetLogLevel(0);
-            myLogger = new Logger();
-
-            Mat cameraMatrix = new Mat(3, 3, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
-            int nFactors = 8;
-            Mat distortionCoeffs = new Mat(nFactors, 1, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
-            double[] cameraArray = new double[9];
-            for (int j = 0; j < 3; j++) {
-                for (int i = 0; i < 3; i++) {
-                    cameraArray[j * 3 + i] = arParams.mat[j, i];
-                }
-            }
-            double[] distCoeffArray = new double[nFactors];
-            for (int i = 0; i < nFactors; i++) {
-                distCoeffArray[i] = arParams.dist_factor[i];
-            }
-            Marshal.Copy(cameraArray, 0, cameraMatrix.DataPointer, 9);
-            Marshal.Copy(distCoeffArray, 0, distortionCoeffs.DataPointer, nFactors);
-
-            mdlDetectPhotos.AddDatumMarkersToARToolKit();
-
-            var cornersErr = new Emgu.CV.Util.VectorOfPointF();
-            var cornersErr2 = new Emgu.CV.Util.VectorOfPointF();
-
-            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayImageBytes, true);
-
-            for (int markerID = 0; markerID < 102; markerID++) {
-
-                double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv, corners, out int numCorners);
-                if (!retB) continue;
-
-                var trans = OpenGL2Trans(mv);
-
-                var pts2d = new List<clsPoint>();
-                var cornerPoints = new Emgu.CV.Util.VectorOfPointF();
-                pts2d.Add(new clsPoint(-40, -40));
-                pts2d.Add(new clsPoint(40, -40));
-                pts2d.Add(new clsPoint(40, 40));
-                pts2d.Add(new clsPoint(-40, 40));
-                if (markerID == myGFMarkerID) {
-                    pts2d.Add(new clsPoint(-128.5, -85));
-                    pts2d.Add(new clsPoint(128.5, -85));
-                    pts2d.Add(new clsPoint(128.5, 85));
-                    pts2d.Add(new clsPoint(-128.5, 85));
-                } else {
-                    pts2d.Add(new clsPoint(-55, -30));
-                    pts2d.Add(new clsPoint(55, -30));
-                    pts2d.Add(new clsPoint(55, 30));
-                    pts2d.Add(new clsPoint(-55, 30));
-                }
-
-                //var objectPoints = new Emgu.CV.Util.VectorOfPoint3D32F(pts2d.Select(p => new MCvPoint3D32f((float)p.x, (float)p.y, 0)).ToArray());
-
-                //var reprojectPoints = new Emgu.CV.Util.VectorOfPointF();
-                //Mat rvec = new Mat(3, 3, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
-                //double[] matrixArray = new double[9];
-                //for (int j = 0; j < 3; j++) {
-                //    for (int k = 0; k < 3; k++) {
-                //        matrixArray[j * 3 + k] = trans[j, k];
-                //    }
-                //}
-                //Marshal.Copy(matrixArray, 0, rvec.DataPointer, 9);
-
-                //Mat tvec = new Mat(3, 1, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
-                //double[] vectorArray = new double[3];
-                //for (int j = 0; j < 3; j++) {
-                //    vectorArray[j] = trans[j, 3];
-                //}
-                //Marshal.Copy(vectorArray, 0, tvec.DataPointer, 3);
-                //CvInvoke.ProjectPoints(objectPoints, rvec, tvec, cameraMatrix, distortionCoeffs, reprojectPoints);
-                //cornerPoints.Push(reprojectPoints.ToArray());
-                //cornersErr.Push(reprojectPoints.ToArray());
-
-                //for (int i = 0; i < pts2d.Count; i++) {
-                //    var pt = ModelToImageSpace(arParams, trans, pts2d[i]);
-                //    cornerPoints.Push(new PointF[] { new PointF((float)pt.X, (float)pt.Y) });
-                //}
-                //cornersErr.Push(cornerPoints.ToArray());
-
-                for (int i = 0; i < numCorners; i++) {
-                    cornerPoints.Push(new PointF[] { new PointF((float)corners[i * 2], (float)corners[i * 2 + 1]) });
-                }
-                cornersErr.Push(cornerPoints.ToArray());
-
-                if (cornerPoints.Size == pts2d.Count) {
-                    //cornersErr.Push(cornerPoints.ToArray());
-                    //var cornersCopy = new List<clsPoint>();
-                    //var cornersCopy2 = new List<clsPoint>();
-                    //foreach (var p in cornerPoints.ToArray()) cornersCopy.Add(new clsPoint(p.X, p.Y));
-                    //CvInvoke.CornerSubPix(grayImage, cornerPoints, new Size(5, 5), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100));
-
-                    //foreach (var p in cornerPoints.ToArray()) cornersCopy2.Add(new clsPoint(p.X, p.Y));
-
-                    //for (int i = 0; i < cornersCopy.Count; i++) {
-                    //    cornersErr.Push(new PointF[] { new PointF((float)cornersCopy[i].x, (float)cornersCopy[i].y) });
-                    //    if (cornersCopy[i].Dist(cornersCopy2[i]) > 4.0) {
-                    //        cornersErr2.Push(new PointF[] { new PointF((float)cornersCopy2[i].x, (float)cornersCopy2[i].y) });
-                    //    }
-                    //}
-
-                    //Emgu.CV.Util.VectorOfPointF imagePoints = new Emgu.CV.Util.VectorOfPointF();
-                    //for (int i = 0; i < centerPoints.Size; i++) {
-                    //    arParamObserv2Ideal(arParams.dist_factor, centerPoints[i].X, centerPoints[i].Y, out double ox, out double oy, arParams.dist_function_version);
-                    //    imagePoints.Push(new PointF[] { new PointF((float)ox, (float)oy) });
-                    //}
-
-                    //Mat rvec = new Mat();
-                    //Mat tvec = new Mat();
-                    //CvInvoke.SolvePnP(objectPoints, imagePoints, cameraMatrix, distortionCoeffs, rvec, tvec, false, Emgu.CV.CvEnum.SolvePnpMethod.IPPE);
-                    //Mat rotationMatrix = new Mat();
-                    //CvInvoke.Rodrigues(rvec, rotationMatrix);
-
-                    //trans = new double[3, 4];
-                    //double[] rotationMatrixArray = new double[12];
-                    //Marshal.Copy(rotationMatrix.DataPointer, rotationMatrixArray, 0, 12);
-                    //double[] translationMatrixArray = new double[3];
-                    //Marshal.Copy(tvec.DataPointer, translationMatrixArray, 0, 3);
-                    //for (int j = 0; j < 3; j++) {
-                    //    for (int i = 0; i < 3; i++) {
-                    //        trans[j, i] = rotationMatrixArray[3 * j + i];
-                    //    }
-                    //    trans[j, 3] = translationMatrixArray[j];
-                    //}
-
-                    //mv = Trans2OpenGL(trans);
-                }
-
-            }
-
-            DrawCornersOnImage(imageCopy, cornersErr, System.Drawing.Color.Red);
-            //if (cornersErr2.Size > 0)  DrawCornersOnImage(imageCopy, cornersErr2, System.Drawing.Color.Red);
-            CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\Corners-" + Path.GetFileNameWithoutExtension(myFile) + ".png", imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
-        }
-
-        public static void DetectMarkers(string myFile) {
+        public static void DetectMarkers_RevA(string myFile) {
             var grayImage = new Image<Gray, byte>(myFile);
             //CheckConnectedComponents(grayImage.Mat);
 
@@ -360,7 +202,7 @@ namespace BatchProcess {
             //Detect the AR Marker first
 
             // Initialise AR
-            string myCameraFile = "data\\calib.dat";
+            string myCameraFile = "data\\calib-rod.dat";
             var arParams = LoadCameraFromFile(myCameraFile);
             // string myVConf = "-module=Image -preset=photo -format=BGRA";
             string myVConf = "-module=Image -width=" + myVideoWidth + " -height=" + myVideoHeight + " -format=MONO";
@@ -392,13 +234,14 @@ namespace BatchProcess {
             var cornersErr = new Emgu.CV.Util.VectorOfPointF();
             var cornersErr2 = new Emgu.CV.Util.VectorOfPointF();
 
-            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayImageBytes, false);
+            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayImageBytes, false, -1, -1);
 
             for (int markerID = 0; markerID < 102; markerID++) {
 
                 double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                 double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv, corners, out int numCorners);
+                double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv, corners, out int numCorners, datums, out int numDatums);
                 if (!retB) continue;
 
                 var trans = OpenGL2Trans(mv);
@@ -510,6 +353,236 @@ namespace BatchProcess {
             }
 
             DrawCornersOnImage(imageCopy, cornersErr, System.Drawing.Color.Green);
+            //if (cornersErr2.Size > 0)  DrawCornersOnImage(imageCopy, cornersErr2, System.Drawing.Color.Red);
+            CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\Corners-" + Path.GetFileNameWithoutExtension(myFile) + ".png", imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
+        }
+
+        public static void DetectMarkers_RevC1(string myFile) {
+            var grayImage = new Image<Gray, byte>(myFile);
+
+            Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
+            byte[] grayImageBytes = new byte[grayImage.Data.Length];
+            Buffer.BlockCopy(grayImage.Data, 0, grayImageBytes, 0, grayImage.Data.Length);
+            myVideoWidth = grayImage.Width;
+            myVideoHeight = grayImage.Height;
+
+            // Initialise AR
+            string myCameraFile = "data\\calib-rod.dat";
+            var arParams = LoadCameraFromFile(myCameraFile);
+            // string myVConf = "-module=Image -preset=photo -format=BGRA";
+            string myVConf = "-module=Image -width=" + myVideoWidth + " -height=" + myVideoHeight + " -format=MONO";
+            ARToolKitFunctions.Instance.arwInitialiseAR();
+            ARToolKitFunctions.Instance.arwInitARToolKit(myVConf, myCameraFile);
+            string artkVersion = ARToolKitFunctions.Instance.arwGetARToolKitVersion();
+            string pixelFormat = string.Empty;
+            ARToolKitFunctions.Instance.arwSetLogLevel(0);
+            myLogger = new Logger();
+
+            mdlDetectPhotos.AddMarkersToARToolKit_RevC1();
+
+            var cornersErr = new Emgu.CV.Util.VectorOfPointF();
+            var datumsErr = new Emgu.CV.Util.VectorOfPointF();
+            var cornersErr2 = new Emgu.CV.Util.VectorOfPointF();
+
+            var numberOfDatumCircles = 6;
+
+            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayImageBytes, true, (int)TargetTypeE.x4Double, numberOfDatumCircles);
+
+            for (int markerID = 0; markerID < 102; markerID++) {
+
+                double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv, corners, out int numCorners, datums, out int numDatums);
+                if (!retB) continue;
+
+                var cornerPoints = new Emgu.CV.Util.VectorOfPointF();              
+                var datumPoints = new Emgu.CV.Util.VectorOfPointF();
+
+                for (int i = 0; i < numCorners; i++) {
+                    cornerPoints.Push(new PointF[] { new PointF((float)corners[i * 2], (float)corners[i * 2 + 1]) });
+                }
+                cornersErr.Push(cornerPoints.ToArray());
+
+                for (int i = 0; i < numDatums; i++) {
+                    datumPoints.Push(new PointF[] { new PointF((float)datums[i * 2], (float)datums[i * 2 + 1]) });
+                }
+                datumsErr.Push(datumPoints.ToArray());
+            }
+
+            DrawCornersOnImage(imageCopy, cornersErr, System.Drawing.Color.Green);
+            DrawCornersOnImage(imageCopy, datumsErr, System.Drawing.Color.Magenta);
+            //DrawCornersOnImage(imageCopy, cornersErr2, System.Drawing.Color.Red);
+
+            //DetectEllipses(grayImage, imageCopy);
+
+            //if (cornersErr2.Size > 0)  DrawCornersOnImage(imageCopy, cornersErr2, System.Drawing.Color.Red);
+            CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\Corners-" + Path.GetFileNameWithoutExtension(myFile) + ".png", imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
+        }
+
+        public static void DetectMarkers_RevC7(string myFile) {
+            var grayImage = new Image<Gray, byte>(myFile);
+
+            Mat imageCopy = Emgu.CV.CvInvoke.Imread(myFile, Emgu.CV.CvEnum.ImreadModes.Color);
+            byte[] grayImageBytes = new byte[grayImage.Data.Length];
+            Buffer.BlockCopy(grayImage.Data, 0, grayImageBytes, 0, grayImage.Data.Length);
+            myVideoWidth = grayImage.Width;
+            myVideoHeight = grayImage.Height;           
+
+            //Detect the AR Marker first
+
+            // Initialise AR
+            string myCameraFile = "data\\calib-rod.dat";
+            var arParams = LoadCameraFromFile(myCameraFile);
+            // string myVConf = "-module=Image -preset=photo -format=BGRA";
+            string myVConf = "-module=Image -width=" + myVideoWidth + " -height=" + myVideoHeight + " -format=MONO";
+            ARToolKitFunctions.Instance.arwInitialiseAR();
+            ARToolKitFunctions.Instance.arwInitARToolKit(myVConf, myCameraFile);
+            string artkVersion = ARToolKitFunctions.Instance.arwGetARToolKitVersion();
+            string pixelFormat = string.Empty;
+            ARToolKitFunctions.Instance.arwSetLogLevel(0);
+            myLogger = new Logger();
+
+            Mat cameraMatrix = new Mat(3, 3, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
+            int nFactors = 8;
+            Mat distortionCoeffs = new Mat(nFactors, 1, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
+            double[] cameraArray = new double[9];
+            for (int j = 0; j < 3; j++) {
+                for (int i = 0; i < 3; i++) {
+                    cameraArray[j * 3 + i] = arParams.mat[j, i];
+                }
+            }
+            double[] distCoeffArray = new double[nFactors];
+            for (int i = 0; i < nFactors; i++) {
+                distCoeffArray[i] = arParams.dist_factor[i];
+            }
+            Marshal.Copy(cameraArray, 0, cameraMatrix.DataPointer, 9);
+            Marshal.Copy(distCoeffArray, 0, distortionCoeffs.DataPointer, nFactors);
+
+            mdlDetectPhotos.AddDatumMarkersToARToolKit();
+
+            var cornersErr = new Emgu.CV.Util.VectorOfPointF();
+            var datumsErr = new Emgu.CV.Util.VectorOfPointF();
+            var cornersErr2 = new Emgu.CV.Util.VectorOfPointF();
+
+            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayImageBytes, true, (int)TargetTypeE.x5Single, 0);
+
+            for (int markerID = 0; markerID < 102; markerID++) {
+
+                double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv, corners, out int numCorners, datums, out int numDatums);
+                if (!retB) continue;
+
+                var trans = OpenGL2Trans(mv);
+
+                var pts2d = new List<clsPoint>();
+
+                var cornerPoints = new Emgu.CV.Util.VectorOfPointF();
+                var datumPoints = new Emgu.CV.Util.VectorOfPointF();
+
+                pts2d.Add(new clsPoint(-40, -40));
+                pts2d.Add(new clsPoint(40, -40));
+                pts2d.Add(new clsPoint(40, 40));
+                pts2d.Add(new clsPoint(-40, 40));
+                if (markerID == myGFMarkerID) {
+                    pts2d.Add(new clsPoint(-128.5, -85));
+                    pts2d.Add(new clsPoint(128.5, -85));
+                    pts2d.Add(new clsPoint(128.5, 85));
+                    pts2d.Add(new clsPoint(-128.5, 85));
+                } else {
+                    pts2d.Add(new clsPoint(-55, -30));
+                    pts2d.Add(new clsPoint(55, -30));
+                    pts2d.Add(new clsPoint(55, 30));
+                    pts2d.Add(new clsPoint(-55, 30));
+                }
+
+                //var objectPoints = new Emgu.CV.Util.VectorOfPoint3D32F(pts2d.Select(p => new MCvPoint3D32f((float)p.x, (float)p.y, 0)).ToArray());
+
+                //var reprojectPoints = new Emgu.CV.Util.VectorOfPointF();
+                //Mat rvec = new Mat(3, 3, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
+                //double[] matrixArray = new double[9];
+                //for (int j = 0; j < 3; j++) {
+                //    for (int k = 0; k < 3; k++) {
+                //        matrixArray[j * 3 + k] = trans[j, k];
+                //    }
+                //}
+                //Marshal.Copy(matrixArray, 0, rvec.DataPointer, 9);
+
+                //Mat tvec = new Mat(3, 1, Emgu.CV.CvEnum.DepthType.Cv64F, 1);
+                //double[] vectorArray = new double[3];
+                //for (int j = 0; j < 3; j++) {
+                //    vectorArray[j] = trans[j, 3];
+                //}
+                //Marshal.Copy(vectorArray, 0, tvec.DataPointer, 3);
+                //CvInvoke.ProjectPoints(objectPoints, rvec, tvec, cameraMatrix, distortionCoeffs, reprojectPoints);
+                //cornerPoints.Push(reprojectPoints.ToArray());
+                //cornersErr.Push(reprojectPoints.ToArray());
+
+                //for (int i = 0; i < pts2d.Count; i++) {
+                //    var pt = ModelToImageSpace(arParams, trans, pts2d[i]);
+                //    cornerPoints.Push(new PointF[] { new PointF((float)pt.X, (float)pt.Y) });
+                //}
+                //cornersErr.Push(cornerPoints.ToArray());
+
+                for (int i = 0; i < numCorners; i++) {
+                    cornerPoints.Push(new PointF[] { new PointF((float)corners[i * 2], (float)corners[i * 2 + 1]) });
+                }
+                cornersErr.Push(cornerPoints.ToArray());
+
+                for (int i = 0; i < numDatums; i++) {
+                    datumPoints.Push(new PointF[] { new PointF((float)datums[i * 2], (float)datums[i * 2 + 1]) });
+                }
+                datumsErr.Push(datumPoints.ToArray());
+
+                if (cornerPoints.Size == pts2d.Count) {
+                    //cornersErr.Push(cornerPoints.ToArray());
+                    //var cornersCopy = new List<clsPoint>();
+                    //var cornersCopy2 = new List<clsPoint>();
+                    //foreach (var p in cornerPoints.ToArray()) cornersCopy.Add(new clsPoint(p.X, p.Y));
+                    //CvInvoke.CornerSubPix(grayImage, cornerPoints, new Size(5, 5), new Size(-1, -1), new Emgu.CV.Structure.MCvTermCriteria(100));
+
+                    //foreach (var p in cornerPoints.ToArray()) cornersCopy2.Add(new clsPoint(p.X, p.Y));
+
+                    //for (int i = 0; i < cornersCopy.Count; i++) {
+                    //    cornersErr.Push(new PointF[] { new PointF((float)cornersCopy[i].x, (float)cornersCopy[i].y) });
+                    //    if (cornersCopy[i].Dist(cornersCopy2[i]) > 4.0) {
+                    //        cornersErr2.Push(new PointF[] { new PointF((float)cornersCopy2[i].x, (float)cornersCopy2[i].y) });
+                    //    }
+                    //}
+
+                    //Emgu.CV.Util.VectorOfPointF imagePoints = new Emgu.CV.Util.VectorOfPointF();
+                    //for (int i = 0; i < centerPoints.Size; i++) {
+                    //    arParamObserv2Ideal(arParams.dist_factor, centerPoints[i].X, centerPoints[i].Y, out double ox, out double oy, arParams.dist_function_version);
+                    //    imagePoints.Push(new PointF[] { new PointF((float)ox, (float)oy) });
+                    //}
+
+                    //Mat rvec = new Mat();
+                    //Mat tvec = new Mat();
+                    //CvInvoke.SolvePnP(objectPoints, imagePoints, cameraMatrix, distortionCoeffs, rvec, tvec, false, Emgu.CV.CvEnum.SolvePnpMethod.IPPE);
+                    //Mat rotationMatrix = new Mat();
+                    //CvInvoke.Rodrigues(rvec, rotationMatrix);
+
+                    //trans = new double[3, 4];
+                    //double[] rotationMatrixArray = new double[12];
+                    //Marshal.Copy(rotationMatrix.DataPointer, rotationMatrixArray, 0, 12);
+                    //double[] translationMatrixArray = new double[3];
+                    //Marshal.Copy(tvec.DataPointer, translationMatrixArray, 0, 3);
+                    //for (int j = 0; j < 3; j++) {
+                    //    for (int i = 0; i < 3; i++) {
+                    //        trans[j, i] = rotationMatrixArray[3 * j + i];
+                    //    }
+                    //    trans[j, 3] = translationMatrixArray[j];
+                    //}
+
+                    //mv = Trans2OpenGL(trans);
+                }
+
+            }
+
+            DrawCornersOnImage(imageCopy, cornersErr, System.Drawing.Color.Red);
+            DrawCornersOnImage(imageCopy, datumsErr, System.Drawing.Color.Magenta);
             //if (cornersErr2.Size > 0)  DrawCornersOnImage(imageCopy, cornersErr2, System.Drawing.Color.Red);
             CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\Corners-" + Path.GetFileNameWithoutExtension(myFile) + ".png", imageCopy, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.PngCompression, 3));
         }
@@ -721,11 +794,11 @@ namespace BatchProcess {
             CvInvoke.Imwrite(Path.GetDirectoryName(myFile) + "\\" + Path.GetFileNameWithoutExtension(myFile) + "-copy" + Path.GetExtension(myFile), blank, new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(Emgu.CV.CvEnum.ImwriteFlags.JpegQuality, 95));
         }
 
-        static void DrawContoursOnImage(Mat imageCopy, Emgu.CV.Util.VectorOfPoint cornerPoints) {
+        static void DrawContoursOnImage(Mat imageCopy, Emgu.CV.Util.VectorOfPoint cornerPoints, System.Drawing.Color color) {
             for (int i = 0; i < cornerPoints.Size - 1; i++) {
-                CvInvoke.Line(imageCopy, new Point(cornerPoints[i].X, cornerPoints[i].Y), new Point(cornerPoints[i + 1].X, cornerPoints[i + 1].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 1);
+                CvInvoke.Line(imageCopy, new Point(cornerPoints[i].X, cornerPoints[i].Y), new Point(cornerPoints[i + 1].X, cornerPoints[i + 1].Y), new Bgr(color).MCvScalar, 1);
             }
-            CvInvoke.Line(imageCopy, new Point(cornerPoints[cornerPoints.Size - 1].X, cornerPoints[cornerPoints.Size - 1].Y), new Point(cornerPoints[0].X, cornerPoints[0].Y), new Bgr(System.Drawing.Color.Red).MCvScalar, 1);
+            CvInvoke.Line(imageCopy, new Point(cornerPoints[cornerPoints.Size - 1].X, cornerPoints[cornerPoints.Size - 1].Y), new Point(cornerPoints[0].X, cornerPoints[0].Y), new Bgr(color).MCvScalar, 1);
         }
 
         public static clsPoint NearestPointOnEllipse(clsPoint point, double semiMajor, double semiMinor) {

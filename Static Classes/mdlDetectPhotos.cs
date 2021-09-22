@@ -275,7 +275,184 @@ namespace BatchProcess {
                 myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
         }
 
+        public static void AddMarkersToARToolKit_RevC1() {
+
+            //!!!IMPORTANT NOTE:
+            //In arConfig.h:
+            //#define   AR_LABELING_32_BIT                  1     // 0 = 16 bits per label, 1 = 32 bits per label.
+            //#  define AR_LABELING_WORK_SIZE      1024*32*64
+
+            ARToolKitFunctions.Instance.arwSetPatternDetectionMode(AR_MATRIX_CODE_DETECTION);
+            ARToolKitFunctions.Instance.arwSetMatrixCodeType((int)AR_MATRIX_CODE_TYPE.AR_MATRIX_CODE_4x4);
+            //ARToolKitFunctions.Instance.arwSetMarkerExtractionMode(AR_USE_TRACKING_HISTORY_V2); //This doesn't work in ARToolKitX
+            ARToolKitFunctions.Instance.arwSetVideoThreshold(50);
+            //ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
+            ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
+            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(true);
+
+            myMarkerIDs.Clear();
+            DebugStringList.Clear();
+
+            for (int i = 1; i <= 100; i++) {
+                myMarkerIDs.Add(ARToolKitFunctions.Instance.arwAddMarker("multi;data/MarkerLargeRevC1_" + i.ToString("00") + ".dat"));
+                //Path to markers is local
+                if (myMarkerIDs[myMarkerIDs.Count - 1] > -1) {
+                    ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 2);
+                    ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 1.0f);
+                    ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+                    ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMarkerIDs[myMarkerIDs.Count - 1], ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
+                }
+            }
+
+            myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/GFMarkerRevC1.dat");
+            if (myGFMarkerID > -1) {
+                ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 4);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 1.0f);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myGFMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myGFMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
+            }
+
+            myStepMarkerID = ARToolKitFunctions.Instance.arwAddMarker("multi;data/StepMarkerRevC1.dat");
+            if (myStepMarkerID > -1) {
+                ARToolKitFunctions.Instance.arwSetTrackableOptionInt(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_SUBMARKERS, 4);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_CONF_MATRIX, 1.0f);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myStepMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
+            }
+
+            myLeftBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;249;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myLeftBulkheadMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myRightBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;250;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myRightBulkheadMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
+            myDoorHingeRightMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;251;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myDoorHingeRightMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myDoorFrameRightMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;252;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myDoorFrameRightMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myDoorHingeLeftMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;253;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myDoorHingeLeftMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myDoorFrameLeftMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;254;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myDoorFrameLeftMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
+            myObstruct1MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;255;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myObstruct1MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myObstruct2MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;256;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myObstruct2MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myObstruct3MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;257;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myObstruct3MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myObstruct4MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;258;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myObstruct4MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
+            myWall1MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;259;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myWall1MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myWall2MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;260;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myWall2MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myWall3MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;261;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myWall3MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myWall4MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;262;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myWall4MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
+            //float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            //bool b = ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myGFMarkerID, 0, myMatrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+            //string sConfig = "multi_auto;" + barcodeID + ";" + ((int)width) + ";";
+            //string sConfig = "multi_auto;" + myGFMarkerID + ";80;";
+            string sConfig = "multi_auto;121;65;";
+            myMapperMarkerID = ARToolKitFunctions.Instance.arwAddMarker(sConfig);
+            ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
+
+            myMaximumMarkerID = myMapperMarkerID + 1; //Please keep this up to date
+            myBulkheadMarkerIDs = new List<int> { myLeftBulkheadMarkerID, myRightBulkheadMarkerID };
+            myDoorMarkerIDs = new List<int> { myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID };
+            myObstructMarkerIDs = new List<int> { myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID };
+            myWallMarkerIDs = new List<int> { myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
+            myAllFeatureMarkerIDs = new List<int> { myLeftBulkheadMarkerID, myRightBulkheadMarkerID,
+                myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID,
+                myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID,
+                myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
+        }
+
         public static void AddDatumMarkersToARToolKit() {
+            int markerID;
+
+            //!!!IMPORTANT NOTE:
+            //In arConfig.h:
+            //#define   AR_LABELING_32_BIT                  1     // 0 = 16 bits per label, 1 = 32 bits per label.
+            //#  define AR_LABELING_WORK_SIZE      1024*32*64
+
+            ARToolKitFunctions.Instance.arwSetPatternDetectionMode(AR_MATRIX_CODE_DETECTION);
+            //ARToolKitFunctions.Instance.arwSetMatrixCodeType((int)AR_MATRIX_CODE_TYPE.AR_MATRIX_CODE_4x4);
+            ARToolKitFunctions.Instance.arwSetMatrixCodeType((int)AR_MATRIX_CODE_TYPE.AR_MATRIX_CODE_5x5_BCH_22_12_5);
+            //ARToolKitFunctions.Instance.arwSetMarkerExtractionMode(AR_USE_TRACKING_HISTORY_V2); //This doesn't work in ARToolKitX
+            ARToolKitFunctions.Instance.arwSetVideoThreshold(50);
+            //ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_MANUAL);
+            ARToolKitFunctions.Instance.arwSetVideoThresholdMode((int)AR_LABELING_THRESH_MODE.AR_LABELING_THRESH_MODE_AUTO_ADAPTIVE);
+            ARToolKitFunctions.Instance.arwSetCornerRefinementMode(true);
+
+            myMarkerIDs.Clear();
+            DebugStringList.Clear();
+
+            for (int i = 0; i < 100; i++) {
+                markerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;" + i + ";80");
+                myMarkerIDs.Add(markerID);
+                ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            }
+
+            myGFMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;100;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myGFMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myStepMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;101;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myStepMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
+            myLeftBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;102;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myLeftBulkheadMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myRightBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;103;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myRightBulkheadMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
+            myDoorHingeRightMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;104;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myDoorHingeRightMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myDoorFrameRightMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;105;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myDoorFrameRightMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myDoorHingeLeftMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;106;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myDoorHingeLeftMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myDoorFrameLeftMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;107;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myDoorFrameLeftMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
+            myObstruct1MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;108;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myObstruct1MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myObstruct2MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;109;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myObstruct2MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myObstruct3MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;110;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myObstruct3MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myObstruct4MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;111;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myObstruct4MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
+            myWall1MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;112;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myWall1MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myWall2MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;113;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myWall2MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myWall3MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;114;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myWall3MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myWall4MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;115;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myWall4MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
+            //float[] myMatrix = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            //bool b = ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myGFMultiMarkerID, 0, myMatrix, out float width, out float height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+            //string sConfig = "multi_auto;" + barcodeID + ";" + ((int)width) + ";";
+            string sConfig = "multi_auto;0;80;";
+            myMapperMarkerID = ARToolKitFunctions.Instance.arwAddMarker(sConfig);
+            ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
+
+            myMaximumMarkerID = myMapperMarkerID + 1; //Please keep this up to date
+            myBulkheadMarkerIDs = new List<int> { myLeftBulkheadMarkerID, myRightBulkheadMarkerID };
+            myDoorMarkerIDs = new List<int> { myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID };
+            myObstructMarkerIDs = new List<int> { myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID };
+            myWallMarkerIDs = new List<int> { myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
+            myAllFeatureMarkerIDs = new List<int> { myLeftBulkheadMarkerID, myRightBulkheadMarkerID,
+                myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID,
+                myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID,
+                myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
+        }
+
+        public static void AddDatumMarkersToARToolKit5by5() {
             int markerID;
 
             //!!!IMPORTANT NOTE:
@@ -370,11 +547,12 @@ namespace BatchProcess {
         {
             //Data.Clear();
 
-            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(imageBytes, UseDatums);
+            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(imageBytes, UseDatums, (int)TargetTypeE.x4Double, 0);
 
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners);
+            double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners, datums, out int numDatums);
             if (!retB) return;
             var mapperMatrix = MatrixFromArray(mv);
             var imagePoints = new Emgu.CV.Util.VectorOfPointF();
@@ -383,7 +561,7 @@ namespace BatchProcess {
             for (int markerID = 0; markerID < 101; markerID++) {
 
                 double[] mv2 = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv2, corners, out numCorners);
+                retB = ARToolKitFunctions.Instance.arwQueryMarkerTransformation(markerID, mv2, corners, out numCorners, datums, out numDatums);
                 if (!retB) continue;
 
                 for (int i = 0; i < numCorners; i++) {
@@ -607,7 +785,8 @@ namespace BatchProcess {
 
             double[] myMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMarkerID, myMatrix, corners, out int numCorners)) {
+            double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMarkerID, myMatrix, corners, out int numCorners, datums, out int numDatums)) {
                 clsPoint3d pt = new clsPoint3d(myMatrix[12], myMatrix[13], myMatrix[14]);
                 if (pt.Length < 2000) {
 

@@ -744,8 +744,8 @@ public class ARToolKitFunctions
     //    return false;
     //}
 
-    public bool arwQueryMarkerTransformation(int markerID, double[] matrix, double[] corners, out int numCorners) {
-        return ARNativePlugin.arwQueryTrackableVisibilityAndTransformation(markerID, matrix, corners, out numCorners);
+    public bool arwQueryMarkerTransformation(int markerID, double[] matrix, double[] corners, out int numCorners, double[] datums, out int numDatums) {
+        return ARNativePlugin.arwQueryTrackableVisibilityAndTransformation(markerID, matrix, corners, out numCorners, datums, out numDatums);
     }
 
     public bool arwQueryTrackableMapperTransformation(int gMapUID, int trackableUID, double[] matrix) {
@@ -891,11 +891,11 @@ public class ARToolKitFunctions
         ARNativePlugin.arwCleanupChessboardCorners();
     }
 
-    public bool arwUpdateARToolKit(byte[] imageBytes, bool doDatums) {
+    public bool arwUpdateARToolKit(byte[] imageBytes, bool doDatums, int markerType, int numberOfDatums) {
         bool ok = false;
         GCHandle handle = GCHandle.Alloc(imageBytes, GCHandleType.Pinned);
         IntPtr address = handle.AddrOfPinnedObject();
-        ok = ARNativePlugin.arwUpdateARToolKit(address, doDatums);
+        ok = ARNativePlugin.arwUpdateARToolKit(address, doDatums, markerType, numberOfDatums);
         handle.Free();
         return ok;
     }

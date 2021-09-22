@@ -449,12 +449,13 @@ namespace BatchProcess
         private static bool MapperMarkerVisible() {
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            return (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners));
+            double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            return (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners, datums, out int numDatums));
         }
 
         public static async void RecogniseMarkers(byte[] grayscaleBytes) {
 
-            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayscaleBytes, false);
+            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayscaleBytes, false, -1, -1);
 
             Data.Clear();
 
@@ -519,8 +520,9 @@ namespace BatchProcess
             //Update positions of confirmed markers by bundle adjustment
             double[] modelMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] cornerCoords = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             SaveHiResSurveyPhoto = false;
-            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners)) {
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners,datums, out int numDatums)) {
                 SaveHiResSurveyPhoto = true;
                 AddNewSuspectedMarkers();
                 ConvertSuspectedToConfirmed();
@@ -564,7 +566,8 @@ namespace BatchProcess
         private static void DetectMarkerVisible(int myMarkerID) {
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMarkerID, mv, corners, out int numCorners)) {
+            double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMarkerID, mv, corners, out int numCorners, datums, out int numDatums)) {
                 var pt = new clsPoint3d(mv[12], mv[13], mv[14]);
                 if (pt.Length < 2000) {
                     var myCameraPoint = PointFromInvMatrix(mv);
@@ -1627,8 +1630,9 @@ namespace BatchProcess
             //Update positions of confirmed markers by bundle adjustment
             double[] modelMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] cornerCoords = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             SaveHiResSurveyPhoto = false;
-            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners)) {
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners, datums, out int numDatums)) {
                 SaveHiResSurveyPhoto = true;
                 AddNewSuspectedMarkers();
                 ConvertSuspectedToConfirmed();
