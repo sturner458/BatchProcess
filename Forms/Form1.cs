@@ -497,6 +497,21 @@ namespace BatchProcess {
             MessageBox.Show("Finished");
         }
 
+        private void btnImportDiagnostics4_Click(object sender, EventArgs e) {
+            var myDlg = new FolderBrowserDialog();
+            DialogResult ret;
+
+            myDlg.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Model Files\\Rodion\\Rev C1 6 Circles\\SurveyPhotos";
+            ret = myDlg.ShowDialog();
+            if (ret != DialogResult.OK) return;
+            var myFolder = myDlg.SelectedPath;
+
+            string myCameraFile = "data\\calib-rod.dat";
+            mdlRecognise.BatchProcessPhotos(lblStatus, myFolder, myCameraFile);
+
+            MessageBox.Show("Finished");
+        }
+
         private void btnBatchImport_Click(object sender, EventArgs e) {
             var folderDialog = new FolderBrowserDialog();
             folderDialog.RootFolder = Environment.SpecialFolder.MyComputer;

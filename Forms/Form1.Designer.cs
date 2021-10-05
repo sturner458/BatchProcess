@@ -39,6 +39,7 @@
             this.btnSimplePhotos = new System.Windows.Forms.Button();
             this.btnImportDiagnostics3 = new System.Windows.Forms.Button();
             this.btnBatchImport = new System.Windows.Forms.Button();
+            this.btnImportDiagnostics4 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnCalibrate
@@ -192,11 +193,23 @@
             this.btnBatchImport.UseVisualStyleBackColor = true;
             this.btnBatchImport.Click += new System.EventHandler(this.btnBatchImport_Click);
             // 
+            // btnImportDiagnostics4
+            // 
+            this.btnImportDiagnostics4.Anchor = System.Windows.Forms.AnchorStyles.Top;
+            this.btnImportDiagnostics4.Location = new System.Drawing.Point(471, 100);
+            this.btnImportDiagnostics4.Name = "btnImportDiagnostics4";
+            this.btnImportDiagnostics4.Size = new System.Drawing.Size(86, 47);
+            this.btnImportDiagnostics4.TabIndex = 11;
+            this.btnImportDiagnostics4.Text = "Rev C1 Photos";
+            this.btnImportDiagnostics4.UseVisualStyleBackColor = true;
+            this.btnImportDiagnostics4.Click += new System.EventHandler(this.btnImportDiagnostics4_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1029, 159);
+            this.Controls.Add(this.btnImportDiagnostics4);
             this.Controls.Add(this.btnBatchImport);
             this.Controls.Add(this.btnDetectDatums);
             this.Controls.Add(this.btnDetectMarkers);
@@ -236,6 +249,7 @@
         private System.Windows.Forms.Button btnSimplePhotos;
         private System.Windows.Forms.Button btnImportDiagnostics3;
         private System.Windows.Forms.Button btnBatchImport;
+        private System.Windows.Forms.Button btnImportDiagnostics4;
     }
 }
 
