@@ -468,6 +468,11 @@ namespace BatchProcess {
         }
 
         private void btnImportDiagnostics3_Click(object sender, EventArgs e) {
+
+            bool useDatums = false;
+            int arToolkitMarkerType = -1;
+            int circlesToUse = 0;
+
             OpenFileDialog myDlg = new OpenFileDialog();
             DialogResult ret;
             string myFile, myCalibFile;
@@ -492,7 +497,7 @@ namespace BatchProcess {
 
             mdlRecognise.LoadSavedDataFile(myFile);
             //mdlRecognise.TempFixPoints();
-            mdlRecognise.BatchBundleAdjust(lblStatus, myFile, myCalibFile);
+            mdlRecognise.BatchBundleAdjust(lblStatus, myFile, myCalibFile, useDatums, arToolkitMarkerType, circlesToUse);
 
             MessageBox.Show("Finished");
         }
@@ -513,6 +518,11 @@ namespace BatchProcess {
         }
 
         private void btnBatchImport_Click(object sender, EventArgs e) {
+
+            bool useDatums = false;
+            int arToolkitMarkerType = -1;
+            int circlesToUse = 0;
+
             var folderDialog = new FolderBrowserDialog();
             folderDialog.RootFolder = Environment.SpecialFolder.MyComputer;
             folderDialog.SelectedPath = "C:\\Customer\\Stannah\\Photogrammetry\\Model Files\\Testing"; // C:\Customer\Stannah\PhotoGrammetry\Model Files\Mezz staircase for reprocessingg
@@ -537,10 +547,10 @@ namespace BatchProcess {
                 var diagFile2 = sf + "\\Diagnostics.txt";
                 if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile)) {
                     mdlRecognise.LoadSavedDataFile(diagFile);
-                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
+                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile, useDatums, arToolkitMarkerType, circlesToUse);
                 } else if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile2)) {
                     mdlRecognise.LoadSavedDataFile(diagFile2);
-                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
+                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile, useDatums, arToolkitMarkerType, circlesToUse);
                 }
             }
         }

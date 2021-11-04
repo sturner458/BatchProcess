@@ -97,7 +97,7 @@ namespace BatchProcess
         public static double GTSAMAngleTolerance2 = 1d;
         public static double GTSAMTolerance = 0.25d;
 
-        public static bool StartTracking(int hiResX, int hiResY, bool avoidAddingMarkers) {
+        public static bool StartTracking(int hiResX, int hiResY, bool avoidAddingMarkers, bool useDatums, int arToolkitMarkerType, int circlesToUse) {
 
             //Only initialize ARToolkit the first time this is run
             if (myMarkerIDs.Count > 0) {
@@ -129,7 +129,7 @@ namespace BatchProcess
             string artkVersion = ARToolKitFunctions.Instance.arwGetARToolKitVersion();
             System.Diagnostics.Debug.Print(artkVersion);
 
-            if (!avoidAddingMarkers) AddMarkersToARToolKit();
+            if (!avoidAddingMarkers) AddMarkersToARToolKit(arToolkitMarkerType);
 
             //mySuspectedMarkers.Clear()
             if (StepMarker.Confirmed == false) {
@@ -139,11 +139,13 @@ namespace BatchProcess
             return true;
         }
 
-        private static void AddMarkersToARToolKit() {
-            if (!UseDatumMarkers) {
+        private static void AddMarkersToARToolKit(int arToolkitMarkerType) {
+            if (arToolkitMarkerType == -1) {
                 AddOldStyleMarkersToARToolKit();
+            } else if (arToolkitMarkerType == 0) {
+                AddMarkersToARToolKit_RevC1();
             } else {
-                AddDatumMarkersToARToolKit();
+                throw new Exception($"Marker type {arToolkitMarkerType} is not supported!");
             }
         }
 
@@ -467,7 +469,7 @@ namespace BatchProcess
                 }
             }
             ARToolKitFunctions.Instance.arwInitialiseAR();
-            StartTracking(myVideoWidth, myVideoHeight, false);
+            StartTracking(myVideoWidth, myVideoHeight, false, false, -1, 0); // set up for RevA only
 
             int lastConfirmedMarker = 0;
             clsMarkerPoint lastStepMarker = null;
@@ -530,7 +532,7 @@ namespace BatchProcess
                         }
                     }
                     stitchingMeasurements.Add(myMeasurements.Count - 1);
-                    StartStitching();
+                    StartStitching(-1); // -1 for RevA, RevC1 not supported yet.
                 }
             }
 
@@ -1469,7 +1471,7 @@ namespace BatchProcess
             return mv;
         }
 
-        public static void BatchBundleAdjust(Label lblStatus, string myFile, string cameraCalibFile) {
+        public static void BatchBundleAdjust(Label lblStatus, string myFile, string cameraCalibFile, bool useDatums, int arToolkitMarkerType, int circlesToUse) {
             InitGlobals();
 
             ResetMeasurements2();
@@ -1509,7 +1511,7 @@ namespace BatchProcess
 
 
             ARToolKitFunctions.Instance.arwInitialiseAR();
-            StartTracking(myVideoWidth, myVideoHeight, false);
+            StartTracking(myVideoWidth, myVideoHeight, false, useDatums, arToolkitMarkerType, circlesToUse);
 
             //DEBUG
             //stitchingMeasurements.Add(139);
@@ -1518,9 +1520,13 @@ namespace BatchProcess
 
             measurementNumber = 0;
             foreach (var measurement in myMeasurements) {
-                ARToolKitFunctions.Instance.arwSetMappedMarkersVisible(measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray());
 
-                RecogniseMarkersFromMeasurements(measurement);
+                int numCircles = 0;
+                if (useDatums && arToolkitMarkerType == 0) numCircles = circlesToUse;
+
+                ARToolKitFunctions.Instance.arwSetMappedMarkersVisible(measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y}).ToArray(), numCircles);
+
+                RecogniseMarkersFromMeasurements(measurement, useDatums, arToolkitMarkerType, circlesToUse);
 
                 for (int i = 0; i < mySuspectedMarkers.Count; i++) {
                     if (mySuspectedMarkers[i].MarkerID == 1) {
@@ -1537,7 +1543,7 @@ namespace BatchProcess
                 Application.DoEvents();
 
                 if (stitchingMeasurements.Contains(myMeasurements.IndexOf(measurement))) {
-                    StartStitching();
+                    StartStitching(arToolkitMarkerType);
                 }
 
                 measurementNumber++;
@@ -1658,7 +1664,7 @@ namespace BatchProcess
 
         }
 
-        private static void StartStitching() {
+        private static void StartStitching(int arToolkitMarkerType) {
             int maxConfirmedID = myMaximumMarkerID - 1;
 
             var lastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.ActualMarkerID == myStepMarkerID || m.ActualMarkerID == myGFMarkerID);
@@ -1682,8 +1688,22 @@ namespace BatchProcess
             ConfirmedMarkers[lastStepMarkerIndex].Stitched = true;
             myLastDatumId = ConfirmedMarkers[lastStepMarkerIndex].ActualMarkerID;
 
-            var sConfig = "multi_auto;125;80;";
-            if (myLastDatumId == myGFMarkerID) sConfig = "multi_auto;121;80;";
+
+
+            var sConfig = "";
+            if (arToolkitMarkerType == 0) {
+                sConfig = "multi_auto;125;65;";
+            } else {
+                sConfig = "multi_auto;125;80;";
+            }
+            if (myLastDatumId == myGFMarkerID) {
+                if (arToolkitMarkerType == 0) {
+                    sConfig = "multi_auto;121;65;";
+                } else {
+                    sConfig = "multi_auto;121;80;";
+                }
+            };            
+
             myMapperMarkerID = ARToolKitFunctions.Instance.arwResetMapperTrackable(myMapperMarkerID, sConfig);
             ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARToolKitFunctions.ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
 
@@ -1784,7 +1804,7 @@ namespace BatchProcess
         //    stitchingsPeformed++;
         //}
 
-        public static void RecogniseMarkersFromMeasurements(clsMeasurement measurement) {
+        public static void RecogniseMarkersFromMeasurements(clsMeasurement measurement, bool useDatums, int arToolkitMarkerType, int circlesToUse) {
 
             Data.Clear();
 
@@ -1808,14 +1828,17 @@ namespace BatchProcess
             DetectMarkerVisible(myWall3MarkerID);
             DetectMarkerVisible(myWall4MarkerID);
 
-            ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myLastDatumId, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray());
+            int numCircles = 0;
+            if (useDatums && arToolkitMarkerType == 0) numCircles = circlesToUse;
+
+            ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myLastDatumId, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray(), numCircles);
 
             //Update positions of confirmed markers by bundle adjustment
             double[] modelMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] cornerCoords = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] circles2 = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             SaveHiResSurveyPhoto = false;
-            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners, datums, out int numDatums)) {
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners, circles2, out numCircles)) {
                 SaveHiResSurveyPhoto = true;
                 AddNewSuspectedMarkers();
                 ConvertSuspectedToConfirmed();
@@ -1897,7 +1920,10 @@ namespace BatchProcess
             int myOriginMarkerID = myGFMarkerID;
             if (stitchingMeasurements.Any()) myOriginMarkerID = myStepMarkerID;
             if (myLastDatumId == myGFMarkerID) myOriginMarkerID = myGFMarkerID;
-            ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myOriginMarkerID, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray());
+
+            // Just use RevA and 0 circles.
+            int numCircles = 0;
+            ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myOriginMarkerID, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), numCircles);
 
             //Update positions of confirmed markers by bundle adjustment
             double[] modelMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };

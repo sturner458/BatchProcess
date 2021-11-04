@@ -9,6 +9,7 @@ namespace BatchProcess
         public List<int> MarkersSeenID = new List<int>();
         public List<double[]> ModelViewMatrix = new List<double[]>();
         public List<List<clsPoint>> Corners = new List<List<clsPoint>>();
+        public List<List<clsPoint>> Circles = new List<List<clsPoint>>();
         public List<double> LastSeenMarkerDistances = new List<double>();
         public double[] ProjMatrix = new double[16];
 
@@ -27,6 +28,7 @@ namespace BatchProcess
             MarkersSeenID.Clear();
             ModelViewMatrix.Clear();
             Corners.Clear();
+            Circles.Clear();
             ConfirmedMarkers.Clear();
             SuspectedMarkers.Clear();
             DoorMarkers.Clear();
@@ -55,6 +57,10 @@ namespace BatchProcess
 
             for (int i = 0; i < Corners.Count; i++) {
                 _copy.Corners.Add(Corners[i].Select(p => p.Copy()).ToList());
+            }
+
+            for (int i = 0; i < Circles.Count; i++) {
+                _copy.Circles.Add(Circles[i].Select(p => p.Copy()).ToList());
             }
 
             _copy.LastSeenMarkerDistances.AddRange(LastSeenMarkerDistances.ToArray());

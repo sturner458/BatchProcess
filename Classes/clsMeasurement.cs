@@ -17,9 +17,11 @@ namespace BatchProcess
         public List<int> MarkerUIDs { get; } = new List<int>();
         public List<double[]> Matrixes { get; } = new List<double[]>(); // Model View Matrices as recorded by ARToolkit
         public List<List<clsPoint>> Corners { get; } = new List<List<clsPoint>>(); // Image corner points (in Ideal coordinates)
+        public List<List<clsPoint>> Circles { get; } = new List<List<clsPoint>>(); // Circle Centres points (in Ideal coordinates)        
 
         public void Load(StreamReader sr) {
             var myLine = sr.ReadLine();
+            var NumCircles = 0;
 
             if (myLine == "SETTINGS") {
                 myLine = sr.ReadLine();
@@ -31,6 +33,7 @@ namespace BatchProcess
                         if (mySplit[0] == "CurrentISO") currentISO = Convert.ToSingle(mySplit[1]);
                         if (mySplit[0] == "MaxISO") maxISO = Convert.ToSingle(mySplit[1]);
                         if (mySplit[0] == "CurrentExposureDuration") currentExposureDuration = Convert.ToSingle(mySplit[1]);
+                        if (mySplit[0] == "NumCircles") NumCircles = Convert.ToInt32(mySplit[1]);
                     }
                     myLine = sr.ReadLine();
                 }
@@ -59,6 +62,17 @@ namespace BatchProcess
                     Corners.Last().Add(p2d);
                 }
             }
+            if (NumCircles > 0) {
+                for (int i = 1; i <= n; i++) {
+                    var n1 = Convert.ToInt32(sr.ReadLine());
+                    Circles.Add(new List<clsPoint>());
+                    for (int j = 1; j <= n1; j++) {
+                        var p2d = new clsPoint();
+                        p2d.Load(sr);
+                        Circles.Last().Add(p2d);
+                    }
+                }
+            }
         }
 
         public void Save(StreamWriter sw) {
@@ -78,6 +92,14 @@ namespace BatchProcess
                 sw.WriteLine(Corners[i].Count);
                 foreach (clsPoint p1 in Corners[i]) {
                     p1.Save(sw);
+                }
+            }
+            if (Circles.Count > 0) {
+                for (int i = 0; i < Circles.Count; i++) {
+                    sw.WriteLine(Circles[i].Count);
+                    foreach (clsPoint p1 in Circles[i]) {
+                        p1.Save(sw);
+                    }
                 }
             }
         }

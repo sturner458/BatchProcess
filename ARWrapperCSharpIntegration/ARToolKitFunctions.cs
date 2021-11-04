@@ -761,7 +761,7 @@ public class ARToolKitFunctions
         return ARNativePlugin.arwResetMapperTrackable(gMapUID, cfg);
     }
 
-    public void arwSetMappedMarkersVisible(int nMarkers, double[] markerTrans, int[] uids, double[] corners) {
+    public void arwSetMappedMarkersVisible(int nMarkers, double[] markerTrans, int[] uids, double[] corners, double[] circles, int numCircles) {
 
         GCHandle handle1 = GCHandle.Alloc(markerTrans, GCHandleType.Pinned);
         IntPtr address1 = handle1.AddrOfPinnedObject();
@@ -772,13 +772,17 @@ public class ARToolKitFunctions
         GCHandle handle3 = GCHandle.Alloc(corners, GCHandleType.Pinned);
         IntPtr address3 = handle3.AddrOfPinnedObject();
 
-        ARNativePlugin.arwSetMappedMarkersVisible(nMarkers, address1, address2, address3);
+        GCHandle handle4 = GCHandle.Alloc(circles, GCHandleType.Pinned);
+        IntPtr address4 = handle4.AddrOfPinnedObject();
+
+        ARNativePlugin.arwSetMappedMarkersVisible(nMarkers, address1, address2, address3, address4, numCircles);
         handle1.Free();
         handle2.Free();
         handle3.Free();
+        handle4.Free();
     }
 
-    public void arwAddMappedMarkers(int gMapUID, int GFMarkerID, int nMarkers, double[] markerTrans, int[] uids, double[] corners) {
+    public void arwAddMappedMarkers(int gMapUID, int GFMarkerID, int nMarkers, double[] markerTrans, int[] uids, double[] corners, double[] circles, int numCircles) {
 
         GCHandle handle1 = GCHandle.Alloc(markerTrans, GCHandleType.Pinned);
         IntPtr address1 = handle1.AddrOfPinnedObject();
@@ -789,10 +793,14 @@ public class ARToolKitFunctions
         GCHandle handle3 = GCHandle.Alloc(corners, GCHandleType.Pinned);
         IntPtr address3 = handle3.AddrOfPinnedObject();
 
-        ARNativePlugin.arwAddMappedMarkers(gMapUID, GFMarkerID, nMarkers, address1, address2, address3);
+        GCHandle handle4 = GCHandle.Alloc(circles, GCHandleType.Pinned);
+        IntPtr address4 = handle4.AddrOfPinnedObject();
+
+        ARNativePlugin.arwAddMappedMarkers(gMapUID, GFMarkerID, nMarkers, address1, address2, address3, address4, numCircles);
         handle1.Free();
         handle2.Free();
         handle3.Free();
+        handle4.Free();
     }
 
     //ARX_EXTERN bool arwLastUpdateSuccessful(int gMapUID, int* numMarkers, int* numSuccessfulUpdates, float lastTrans[12]);
