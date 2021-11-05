@@ -469,9 +469,13 @@ namespace BatchProcess {
 
         private void btnImportDiagnostics3_Click(object sender, EventArgs e) {
 
-            bool useDatums = false;
-            int arToolkitMarkerType = -1;
-            int circlesToUse = 0;
+            //bool useDatums = false;
+            //int arToolkitMarkerType = -1;
+            //int circlesToUse = 0;
+
+            bool useDatums = true;
+            int arToolkitMarkerType = 0;
+            int circlesToUse = 6;
 
             OpenFileDialog myDlg = new OpenFileDialog();
             DialogResult ret;
@@ -519,9 +523,13 @@ namespace BatchProcess {
 
         private void btnBatchImport_Click(object sender, EventArgs e) {
 
-            bool useDatums = false;
-            int arToolkitMarkerType = -1;
-            int circlesToUse = 0;
+            //bool useDatums = false;
+            //int arToolkitMarkerType = -1;
+            //int circlesToUse = 0;
+
+            bool useDatums = true;
+            int arToolkitMarkerType = 0;
+            int circlesToUse = 6;
 
             var folderDialog = new FolderBrowserDialog();
             folderDialog.RootFolder = Environment.SpecialFolder.MyComputer;
