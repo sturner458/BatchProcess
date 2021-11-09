@@ -97,7 +97,7 @@ namespace BatchProcess
         public static double GTSAMAngleTolerance2 = 1d;
         public static double GTSAMTolerance = 0.25d;
 
-        public static bool StartTracking(int hiResX, int hiResY, bool avoidAddingMarkers) {
+        public static bool StartTracking(int hiResX, int hiResY, bool avoidAddingMarkers, int markerType) {
 
             //Only initialize ARToolkit the first time this is run
             if (myMarkerIDs.Count > 0) {
@@ -129,7 +129,13 @@ namespace BatchProcess
             string artkVersion = ARToolKitFunctions.Instance.arwGetARToolKitVersion();
             System.Diagnostics.Debug.Print(artkVersion);
 
-            if (!avoidAddingMarkers) AddMarkersToARToolKit();
+            if (!avoidAddingMarkers) {
+                if (markerType == -1) {
+                    AddMarkersToARToolKit();
+                } else {
+                    AddMarkersToARToolKit_RevC1();
+                }
+            }
 
             //mySuspectedMarkers.Clear()
             if (StepMarker.Confirmed == false) {
@@ -467,7 +473,7 @@ namespace BatchProcess
                 }
             }
             ARToolKitFunctions.Instance.arwInitialiseAR();
-            StartTracking(myVideoWidth, myVideoHeight, false);
+            StartTracking(myVideoWidth, myVideoHeight, false, 0);
 
             int lastConfirmedMarker = 0;
             clsMarkerPoint lastStepMarker = null;
@@ -1469,7 +1475,7 @@ namespace BatchProcess
             return mv;
         }
 
-        public static void BatchBundleAdjust(Label lblStatus, string myFile, string cameraCalibFile) {
+        public static void BatchBundleAdjust(Label lblStatus, string myFile, string cameraCalibFile, int markerType, int numCircles) {
             InitGlobals();
 
             ResetMeasurements2();
@@ -1509,7 +1515,7 @@ namespace BatchProcess
 
 
             ARToolKitFunctions.Instance.arwInitialiseAR();
-            StartTracking(myVideoWidth, myVideoHeight, false);
+            StartTracking(myVideoWidth, myVideoHeight, false, markerType);
 
             //DEBUG
             //stitchingMeasurements.Add(139);

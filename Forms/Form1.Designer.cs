@@ -40,6 +40,7 @@
             this.btnImportDiagnostics3 = new System.Windows.Forms.Button();
             this.btnBatchImport = new System.Windows.Forms.Button();
             this.btnImportDiagnostics4 = new System.Windows.Forms.Button();
+            this.btnBatchImportC1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnCalibrate
@@ -204,11 +205,23 @@
             this.btnImportDiagnostics4.UseVisualStyleBackColor = true;
             this.btnImportDiagnostics4.Click += new System.EventHandler(this.btnImportDiagnostics4_Click);
             // 
+            // btnBatchImportC1
+            // 
+            this.btnBatchImportC1.Anchor = System.Windows.Forms.AnchorStyles.Top;
+            this.btnBatchImportC1.Location = new System.Drawing.Point(582, 100);
+            this.btnBatchImportC1.Name = "btnBatchImportC1";
+            this.btnBatchImportC1.Size = new System.Drawing.Size(86, 47);
+            this.btnBatchImportC1.TabIndex = 12;
+            this.btnBatchImportC1.Text = "Batch Import C1";
+            this.btnBatchImportC1.UseVisualStyleBackColor = true;
+            this.btnBatchImportC1.Click += new System.EventHandler(this.btnBatchImport_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1029, 159);
+            this.Controls.Add(this.btnBatchImportC1);
             this.Controls.Add(this.btnImportDiagnostics4);
             this.Controls.Add(this.btnBatchImport);
             this.Controls.Add(this.btnDetectDatums);
@@ -250,6 +263,7 @@
         private System.Windows.Forms.Button btnImportDiagnostics3;
         private System.Windows.Forms.Button btnBatchImport;
         private System.Windows.Forms.Button btnImportDiagnostics4;
+        private System.Windows.Forms.Button btnBatchImportC1;
     }
 }
 

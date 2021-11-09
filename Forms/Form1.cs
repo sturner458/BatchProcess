@@ -492,7 +492,14 @@ namespace BatchProcess {
 
             mdlRecognise.LoadSavedDataFile(myFile);
             //mdlRecognise.TempFixPoints();
-            mdlRecognise.BatchBundleAdjust(lblStatus, myFile, myCalibFile);
+            int markerType = -1;
+            int numCircles = 0;
+            var name = ((Control)sender).Name;
+            if (name.ToLower().Contains("c1")) {
+                markerType = (int)TargetTypeE.x4Double;
+                numCircles = 6;
+            }
+            mdlRecognise.BatchBundleAdjust(lblStatus, myFile, myCalibFile, markerType, numCircles);
 
             MessageBox.Show("Finished");
         }
@@ -537,10 +544,10 @@ namespace BatchProcess {
                 var diagFile2 = sf + "\\Diagnostics.txt";
                 if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile)) {
                     mdlRecognise.LoadSavedDataFile(diagFile);
-                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
+                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile, -1, 0);
                 } else if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile2)) {
                     mdlRecognise.LoadSavedDataFile(diagFile2);
-                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
+                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile, - 1, 0);
                 }
             }
         }
