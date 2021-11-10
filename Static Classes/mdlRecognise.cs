@@ -622,9 +622,9 @@ namespace BatchProcess
             SaveHiResSurveyPhoto = false;
             if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners,datums, out int numDatums)) {
                 SaveHiResSurveyPhoto = true;
-                AddNewSuspectedMarkers();
+                AddNewSuspectedMarkers(usingRevAMarkerType: true);
                 ConvertSuspectedToConfirmed();
-                UpdateConfirmedMarkersWithBundleAdjustment();
+                UpdateConfirmedMarkersWithBundleAdjustment(usingRevAMarkerType: true);
             }
 
             if (SaveHiResSurveyPhoto) {
@@ -635,7 +635,7 @@ namespace BatchProcess
 
         }
 
-        private static void UpdateConfirmedMarkersWithBundleAdjustment() {
+        private static void UpdateConfirmedMarkersWithBundleAdjustment(bool usingRevAMarkerType) {
             for (int i = 0; i < ConfirmedMarkers.Count; i++) {
                 if (ConfirmedMarkers[i].MarkerID == ConfirmedMarkers[i].ActualMarkerID) {
                     double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -649,10 +649,10 @@ namespace BatchProcess
                         if (barcodeID == 125) {
 
                         } else if (barcodeID <= 100) {
-                            pt = new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1);
+                            pt = usingRevAMarkerType ? new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1) : new OpenTK.Vector4d(142.5f, -45.0f, 0.0f, 1);
                             pt = OpenTK.Vector4d.Transform(pt, matrix);
                         } else {
-                            pt = new OpenTK.Vector4d(140.0, 45.0, 0.0f, 1);
+                            pt = usingRevAMarkerType ? new OpenTK.Vector4d(140.0f, 45.0f, 0.0f, 1) : new OpenTK.Vector4d(142.5f, 45.0f, 0.0f, 1);
                             pt = OpenTK.Vector4d.Transform(pt, matrix);
                         }
                         ConfirmedMarkers[i].Point = new clsPoint3d(pt.X, pt.Y, pt.Z);
@@ -686,7 +686,7 @@ namespace BatchProcess
             }
         }
 
-        private static void AddNewSuspectedMarkers() {
+        private static void AddNewSuspectedMarkers(bool usingRevAMarkerType) {
             string myErrorString = "";
 
             //Take a measurement of each of the markers
@@ -746,10 +746,10 @@ namespace BatchProcess
                     if (barcodeID == 125) {
 
                     } else if (barcodeID <= 100) {
-                        pt = new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1);
+                        pt = usingRevAMarkerType ? new OpenTK.Vector4d(140.0f, -45.0f, 0.0f, 1) : new OpenTK.Vector4d(142.5f, -45.0f, 0.0f, 1);
                         pt = OpenTK.Vector4d.Transform(pt, matrix);
                     } else {
-                        pt = new OpenTK.Vector4d(140.0, 45.0, 0.0f, 1);
+                        pt = usingRevAMarkerType ? new OpenTK.Vector4d(140.0f, 45.0f, 0.0f, 1) : new OpenTK.Vector4d(142.5f, 45.0f, 0.0f, 1);
                         pt = OpenTK.Vector4d.Transform(pt, matrix);
                     }
                     mySuspectedMarkers[k].Point = new clsPoint3d(pt.X, pt.Y, pt.Z);
@@ -1830,6 +1830,7 @@ namespace BatchProcess
 
             int numCircles = 0;
             if (useDatums && arToolkitMarkerType == 0) numCircles = circlesToUse;
+            bool usingRevAMarkerType = arToolkitMarkerType == -1;
 
             ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myLastDatumId, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray(), numCircles);
 
@@ -1840,9 +1841,9 @@ namespace BatchProcess
             SaveHiResSurveyPhoto = false;
             if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners, circles2, out numCircles)) {
                 SaveHiResSurveyPhoto = true;
-                AddNewSuspectedMarkers();
+                AddNewSuspectedMarkers(usingRevAMarkerType);
                 ConvertSuspectedToConfirmed();
-                UpdateConfirmedMarkersWithBundleAdjustment();
+                UpdateConfirmedMarkersWithBundleAdjustment(usingRevAMarkerType);
             }
 
             if (SaveHiResSurveyPhoto) {
@@ -1932,9 +1933,9 @@ namespace BatchProcess
             SaveHiResSurveyPhoto = false;
             if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners, datums, out int numDatums)) {
                 SaveHiResSurveyPhoto = true;
-                AddNewSuspectedMarkers();
+                AddNewSuspectedMarkers(usingRevAMarkerType: true);
                 ConvertSuspectedToConfirmed();
-                UpdateConfirmedMarkersWithBundleAdjustment();
+                UpdateConfirmedMarkersWithBundleAdjustment(usingRevAMarkerType: true);
             }
 
             if (SaveHiResSurveyPhoto) {
