@@ -121,6 +121,7 @@
     <Compile Include="Static Classes\mdlGlobals.cs" />
     <Compile Include="Static Classes\mdlDetectPhotos.cs" />
     <Compile Include="Static Classes\mdlRecognise.cs" />
+    <Compile Include="Static Classes\mdlSplitMultiFlight.cs" />
     <Compile Include="Static Classes\mdlUndistort.cs" />
     <Compile Include="Static Classes\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

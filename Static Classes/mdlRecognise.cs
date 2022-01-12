@@ -19,6 +19,8 @@ namespace BatchProcess
     public static class mdlRecognise
     {
         public static bool UseDatumMarkers = false;
+        public static int arToolkitMarkerType = 0;
+        public static int circlesToUse = 0;
 
         public static int myVideoWidth;
         public static int myVideoHeight;
@@ -1124,6 +1126,15 @@ namespace BatchProcess
                         if (mySplit[0] == "GTSAMTolerance") {
                             GTSAMTolerance = Convert.ToDouble(mySplit[1]);
                         }
+                        if (mySplit[0] == "UseDatumMarkers") {
+                            UseDatumMarkers = Convert.ToInt32(mySplit[1]) == 0 ? false : true;
+                        }
+                        if (mySplit[0] == "MarkerType") {
+                            arToolkitMarkerType = Convert.ToInt32(mySplit[1]);
+                        }
+                        if (mySplit[0] == "NumCircles") {
+                            circlesToUse = Convert.ToInt32(mySplit[1]);
+                        }
                     }
                     myLine = sr.ReadLine();
                 }
@@ -1471,7 +1482,7 @@ namespace BatchProcess
             return mv;
         }
 
-        public static void BatchBundleAdjust(Label lblStatus, string myFile, string cameraCalibFile, bool useDatums, int arToolkitMarkerType, int circlesToUse) {
+        public static void BatchBundleAdjust(Label lblStatus, string myFile, string cameraCalibFile) {
             InitGlobals();
 
             ResetMeasurements2();
@@ -1511,7 +1522,7 @@ namespace BatchProcess
 
 
             ARToolKitFunctions.Instance.arwInitialiseAR();
-            StartTracking(myVideoWidth, myVideoHeight, false, useDatums, arToolkitMarkerType, circlesToUse);
+            StartTracking(myVideoWidth, myVideoHeight, false, UseDatumMarkers, arToolkitMarkerType, circlesToUse);
 
             //DEBUG
             //stitchingMeasurements.Add(139);
@@ -1522,11 +1533,11 @@ namespace BatchProcess
             foreach (var measurement in myMeasurements) {
 
                 int numCircles = 0;
-                if (useDatums && arToolkitMarkerType == 0) numCircles = circlesToUse;
+                if (UseDatumMarkers && arToolkitMarkerType == 0) numCircles = circlesToUse;
 
                 ARToolKitFunctions.Instance.arwSetMappedMarkersVisible(measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y}).ToArray(), numCircles);
 
-                RecogniseMarkersFromMeasurements(measurement, useDatums, arToolkitMarkerType, circlesToUse);
+                RecogniseMarkersFromMeasurements(measurement, UseDatumMarkers, arToolkitMarkerType, circlesToUse);
 
                 for (int i = 0; i < mySuspectedMarkers.Count; i++) {
                     if (mySuspectedMarkers[i].MarkerID == 1) {

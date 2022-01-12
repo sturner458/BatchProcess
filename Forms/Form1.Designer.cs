@@ -40,6 +40,7 @@
             this.btnImportDiagnostics3 = new System.Windows.Forms.Button();
             this.btnBatchImport = new System.Windows.Forms.Button();
             this.btnImportDiagnostics4 = new System.Windows.Forms.Button();
+            this.btnSplitMulti = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnCalibrate
@@ -204,11 +205,23 @@
             this.btnImportDiagnostics4.UseVisualStyleBackColor = true;
             this.btnImportDiagnostics4.Click += new System.EventHandler(this.btnImportDiagnostics4_Click);
             // 
+            // btnSplitMulti
+            // 
+            this.btnSplitMulti.Anchor = System.Windows.Forms.AnchorStyles.Top;
+            this.btnSplitMulti.Location = new System.Drawing.Point(582, 101);
+            this.btnSplitMulti.Name = "btnSplitMulti";
+            this.btnSplitMulti.Size = new System.Drawing.Size(86, 47);
+            this.btnSplitMulti.TabIndex = 12;
+            this.btnSplitMulti.Text = "Split Multi-Flight";
+            this.btnSplitMulti.UseVisualStyleBackColor = true;
+            this.btnSplitMulti.Click += new System.EventHandler(this.btnSplitMulti_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1029, 159);
+            this.Controls.Add(this.btnSplitMulti);
             this.Controls.Add(this.btnImportDiagnostics4);
             this.Controls.Add(this.btnBatchImport);
             this.Controls.Add(this.btnDetectDatums);
@@ -250,6 +263,7 @@
         private System.Windows.Forms.Button btnImportDiagnostics3;
         private System.Windows.Forms.Button btnBatchImport;
         private System.Windows.Forms.Button btnImportDiagnostics4;
+        private System.Windows.Forms.Button btnSplitMulti;
     }
 }
 

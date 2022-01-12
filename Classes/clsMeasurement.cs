@@ -133,5 +133,17 @@ namespace BatchProcess
             sw.Close();
         }
 
+        public clsMeasurement Clone() {
+            var _copy = new clsMeasurement();
+
+            _copy.MeasurementNumber = MeasurementNumber;
+            _copy.MarkerUIDs.AddRange(MarkerUIDs);
+            _copy.Matrixes.AddRange(Matrixes.Select(m => m.ToArray()));
+            _copy.Corners.AddRange(Corners.Select(c => c.Select(p => p.Copy()).ToList()));
+            _copy.Circles.AddRange(Circles.Select(c => c.Select(p => p.Copy()).ToList()));
+
+            return _copy;
+        }
+
     }
 }

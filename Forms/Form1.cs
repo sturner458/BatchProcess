@@ -473,9 +473,9 @@ namespace BatchProcess {
             //int arToolkitMarkerType = -1;
             //int circlesToUse = 0;
 
-            bool useDatums = true;
-            int arToolkitMarkerType = 0;
-            int circlesToUse = 6;
+            mdlRecognise.UseDatumMarkers = true;
+            mdlRecognise.arToolkitMarkerType = 0;
+            mdlRecognise.circlesToUse = 6;
 
             OpenFileDialog myDlg = new OpenFileDialog();
             DialogResult ret;
@@ -501,7 +501,7 @@ namespace BatchProcess {
 
             mdlRecognise.LoadSavedDataFile(myFile);
             //mdlRecognise.TempFixPoints();
-            mdlRecognise.BatchBundleAdjust(lblStatus, myFile, myCalibFile, useDatums, arToolkitMarkerType, circlesToUse);
+            mdlRecognise.BatchBundleAdjust(lblStatus, myFile, myCalibFile);
 
             MessageBox.Show("Finished");
         }
@@ -527,9 +527,9 @@ namespace BatchProcess {
             //int arToolkitMarkerType = -1;
             //int circlesToUse = 0;
 
-            bool useDatums = true;
-            int arToolkitMarkerType = 0;
-            int circlesToUse = 6;
+            mdlRecognise.UseDatumMarkers = true;
+            mdlRecognise.arToolkitMarkerType = 0;
+            mdlRecognise.circlesToUse = 6;
 
             var folderDialog = new FolderBrowserDialog();
             folderDialog.RootFolder = Environment.SpecialFolder.MyComputer;
@@ -555,12 +555,25 @@ namespace BatchProcess {
                 var diagFile2 = sf + "\\Diagnostics.txt";
                 if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile)) {
                     mdlRecognise.LoadSavedDataFile(diagFile);
-                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile, useDatums, arToolkitMarkerType, circlesToUse);
+                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
                 } else if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile2)) {
                     mdlRecognise.LoadSavedDataFile(diagFile2);
-                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile, useDatums, arToolkitMarkerType, circlesToUse);
+                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
                 }
             }
+        }
+
+        private void btnSplitMulti_Click(object sender, EventArgs e) {
+            var myDlg = new OpenFileDialog();
+            DialogResult ret;
+
+            myDlg.InitialDirectory = "C:\\Customer\\Stannah\\Photogrammetry\\Model Files\\Testing";
+            myDlg.Filter = "Diagnostic Files (*.txt)|*.txt";
+            ret = myDlg.ShowDialog();
+            if (ret != DialogResult.OK) return;
+            var myFile = myDlg.FileName;
+
+            mdlSplitMultiFlight.SplitMultiFlight(myFile);
         }
     }
 
