@@ -1321,6 +1321,15 @@ namespace BatchProcess
             return;
         }
 
+        // Make the step marker flat
+        public static void FlattenStepMarker(ref clsMarkerPoint stepMarker) {
+            stepMarker.Vz = new clsPoint3d(0, 0, 1);
+            stepMarker.Vy = stepMarker.Vz.Cross(stepMarker.Vx);
+            stepMarker.Vy.Normalise();
+            stepMarker.Vx = stepMarker.Vy.Cross(stepMarker.Vz);
+            stepMarker.Vx.Normalise();
+        }
+
         // We have measured that the landing board is tilted at the wrong angle
         // Assuming that the previous flight was correct at the start, and wrong by that angle at the end
         // On average, it is out by half that angle
@@ -1569,7 +1578,11 @@ namespace BatchProcess
                 var lastStepMarker = ConfirmedMarkers[lastStepMarkerIndex];
                 var lastLastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.MarkerID != lastStepMarker.MarkerID && (m.ActualMarkerID == myStepMarkerID || m.ActualMarkerID == myGFMarkerID));
                 if (!lastStepMarker.Stitched) {
-                    if (lastLastStepMarkerIndex == -1) RelevelFromGFMarker();
+                    if (lastLastStepMarkerIndex == -1) {
+                        RelevelFromGFMarker();
+                    } else {
+                        RelevelFromVerticalVector(lastLastStepMarkerIndex + 1, ConfirmedMarkers[lastStepMarkerIndex].VerticalVect);
+                    }
                     if (lastStepMarker.Levelled) ModifyPreviousFlightCoordinates(lastLastStepMarkerIndex + 1, lastStepMarkerIndex);
                     if (lastLastStepMarkerIndex != -1 && ConfirmedMarkers[lastLastStepMarkerIndex].Stitched) AddMarkersOntoLastStepMarker(lastLastStepMarkerIndex);
                 } else {
@@ -1656,7 +1669,11 @@ namespace BatchProcess
                 var lastStepMarker = ConfirmedMarkers[lastStepMarkerIndex];
                 var lastLastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.MarkerID != lastStepMarker.MarkerID && (m.ActualMarkerID == myStepMarkerID || m.ActualMarkerID == myGFMarkerID));
                 if (!lastStepMarker.Stitched) {
-                    if (lastLastStepMarkerIndex == -1) RelevelFromGFMarker();
+                    if (lastLastStepMarkerIndex == -1) {
+                        RelevelFromGFMarker();
+                    } else {
+                        RelevelFromVerticalVector(lastLastStepMarkerIndex + 1, ConfirmedMarkers[lastStepMarkerIndex].VerticalVect);
+                    }
                     if (lastStepMarker.Levelled) ModifyPreviousFlightCoordinates(lastLastStepMarkerIndex + 1, lastStepMarkerIndex);
                     if (lastLastStepMarkerIndex != -1 && ConfirmedMarkers[lastLastStepMarkerIndex].Stitched) AddMarkersOntoLastStepMarker(lastLastStepMarkerIndex);
                 } else {
@@ -1726,7 +1743,11 @@ namespace BatchProcess
             }
             var lastLastStepMarker = ConfirmedMarkers.FindLastIndex(m => m.MarkerID != ConfirmedMarkers.Last().MarkerID && (m.ActualMarkerID == myStepMarkerID || m.ActualMarkerID == myGFMarkerID));
 
-            if (lastLastStepMarker == -1) RelevelFromGFMarker();
+            if (lastLastStepMarker == -1) {
+                RelevelFromGFMarker();
+            } else {
+                RelevelFromVerticalVector(lastLastStepMarker + 1, ConfirmedMarkers[lastLastStepMarker].VerticalVect);
+            }
             ModifyPreviousFlightCoordinates(lastLastStepMarker + 1, lastStepMarkerIndex);
             if (lastLastStepMarker != -1) AddMarkersOntoLastStepMarker(lastLastStepMarker);
 
@@ -1749,13 +1770,20 @@ namespace BatchProcess
             // Keep the X axis constant (in plan view)
             stepMarker = ConfirmedMarkers[stepMarkerIndex];
             stepMarker.CorrectionAngle = correctionAngle;
-            RelevelStepMarker(ref stepMarker);
+            FlattenStepMarker(ref stepMarker);
         }
 
         public static void RelevelFromGFMarker() {
             for (int i = 0; i < ConfirmedMarkers.Count; i++) {
                 var pt = ConfirmedMarkers[i];
                 RelevelVerticalAboutOrigin(myVerticalVector, ref pt);
+            }
+        }
+
+        public static void RelevelFromVerticalVector(int startMarkerIndex, clsPoint3d verticalVector) {
+            for (int i = startMarkerIndex; i < ConfirmedMarkers.Count; i++) {
+                var pt = ConfirmedMarkers[i];
+                RelevelVerticalAboutOrigin(verticalVector, ref pt);
             }
         }
 
