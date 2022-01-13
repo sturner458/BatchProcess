@@ -76,7 +76,15 @@ namespace BatchProcess
         }
 
         public void Save(StreamWriter sw) {
-            sw.WriteLine(MeasurementNumber);
+            sw.WriteLine("SETTINGS");
+            sw.WriteLine("MeasurementNumber," + MeasurementNumber.ToString());
+            sw.WriteLine("MinISO," + minISO.ToString());
+            sw.WriteLine("CurrentISO," + currentISO.ToString());
+            sw.WriteLine("MaxISO," + maxISO.ToString());
+            sw.WriteLine("CurrentExposureDuration," + currentExposureDuration.ToString());
+            sw.WriteLine("NumCircles," + Circles.Count.ToString());
+            sw.WriteLine("END_SETTINGS");
+
             sw.WriteLine(MarkerUIDs.Count);
             for (int i = 0; i < MarkerUIDs.Count; i++) {
                 sw.WriteLine(MarkerUIDs[i]);
