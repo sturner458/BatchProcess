@@ -541,7 +541,7 @@ namespace BatchProcess {
             foreach (var sf in Directory.GetDirectories(folder)) {
                 var calibFile = "";
                 foreach (var file in Directory.GetFiles(sf)) {
-                    if (file.EndsWith(".dat")) calibFile = file;
+                    if (file.EndsWith(".dat") && !Path.GetFileName(file).ToLower().StartsWith("scandata")) calibFile = file;
                     if (file.StartsWith("ATT") && file.EndsWith(".txt")) {
                         try {
                             File.Delete(file);
@@ -553,11 +553,15 @@ namespace BatchProcess {
                 var parentFolderName = Path.GetFileName(sf);
                 var diagFile = sf + "\\" + parentFolderName + ".txt";
                 var diagFile2 = sf + "\\Diagnostics.txt";
+                var diagFile3 = sf + "\\ScanData.dat";
                 if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile)) {
                     mdlRecognise.LoadSavedDataFile(diagFile);
                     mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
                 } else if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile2)) {
                     mdlRecognise.LoadSavedDataFile(diagFile2);
+                    mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
+                } else if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile3)) {
+                    mdlRecognise.LoadSavedDataFile(diagFile3);
                     mdlRecognise.BatchBundleAdjust(lblStatus, diagFile, calibFile);
                 }
             }

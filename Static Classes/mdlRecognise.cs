@@ -1573,7 +1573,7 @@ namespace BatchProcess
             StopTracking();
 
             // If we have a step marker, do something with it:
-            var lastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.ActualMarkerID == myGFMarkerID || m.ActualMarkerID == myStepMarkerID);
+            var lastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.Levelled && (m.ActualMarkerID == myGFMarkerID || m.ActualMarkerID == myStepMarkerID));
             if (lastStepMarkerIndex != -1) {
                 var lastStepMarker = ConfirmedMarkers[lastStepMarkerIndex];
                 var lastLastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.MarkerID != lastStepMarker.MarkerID && (m.ActualMarkerID == myStepMarkerID || m.ActualMarkerID == myGFMarkerID));
@@ -1770,7 +1770,7 @@ namespace BatchProcess
             // Keep the X axis constant (in plan view)
             stepMarker = ConfirmedMarkers[stepMarkerIndex];
             stepMarker.CorrectionAngle = correctionAngle;
-            FlattenStepMarker(ref stepMarker);
+            RelevelStepMarker(ref stepMarker);
         }
 
         public static void RelevelFromGFMarker() {
