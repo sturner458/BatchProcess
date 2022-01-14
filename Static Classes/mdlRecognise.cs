@@ -1770,7 +1770,8 @@ namespace BatchProcess
             // Keep the X axis constant (in plan view)
             stepMarker = ConfirmedMarkers[stepMarkerIndex];
             stepMarker.CorrectionAngle = correctionAngle;
-            RelevelStepMarker(ref stepMarker);
+            //RelevelStepMarker(ref stepMarker);
+            FlattenStepMarker(ref stepMarker);
         }
 
         public static void RelevelFromGFMarker() {
