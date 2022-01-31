@@ -497,11 +497,11 @@ namespace BatchProcess
                             Console.WriteLine(ex.ToString());
                         }
 
-                        for (int i = 0; i < mySuspectedMarkers.Count; i++) {
-                            if (mySuspectedMarkers[i].MarkerID == 1) {
-                                Console.WriteLine(mySuspectedMarkers[i].Origin.x.ToString() + ", " + mySuspectedMarkers[i].Origin.y.ToString() + ", " + mySuspectedMarkers[i].Origin.z.ToString());
-                            }
-                        }
+                        //for (int i = 0; i < mySuspectedMarkers.Count; i++) {
+                        //    if (mySuspectedMarkers[i].MarkerID == 1) {
+                        //        Console.WriteLine(mySuspectedMarkers[i].Origin.x.ToString() + ", " + mySuspectedMarkers[i].Origin.y.ToString() + ", " + mySuspectedMarkers[i].Origin.z.ToString());
+                        //    }
+                        //}
 
                     } catch (Exception ex) {
                         Console.WriteLine(ex.ToString());
@@ -1361,8 +1361,8 @@ namespace BatchProcess
                 //b = -0; // Levelling Debug
 
                 var vect = new clsLine3d(originPt, originPt + p3);
-                marker.Origin.RotateAboutLine(vect, b / 4);
-                marker.Point.RotateAboutLine(vect, b / 4);
+                marker.Origin.RotateAboutLine(vect, b / 2);
+                marker.Point.RotateAboutLine(vect, b / 2);
                 return b * 180 / PI;
             }
             return 0;
@@ -1548,16 +1548,16 @@ namespace BatchProcess
 
                 RecogniseMarkersFromMeasurements(measurement, UseDatumMarkers, arToolkitMarkerType, circlesToUse);
 
-                for (int i = 0; i < mySuspectedMarkers.Count; i++) {
-                    if (mySuspectedMarkers[i].MarkerID == 1) {
-                        Console.WriteLine(mySuspectedMarkers[i].Origin.x.ToString() + ", " + mySuspectedMarkers[i].Origin.y.ToString() + ", " + mySuspectedMarkers[i].Origin.z.ToString());
-                    }
-                }
+                //for (int i = 0; i < mySuspectedMarkers.Count; i++) {
+                //    if (mySuspectedMarkers[i].MarkerID == 1) {
+                //        Console.WriteLine(mySuspectedMarkers[i].Origin.x.ToString() + ", " + mySuspectedMarkers[i].Origin.y.ToString() + ", " + mySuspectedMarkers[i].Origin.z.ToString());
+                //    }
+                //}
 
-                if (!SaveHiResSurveyPhoto) {
-                    var n = myMeasurements.IndexOf(measurement);
-                    Console.WriteLine(n.ToString());
-                }
+                //if (!SaveHiResSurveyPhoto) {
+                //    var n = myMeasurements.IndexOf(measurement);
+                //    Console.WriteLine(n.ToString());
+                //}
 
                 lblStatus.Text = (myMeasurements.IndexOf(measurement) + 1).ToString() + "/" + myMeasurements.Count().ToString();
                 Application.DoEvents();
@@ -1653,11 +1653,11 @@ namespace BatchProcess
 
                 RecogniseMarkersFromImage(arToolkitMarkerType);
 
-                for (int i = 0; i < mySuspectedMarkers.Count; i++) {
-                    if (mySuspectedMarkers[i].MarkerID == 1) {
-                        Console.WriteLine(mySuspectedMarkers[i].Origin.x.ToString() + ", " + mySuspectedMarkers[i].Origin.y.ToString() + ", " + mySuspectedMarkers[i].Origin.z.ToString());
-                    }
-                }
+                //for (int i = 0; i < mySuspectedMarkers.Count; i++) {
+                //    if (mySuspectedMarkers[i].MarkerID == 1) {
+                //        Console.WriteLine(mySuspectedMarkers[i].Origin.x.ToString() + ", " + mySuspectedMarkers[i].Origin.y.ToString() + ", " + mySuspectedMarkers[i].Origin.z.ToString());
+                //    }
+                //}
             }
 
             //ConvertSuspectedToConfirmed(true);
