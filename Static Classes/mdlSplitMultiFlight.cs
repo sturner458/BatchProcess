@@ -52,7 +52,7 @@ namespace BatchProcess
 
                 if (i > -1) myVerticalVector = _stitchingVectors[i];
                 var n1 = 0;
-                if (i > -1) n1 = _stitchingMeasurements[i];
+                if (i > -1) n1 = _stitchingMeasurements[i] + 1;
                 var n2 = _measurements.Count - 1;
                 if (i < _stitchingMeasurements.Count - 1) n2 = _stitchingMeasurements[i + 1];
                 for (int j = n1; j <= n2; j++) {
