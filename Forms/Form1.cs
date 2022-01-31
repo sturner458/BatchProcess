@@ -540,7 +540,9 @@ namespace BatchProcess {
 
             foreach (var sf in Directory.GetDirectories(folder)) {
                 var calibFile = "";
+                var diagFile = "";
                 foreach (var file in Directory.GetFiles(sf)) {
+                    if (file.EndsWith(".dat") && Path.GetFileName(file).ToLower().StartsWith("scandata")) diagFile = file;
                     if (file.EndsWith(".dat") && !Path.GetFileName(file).ToLower().StartsWith("scandata")) calibFile = file;
                     if (file.StartsWith("ATT") && file.EndsWith(".txt")) {
                         try {
@@ -550,8 +552,11 @@ namespace BatchProcess {
                         }
                     }
                 }
+                if (!string.IsNullOrEmpty(diagFile)) {
+                    File.Move(diagFile, diagFile.Replace("ScanData.dat", "Diagnostics.txt"));
+                }
                 var parentFolderName = Path.GetFileName(sf);
-                var diagFile = sf + "\\" + parentFolderName + ".txt";
+                diagFile = sf + "\\" + parentFolderName + ".txt";
                 var diagFile2 = sf + "\\Diagnostics.txt";
                 var diagFile3 = sf + "\\ScanData.dat";
                 if (!File.Exists(sf + "\\" + parentFolderName + ".3dm") && File.Exists(calibFile) && File.Exists(diagFile)) {

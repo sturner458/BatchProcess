@@ -1361,8 +1361,8 @@ namespace BatchProcess
                 //b = -0; // Levelling Debug
 
                 var vect = new clsLine3d(originPt, originPt + p3);
-                marker.Origin.RotateAboutLine(vect, b / 2);
-                marker.Point.RotateAboutLine(vect, b / 2);
+                marker.Origin.RotateAboutLine(vect, b / 4);
+                marker.Point.RotateAboutLine(vect, b / 4);
                 return b * 180 / PI;
             }
             return 0;
@@ -1581,7 +1581,7 @@ namespace BatchProcess
                     if (lastLastStepMarkerIndex == -1) {
                         RelevelFromGFMarker();
                     } else {
-                        RelevelFromVerticalVector(lastLastStepMarkerIndex + 1, ConfirmedMarkers[lastStepMarkerIndex].VerticalVect);
+                        RelevelFromVerticalVector(lastLastStepMarkerIndex + 1, ConfirmedMarkers[lastLastStepMarkerIndex].VerticalVect);
                     }
                     if (lastStepMarker.Levelled) ModifyPreviousFlightCoordinates(lastLastStepMarkerIndex + 1, lastStepMarkerIndex);
                     if (lastLastStepMarkerIndex != -1 && ConfirmedMarkers[lastLastStepMarkerIndex].Stitched) AddMarkersOntoLastStepMarker(lastLastStepMarkerIndex);
