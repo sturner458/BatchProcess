@@ -247,11 +247,13 @@ namespace BatchProcess
                 for (var i = 1; i <= n; i++) {
                     myMarkerPoint = new clsMarkerPoint();
                     myMarkerPoint.Load(sr);
-                    ConfirmedMarkers.Add(myMarkerPoint);
-                    if (ConfirmedMarkers.Last().VerticalVect != null && (ConfirmedMarkers.Last().ActualMarkerID == myGFMarkerID || ConfirmedMarkers.Last().ActualMarkerID == myStepMarkerID)) {
-                        stitchingVectors.Add(ConfirmedMarkers.Last().VerticalVect);
-                    }
                 }
+                ConfirmedMarkers.Sort((c1, c2) => c1.ConfirmedImageNumber.CompareTo(c2.ConfirmedImageNumber));
+                ConfirmedMarkers.ForEach(c => {
+                    if (c.VerticalVect != null && (c.ActualMarkerID == myGFMarkerID || c.ActualMarkerID == myStepMarkerID)) {
+                        stitchingVectors.Add(c.VerticalVect);
+                    }
+                });
 
                 if (sr.Peek() == -1) return;
                 myLine = sr.ReadLine();
