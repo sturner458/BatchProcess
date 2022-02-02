@@ -244,12 +244,14 @@ namespace BatchProcess
                 myLine = sr.ReadLine();
                 n = Convert.ToInt32(myLine);
                 clsMarkerPoint myMarkerPoint;
+                var mpts = new List<clsMarkerPoint>();
                 for (var i = 1; i <= n; i++) {
                     myMarkerPoint = new clsMarkerPoint();
                     myMarkerPoint.Load(sr);
+                    mpts.Add(myMarkerPoint);
                 }
-                ConfirmedMarkers.Sort((c1, c2) => c1.ConfirmedImageNumber.CompareTo(c2.ConfirmedImageNumber));
-                ConfirmedMarkers.ForEach(c => {
+                mpts.Sort((c1, c2) => c1.ConfirmedImageNumber.CompareTo(c2.ConfirmedImageNumber));
+                mpts.ForEach(c => {
                     if (c.VerticalVect != null && (c.ActualMarkerID == myGFMarkerID || c.ActualMarkerID == myStepMarkerID)) {
                         stitchingVectors.Add(c.VerticalVect);
                     }
