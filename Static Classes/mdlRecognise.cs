@@ -864,6 +864,7 @@ namespace BatchProcess
                     myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
                     myConfirmedMarker.SetEndPointBasedOnZVectors();
                     myBulkheadMarkers.Add(myConfirmedMarker);
+                    ConfirmedMarkers.Add(myConfirmedMarker);
 
                     string myBulkheadName = (myMarkerID == myLeftBulkheadMarkerID) ? "Left Bulkhead" : "Right Bulkhead";
                     //(mySurveyForm.ViewController).ShowHeightInput((HeightZ) => { double z; if (double.TryParse(HeightZ, out z) && z > myTol) myBulkheadMarkers.Last().BulkheadHeight = ConvertLengthUnitsToMM(z); }, 0.0, "Bulkhead", "Enter Height of " + myBulkheadName + " above riser");
@@ -879,6 +880,7 @@ namespace BatchProcess
                     myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
                     myConfirmedMarker.SetEndPointBasedOnZVectors();
                     myDoorMarkers.Add(myConfirmedMarker);
+                    ConfirmedMarkers.Add(myConfirmedMarker);
 
                 } else if (myObstructMarkerIDs.Contains(myMarkerID)) {
                     myMarkerConfirmed = true; //So we can auto-save
@@ -891,6 +893,7 @@ namespace BatchProcess
                     myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
                     myConfirmedMarker.SetEndPointBasedOnZVectors();
                     myObstructMarkers.Add(myConfirmedMarker);
+                    ConfirmedMarkers.Add(myConfirmedMarker);
 
                     string myMarkerName = "Obstruction";
                     if (myMarkerID == myObstruct1MarkerID) {
@@ -915,6 +918,7 @@ namespace BatchProcess
                     myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
                     myConfirmedMarker.SetEndPointBasedOnZVectors();
                     myWallMarkers.Add(myConfirmedMarker);
+                    ConfirmedMarkers.Add(myConfirmedMarker);
 
                 } else {
                     myMarkerConfirmed = true; //So we can auto-save
@@ -1547,7 +1551,7 @@ namespace BatchProcess
                 int numCircles = 0;
                 if (UseDatumMarkers && arToolkitMarkerType == 0) numCircles = circlesToUse;
 
-                ARToolKitFunctions.Instance.arwSetMappedMarkersVisible(measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y}).ToArray(), numCircles);
+                ARToolKitFunctions.Instance.arwSetMappedMarkersVisible(measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), numCircles);
 
                 RecogniseMarkersFromMeasurements(measurement, UseDatumMarkers, arToolkitMarkerType, circlesToUse);
 
@@ -1598,8 +1602,31 @@ namespace BatchProcess
             var sortedMarkers = ConfirmedMarkers.Select(m => m.Copy()).ToList();
             sortedMarkers.Sort(new MarkerPointComparer()); //Order by Z value and then by ID
 
-            var sw = new System.IO.StreamWriter(myFile.Replace(".txt",".3dm"));
-            sortedMarkers.ForEach(p => sw.WriteLine(p.Point.x.ToString() + '\t' + p.Point.y.ToString() + '\t' + p.Point.z.ToString() + '\t' + (p.ActualMarkerID + 1).ToString() + ((p.ActualMarkerID == myGFMarkerID || p.ActualMarkerID == myStepMarkerID) ? '\t' + p.CorrectionAngle.ToString() + '\t' + p.ConfirmedImageNumber.ToString() : string.Empty)));
+            var sw = new System.IO.StreamWriter(myFile.Replace(".txt", ".3dm"));
+            sortedMarkers.ForEach(pt => {
+
+                if (myBulkheadMarkerIDs.Contains(pt.ActualMarkerID)) {
+                    sw.WriteLine(pt.Origin.X.ToString() + '\t' + pt.Origin.Y.ToString() + '\t' + pt.Origin.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + pt.BulkheadHeight.ToString());
+                } else if (myDoorMarkerIDs.Contains(pt.ActualMarkerID)) {
+                    var a = (pt.Point.Point2D() - pt.Origin.Point2D()).Angle();
+                    sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + a.ToString());
+                } else if (myObstructMarkerIDs.Contains(pt.ActualMarkerID)) {
+                    sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + pt.BulkheadHeight.ToString());
+                } else if (myWallMarkerIDs.Contains(pt.ActualMarkerID)) {
+                    var a = (pt.Vz.Point2D().Angle());
+                    sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + a.ToString());
+                } else if (pt.ActualMarkerID == -1) { // Camera Captured Obstructions
+                    sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString());
+                } else {
+                    if ((pt.ActualMarkerID != myStepMarkerID && pt.ActualMarkerID != myGFMarkerID) || pt.VerticalVect == null) {
+                        sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString());
+                    } else {
+                        sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + pt.CorrectionAngle.ToString() + '\t' + pt.ConfirmedImageNumber.ToString());
+                    }
+                }
+
+                //sw.WriteLine(pt.Point.x.ToString() + '\t' + pt.Point.y.ToString() + '\t' + pt.Point.z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + ((pt.ActualMarkerID == myGFMarkerID || p.ActualMarkerID == myStepMarkerID) ? '\t' + pt.CorrectionAngle.ToString() + '\t' + pt.ConfirmedImageNumber.ToString() : string.Empty));
+            });
             sw.Close();
 
         }
@@ -1871,22 +1898,70 @@ namespace BatchProcess
             DetectMarkerVisible(myWall3MarkerID);
             DetectMarkerVisible(myWall4MarkerID);
 
+            double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] circles = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
             int numCircles = 0;
             if (useDatums && arToolkitMarkerType == 0) numCircles = circlesToUse;
             bool usingRevAMarkerType = arToolkitMarkerType == -1;
 
-            ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myLastDatumId, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray(), numCircles);
+            //Start passing the marker info across to the multi-marker
+            //Do this in 2 phases so that we can check if a marker has been accidentally moved
+            //The first phase sets the visibility of the multi-marker
+            var initialiseMultiMarker = ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myLastDatumId, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), numCircles);
 
-            //Update positions of confirmed markers by bundle adjustment
-            double[] modelMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            double[] cornerCoords = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            double[] circles2 = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            SaveHiResSurveyPhoto = false;
-            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners, circles2, out numCircles)) {
-                SaveHiResSurveyPhoto = true;
-                AddNewSuspectedMarkers(usingRevAMarkerType);
-                ConvertSuspectedToConfirmed();
-                UpdateConfirmedMarkersWithBundleAdjustment(usingRevAMarkerType);
+            //Is the multi-marker visible?
+            //If not, we don't need to do any checks, and we don't need to update it
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners, circles, out numCircles)) {
+
+                OpenTK.Matrix4d myModel = MatrixFromArray(mv);
+                myModel = OpenTK.Matrix4d.Invert(myModel);
+
+                //Check for markers having been moved
+                var checksOK = true;
+                var markersToIgnore = new List<int>();
+                for (int i = 0; i < Data.MarkersSeenID.Count; i++) {
+                    var markerOK = true;
+                    var markerId = Data.MarkersSeenID[i];
+
+                    mv = Data.ModelViewMatrix[i];
+                    OpenTK.Matrix4d myModel2 = MatrixFromArray(mv);
+                    //myModel2 = OpenTK.Matrix4d.Invert(myModel2);
+                    myModel2 = myModel2 * myModel; // This multiplication might need to be reversed
+                    mv = ArrayFromMatrix(myModel2);
+                    var pt = new clsPoint3d(mv[12], mv[13], mv[14]); //This is the coordinates of the marker in the multi-marker space
+                    //var pt = new clsPoint3d(myModel2.M41, myModel2.M42, myModel2.M43); //This is the coordinates of the marker in the multi-marker space
+
+                    var getTrackablePatternConfigResult = ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(markerId, 0, mv, out double width, out double height, out int imageSizeX, out int imageSizeY, out int barcodeID);
+                    if (ARToolKitFunctions.Instance.arwQueryTrackableMapperTransformation(myMapperMarkerID, barcodeID, mv)) {
+                        var pt2 = new clsPoint3d(mv[12], mv[13], mv[14]); //This is where we last saw this marker
+                        var d = pt.Dist(pt2);
+                        if (d > 50) { //50mm is a guess. If this is coming out completely wrong, then the matrix multiplication above needs to be reversed
+                            markerOK = false;
+                            //checksOK = false;
+                        }
+                    }
+                }
+
+                //Now update the multi-marker
+                var res = ARToolKitFunctions.Instance.arwUpdateMultiMarker(myMapperMarkerID, myLastDatumId, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), numCircles, initialiseMultiMarker);
+
+                if (res == -1 || !checksOK) { //res = -1 indicates that gtsam has thrown an exception
+                                              // Show an alert
+                    var markerId = -1;
+                    if (markersToIgnore.Any()) markerId = markersToIgnore.First();
+                    //(mySurveyForm.ViewController as NSObject).InvokeOnMainThread(
+                    //    () => mySurveyForm.ViewController.ShowMarkerWarning((n) => IgnoreMarkerId(n), () => RestartFlight(), markerId)
+                    //    );
+                } else {
+
+                    //Update positions of confirmed markers by bundle adjustment
+                    SaveHiResSurveyPhoto = false;
+                    AddNewSuspectedMarkers(usingRevAMarkerType);
+                    ConvertSuspectedToConfirmed();
+                    UpdateConfirmedMarkersWithBundleAdjustment(usingRevAMarkerType);
+                }
             }
 
             if (SaveHiResSurveyPhoto) {

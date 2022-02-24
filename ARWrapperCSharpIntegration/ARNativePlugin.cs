@@ -298,7 +298,11 @@ public class ARNativePlugin
     internal static extern void arwSetMappedMarkersVisible(int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners, IntPtr circles, int numCircles);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void arwAddMappedMarkers(int gMapUID, int GFMarkerID, int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners, IntPtr circles, int numCircles);
+    [return: MarshalAs(UnmanagedType.I1)]
+    internal static extern bool arwAddMappedMarkers(int gMapUID, int GFMarkerID, int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners, IntPtr circles, int numCircles);
+
+    [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int arwUpdateMultiMarker(int gMapUID, int GFMarkerID, int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners, IntPtr circles, int numCircles, bool initialiseMultiMarker);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     internal static extern void arwListTrackables(int gMapUID);
