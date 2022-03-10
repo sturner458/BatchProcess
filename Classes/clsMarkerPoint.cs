@@ -533,13 +533,13 @@ namespace BatchProcess
             if (UseDatumMarkers) {
                 if (ActualMarkerID == myGFMarkerID || ActualMarkerID <= myStepMarkerID) { //GF, Step & Bulkhead Markers
                     Point = Origin.Copy();
-                } else if (ActualMarkerID < myLeftBulkheadMarkerID) {
+                } else if (ActualMarkerID < myLeftBulkheadMarker1ID) {
                     if (ActualMarkerID - 2 >= 0 && ActualMarkerID - 2 < 50) {
                         Point = Origin + Vx * 160 - Vy * 45;
                     } else if (ActualMarkerID - 2 >= 50 && ActualMarkerID - 2 < 100) {
                         Point = Origin - Vx * 160 - Vy * 45;
                     }
-                } else if (ActualMarkerID >= myLeftBulkheadMarkerID && ActualMarkerID <= myRightBulkheadMarkerID) //GF, Step & Bulkhead Markers
+                } else if (ActualMarkerID >= myLeftBulkheadMarker1ID && ActualMarkerID <= myRightBulkheadMarker2ID) //GF, Step & Bulkhead Markers
                   {
                     Point = Origin.Copy();
                 } else if (ActualMarkerID >= myDoorHingeRightMarkerID && ActualMarkerID <= myDoorFrameLeftMarkerID) //Door Markers
@@ -549,6 +549,9 @@ namespace BatchProcess
                   {
                     Point = Origin + Vy * 65.0;
                 } else if (ActualMarkerID >= myWall1MarkerID && ActualMarkerID <= myWall4MarkerID) //Wall Markers
+                  {
+                    Point = Origin + Vy * 65.0;
+                } else if (ActualMarkerID >= myRailStartMarkerID && ActualMarkerID <= myRailEndMarkerID) //Rail End Markers
                   {
                     Point = Origin + Vy * 65.0;
                 } else {
@@ -561,7 +564,7 @@ namespace BatchProcess
                     } else if (ActualMarkerID >= 50 && ActualMarkerID < 100) {
                         Point = Origin + Vx * 140 + Vy * 45;
                     }
-                } else if (ActualMarkerID >= myGFMarkerID && ActualMarkerID <= myRightBulkheadMarkerID) //GF, Step & Bulkhead Markers
+                } else if (ActualMarkerID >= myGFMarkerID && ActualMarkerID <= myRightBulkheadMarker2ID) //GF, Step & Bulkhead Markers
                   {
                     Point = Origin.Copy();
                 } else if (ActualMarkerID >= myDoorHingeRightMarkerID && ActualMarkerID <= myDoorFrameLeftMarkerID) //Door Markers
@@ -571,6 +574,9 @@ namespace BatchProcess
                   {
                     Point = Origin + Vy * 65.0;
                 } else if (ActualMarkerID >= myWall1MarkerID && ActualMarkerID <= myWall4MarkerID) //Wall Markers
+                  {
+                    Point = Origin + Vy * 65.0;
+                } else if (ActualMarkerID >= myRailStartMarkerID && ActualMarkerID <= myRailEndMarkerID) //Rail End Markers
                   {
                     Point = Origin + Vy * 65.0;
                 } else {

@@ -147,10 +147,6 @@ namespace BatchProcess
 
                 myMeasurements.Clear();
                 ConfirmedMarkers.Clear();
-                myBulkheadMarkers.Clear();
-                myDoorMarkers.Clear();
-                myObstructMarkers.Clear();
-                myWallMarkers.Clear();
                 mySuspectedMarkers.Clear();
                 stitchingMeasurements.Clear();
                 surveyStartTimes.Clear();
@@ -258,42 +254,6 @@ namespace BatchProcess
 
                 if (sr.Peek() == -1) return;
                 myLine = sr.ReadLine();
-                n = Convert.ToInt32(myLine);
-                for (var i = 1; i <= n; i++) {
-                    myMarkerPoint = new clsMarkerPoint();
-                    myMarkerPoint.Load(sr);
-                    myBulkheadMarkers.Add(myMarkerPoint);
-                }
-
-                if (sr.Peek() == -1) return;
-                myLine = sr.ReadLine();
-                n = Convert.ToInt32(myLine);
-                for (var i = 1; i <= n; i++) {
-                    myMarkerPoint = new clsMarkerPoint();
-                    myMarkerPoint.Load(sr);
-                    myDoorMarkers.Add(myMarkerPoint);
-                }
-
-                if (sr.Peek() == -1) return;
-                myLine = sr.ReadLine();
-                n = Convert.ToInt32(myLine);
-                for (var i = 1; i <= n; i++) {
-                    myMarkerPoint = new clsMarkerPoint();
-                    myMarkerPoint.Load(sr);
-                    myObstructMarkers.Add(myMarkerPoint);
-                }
-
-                if (sr.Peek() == -1) return;
-                myLine = sr.ReadLine();
-                n = Convert.ToInt32(myLine);
-                for (var i = 1; i <= n; i++) {
-                    myMarkerPoint = new clsMarkerPoint();
-                    myMarkerPoint.Load(sr);
-                    myWallMarkers.Add(myMarkerPoint);
-                }
-
-                if (sr.Peek() == -1) return;
-                myLine = sr.ReadLine();
                 if (!int.TryParse(myLine, out n)) return;
                 for (var i = 1; i <= n; i++) {
                     myMarkerPoint = new clsMarkerPoint();
@@ -356,25 +316,10 @@ namespace BatchProcess
                     for (var i = 0; i <= myMeasurements.Count - 1; i++) {
                         myMeasurements[i].Save(sw);
                     }
+
                     sw.WriteLine(ConfirmedMarkers.Count);
                     for (var i = 0; i <= ConfirmedMarkers.Count - 1; i++) {
                         ConfirmedMarkers[i].Save(sw);
-                    }
-                    sw.WriteLine(myBulkheadMarkers.Count);
-                    for (var i = 0; i <= myBulkheadMarkers.Count - 1; i++) {
-                        myBulkheadMarkers[i].Save(sw);
-                    }
-                    sw.WriteLine(myDoorMarkers.Count);
-                    for (var i = 0; i <= myDoorMarkers.Count - 1; i++) {
-                        myDoorMarkers[i].Save(sw);
-                    }
-                    sw.WriteLine(myObstructMarkers.Count);
-                    for (var i = 0; i <= myObstructMarkers.Count - 1; i++) {
-                        myObstructMarkers[i].Save(sw);
-                    }
-                    sw.WriteLine(myWallMarkers.Count);
-                    for (var i = 0; i <= myWallMarkers.Count - 1; i++) {
-                        myWallMarkers[i].Save(sw);
                     }
 
                     ms.Position = 0;

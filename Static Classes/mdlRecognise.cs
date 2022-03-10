@@ -42,35 +42,39 @@ namespace BatchProcess
         public static List<clsMeasurement> myMeasurements = new List<clsMeasurement>();
         public static int measurementNumber;
         public static List<clsMarkerPoint> mySuspectedMarkers = new List<clsMarkerPoint>();
-        public static List<clsMarkerPoint> myBulkheadMarkers = new List<clsMarkerPoint>();
-        public static List<clsMarkerPoint> myDoorMarkers = new List<clsMarkerPoint>();
-        public static List<clsMarkerPoint> myObstructMarkers = new List<clsMarkerPoint>();
-        public static List<clsMarkerPoint> myWallMarkers = new List<clsMarkerPoint>();
 
         public static int myGFMarkerID = 100;
         public static int myStepMarkerID = 101;
         public static int myLastDatumId = 100;
-        public static int myLeftBulkheadMarkerID = 102;
-        public static int myRightBulkheadMarkerID = 103;
-        public static int myDoorHingeRightMarkerID = 104;
-        public static int myDoorFrameRightMarkerID = 105;
-        public static int myDoorHingeLeftMarkerID = 106;
-        public static int myDoorFrameLeftMarkerID = 107;
-        public static int myObstruct1MarkerID = 108;
-        public static int myObstruct2MarkerID = 109;
-        public static int myObstruct3MarkerID = 110;
-        public static int myObstruct4MarkerID = 111;
-        public static int myWall1MarkerID = 112;
-        public static int myWall2MarkerID = 113;
-        public static int myWall3MarkerID = 114;
-        public static int myWall4MarkerID = 115;
-        public static int myMapperMarkerID = 116;
-        public static int myMaximumMarkerID = 117; //Please keep this up to date
-        static List<int> myBulkheadMarkerIDs = new List<int>();
-        static List<int> myDoorMarkerIDs = new List<int>();
-        static List<int> myObstructMarkerIDs = new List<int>();
-        static List<int> myWallMarkerIDs = new List<int>();
-        static List<int> myAllFeatureMarkerIDs = new List<int>();
+        public static int myLeftBulkheadMarker1ID = 102;
+        public static int myLeftBulkheadMarker2ID = 103;
+        public static int myRightBulkheadMarker1ID = 104;
+        public static int myRightBulkheadMarker2ID = 105;
+        public static int myDoorHingeRightMarkerID = 106;
+        public static int myDoorFrameRightMarkerID = 107;
+        public static int myDoorHingeLeftMarkerID = 108;
+        public static int myDoorFrameLeftMarkerID = 109;
+        public static int myObstruct1MarkerID = 110;
+        public static int myObstruct2MarkerID = 111;
+        public static int myObstruct3MarkerID = 112;
+        public static int myObstruct4MarkerID = 113;
+        public static int myWall1MarkerID = 114;
+        public static int myWall2MarkerID = 115;
+        public static int myWall3MarkerID = 116;
+        public static int myWall4MarkerID = 117;
+        public static int myRailStartMarkerID = 118;
+        public static int myRailEndMarkerID = 119;
+        public static int myMapperMarkerID = -1;
+        public static int myMaximumMarkerID = 121; //Please keep this up to date
+        public static List<int> myBulkheadMarkerIDs = new List<int> { myLeftBulkheadMarker1ID, myLeftBulkheadMarker2ID, myRightBulkheadMarker1ID, myRightBulkheadMarker2ID };
+        public static List<int> myDoorMarkerIDs = new List<int> { myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID };
+        public static List<int> myObstructMarkerIDs = new List<int> { myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID };
+        public static List<int> myWallMarkerIDs = new List<int> { myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
+        public static List<int> myRailEndMarkerIDs = new List<int> { myRailStartMarkerID, myRailEndMarkerID };
+        public static List<int> myAllFeatureMarkerIDs = new List<int> { myLeftBulkheadMarker1ID, myLeftBulkheadMarker2ID, myRightBulkheadMarker1ID, myRightBulkheadMarker2ID,
+                myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID,
+                myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID,
+                myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID, myRailStartMarkerID, myRailEndMarkerID };
         public static List<int> stitchingMeasurements = new List<int>();
         public static List<clsPoint3d> stitchingVectors = new List<clsPoint3d>();
         private static int stitchingVectorIndex = 0;
@@ -103,20 +107,6 @@ namespace BatchProcess
 
             //Only initialize ARToolkit the first time this is run
             if (myMarkerIDs.Count > 0) {
-
-                //Clear bulkheads and door markers
-                for (int i = 0; i < myBulkheadMarkers.Count; i++) {
-                    myBulkheadMarkers[i].Confirmed = false;
-                }
-                for (int i = 0; i < myDoorMarkers.Count; i++) {
-                    myDoorMarkers[i].Confirmed = false;
-                }
-                for (int i = 0; i < myObstructMarkers.Count; i++) {
-                    myObstructMarkers[i].Confirmed = false;
-                }
-                for (int i = 0; i < myWallMarkers.Count; i++) {
-                    myWallMarkers[i].Confirmed = false;
-                }
 
                 myVideoWidth = hiResX;
                 myVideoHeight = hiResY;
@@ -196,10 +186,10 @@ namespace BatchProcess
                 ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myStepMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
             }
 
-            myLeftBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;249;65;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myLeftBulkheadMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            myRightBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;250;65;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myRightBulkheadMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myLeftBulkheadMarker1ID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;249;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myLeftBulkheadMarker1ID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myRightBulkheadMarker1ID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;250;65;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myRightBulkheadMarker1ID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
 
             myDoorHingeRightMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;251;65;");
             ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myDoorHingeRightMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
@@ -237,11 +227,11 @@ namespace BatchProcess
             ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
 
             myMaximumMarkerID = myMapperMarkerID + 1; //Please keep this up to date
-            myBulkheadMarkerIDs = new List<int> { myLeftBulkheadMarkerID, myRightBulkheadMarkerID };
+            myBulkheadMarkerIDs = new List<int> { myLeftBulkheadMarker1ID, myRightBulkheadMarker1ID };
             myDoorMarkerIDs = new List<int> { myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID };
             myObstructMarkerIDs = new List<int> { myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID };
             myWallMarkerIDs = new List<int> { myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
-            myAllFeatureMarkerIDs = new List<int> { myLeftBulkheadMarkerID, myRightBulkheadMarkerID,
+            myAllFeatureMarkerIDs = new List<int> { myLeftBulkheadMarker1ID, myRightBulkheadMarker1ID,
                 myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID,
                 myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID,
                 myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
@@ -289,10 +279,14 @@ namespace BatchProcess
             }
             myLastDatumId = myGFMarkerID;
 
-            myLeftBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;249;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myLeftBulkheadMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            myRightBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;250;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myRightBulkheadMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myLeftBulkheadMarker1ID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;249;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myLeftBulkheadMarker1ID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myLeftBulkheadMarker2ID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;263;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myLeftBulkheadMarker2ID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myRightBulkheadMarker1ID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;250;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myRightBulkheadMarker1ID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myRightBulkheadMarker2ID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;264;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myRightBulkheadMarker2ID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
 
             myDoorHingeRightMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;251;80;");
             ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myDoorHingeRightMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
@@ -321,19 +315,26 @@ namespace BatchProcess
             myWall4MarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;262;80;");
             ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myWall4MarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
 
+            myRailStartMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;265;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myRailStartMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myRailEndMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;266;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myRailEndMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+
             string sConfig = "multi_auto;121;80;";
             myMapperMarkerID = ARToolKitFunctions.Instance.arwAddMarker(sConfig);
             ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 1.0f);
 
             myMaximumMarkerID = myMapperMarkerID + 1; //Please keep this up to date
-            myBulkheadMarkerIDs = new List<int> { myLeftBulkheadMarkerID, myRightBulkheadMarkerID };
+            myBulkheadMarkerIDs = new List<int> { myLeftBulkheadMarker1ID, myRightBulkheadMarker1ID, myLeftBulkheadMarker2ID, myRightBulkheadMarker2ID };
             myDoorMarkerIDs = new List<int> { myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID };
             myObstructMarkerIDs = new List<int> { myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID };
             myWallMarkerIDs = new List<int> { myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
-            myAllFeatureMarkerIDs = new List<int> { myLeftBulkheadMarkerID, myRightBulkheadMarkerID,
+            myAllFeatureMarkerIDs = new List<int> { myLeftBulkheadMarker1ID, myRightBulkheadMarker1ID, myLeftBulkheadMarker2ID, myRightBulkheadMarker2ID,
                 myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID,
                 myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID,
-                myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
+                myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID,
+                myRailStartMarkerID, myRailEndMarkerID
+            };
         }
 
         private static void AddDatumMarkersToARToolKit() {
@@ -366,10 +367,10 @@ namespace BatchProcess
                 ARToolKitFunctions.Instance.arwSetTrackableOptionBool(markerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
             }
 
-            myLeftBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;102;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myLeftBulkheadMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
-            myRightBulkheadMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;103;80;");
-            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myRightBulkheadMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myLeftBulkheadMarker1ID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;102;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myLeftBulkheadMarker1ID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
+            myRightBulkheadMarker1ID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;103;80;");
+            ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myRightBulkheadMarker1ID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
 
             myDoorHingeRightMarkerID = ARToolKitFunctions.Instance.arwAddMarker("single_barcode;104;80;");
             ARToolKitFunctions.Instance.arwSetTrackableOptionBool(myDoorHingeRightMarkerID, ARW_TRACKABLE_OPTION_SQUARE_USE_CONT_POSE_ESTIMATION, false);
@@ -403,11 +404,11 @@ namespace BatchProcess
             //ARToolKitFunctions.Instance.arwSetTrackableOptionFloat(myMapperMarkerID, ARW_TRACKABLE_OPTION_MULTI_MIN_INLIER_PROB, 0.75f);
 
             myMaximumMarkerID = myWall4MarkerID + 1; //Please keep this up to date
-            myBulkheadMarkerIDs = new List<int> { myLeftBulkheadMarkerID, myRightBulkheadMarkerID };
+            myBulkheadMarkerIDs = new List<int> { myLeftBulkheadMarker1ID, myRightBulkheadMarker1ID };
             myDoorMarkerIDs = new List<int> { myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID };
             myObstructMarkerIDs = new List<int> { myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID };
             myWallMarkerIDs = new List<int> { myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
-            myAllFeatureMarkerIDs = new List<int> { myLeftBulkheadMarkerID, myRightBulkheadMarkerID,
+            myAllFeatureMarkerIDs = new List<int> { myLeftBulkheadMarker1ID, myRightBulkheadMarker1ID,
                 myDoorHingeRightMarkerID, myDoorFrameRightMarkerID, myDoorHingeLeftMarkerID, myDoorFrameLeftMarkerID,
                 myObstruct1MarkerID, myObstruct2MarkerID, myObstruct3MarkerID, myObstruct4MarkerID,
                 myWall1MarkerID, myWall2MarkerID, myWall3MarkerID, myWall4MarkerID };
@@ -564,8 +565,10 @@ namespace BatchProcess
             }
             DetectMarkerVisible(myStepMarkerID);
             DetectMarkerVisible(myGFMarkerID);
-            DetectMarkerVisible(myLeftBulkheadMarkerID);
-            DetectMarkerVisible(myRightBulkheadMarkerID);
+            DetectMarkerVisible(myLeftBulkheadMarker1ID);
+            DetectMarkerVisible(myRightBulkheadMarker1ID);
+            DetectMarkerVisible(myLeftBulkheadMarker2ID);
+            DetectMarkerVisible(myRightBulkheadMarker2ID);
             DetectMarkerVisible(myDoorHingeRightMarkerID);
             DetectMarkerVisible(myDoorFrameRightMarkerID);
             DetectMarkerVisible(myDoorHingeLeftMarkerID);
@@ -578,6 +581,8 @@ namespace BatchProcess
             DetectMarkerVisible(myWall2MarkerID);
             DetectMarkerVisible(myWall3MarkerID);
             DetectMarkerVisible(myWall4MarkerID);
+            DetectMarkerVisible(myRailStartMarkerID);
+            DetectMarkerVisible(myRailEndMarkerID);
 
             if (Data.MarkersSeenID.Any()) { // Record a measurement
                 var measurement = new clsMeasurement();
@@ -697,21 +702,6 @@ namespace BatchProcess
 
                 if (myMarkerID == myLastDatumId) continue; //Ignore the GF marker
                 if (ConfirmedMarkers.Select(m => m.MarkerID).Contains(myMarkerID)) continue; //Ignore confirmed markers
-
-                //Don't add new suspected markers for bulkheads or doors if they have just been measured
-                for (int i1 = 0; i1 < myBulkheadMarkers.Count; i1++) {
-                    if (myBulkheadMarkers[i1].Confirmed && myBulkheadMarkers[i1].MarkerID == myMarkerID) continue;
-                }
-                for (int i1 = 0; i1 < myDoorMarkers.Count; i1++) {
-                    if (myDoorMarkers[i1].Confirmed && myDoorMarkers[i1].MarkerID == myMarkerID) continue;
-                }
-                for (int i1 = 0; i1 < myObstructMarkers.Count; i1++) {
-                    if (myObstructMarkers[i1].Confirmed && myObstructMarkers[i1].MarkerID == myMarkerID) continue;
-                }
-                for (int i1 = 0; i1 < myWallMarkers.Count; i1++) {
-                    if (myWallMarkers[i1].Confirmed && myWallMarkers[i1].MarkerID == myMarkerID) continue;
-                }
-
 
                 double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                 ARToolKitFunctions.Instance.arwGetTrackablePatternConfig(myMarkerID, 0, mv, out double width, out double height, out int imageSizeX, out int imageSizeY, out int barcodeID);
@@ -853,73 +843,6 @@ namespace BatchProcess
                         stitchingVectorIndex++;
                     }
 
-                } else if (myBulkheadMarkerIDs.Contains(myMarkerID)) {
-                    myMarkerConfirmed = true; //So we can auto-save
-                    myConfirmedMarker = new clsMarkerPoint(myMarkerID);
-                    myConfirmedMarker.Confirmed = true;
-                    myConfirmedMarker.Origin = pt1.Copy();
-                    myConfirmedMarker.Vx = vx.Copy();
-                    myConfirmedMarker.Vy = vy.Copy();
-                    myConfirmedMarker.Vz = vz.Copy();
-                    myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
-                    myConfirmedMarker.SetEndPointBasedOnZVectors();
-                    myBulkheadMarkers.Add(myConfirmedMarker);
-                    ConfirmedMarkers.Add(myConfirmedMarker);
-
-                    string myBulkheadName = (myMarkerID == myLeftBulkheadMarkerID) ? "Left Bulkhead" : "Right Bulkhead";
-                    //(mySurveyForm.ViewController).ShowHeightInput((HeightZ) => { double z; if (double.TryParse(HeightZ, out z) && z > myTol) myBulkheadMarkers.Last().BulkheadHeight = ConvertLengthUnitsToMM(z); }, 0.0, "Bulkhead", "Enter Height of " + myBulkheadName + " above riser");
-
-                } else if (myDoorMarkerIDs.Contains(myMarkerID)) {
-                    myMarkerConfirmed = true; //So we can auto-save
-                    myConfirmedMarker = new clsMarkerPoint(myMarkerID);
-                    myConfirmedMarker.Confirmed = true;
-                    myConfirmedMarker.Origin = pt1.Copy();
-                    myConfirmedMarker.Vx = vx.Copy();
-                    myConfirmedMarker.Vy = vy.Copy();
-                    myConfirmedMarker.Vz = vz.Copy();
-                    myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
-                    myConfirmedMarker.SetEndPointBasedOnZVectors();
-                    myDoorMarkers.Add(myConfirmedMarker);
-                    ConfirmedMarkers.Add(myConfirmedMarker);
-
-                } else if (myObstructMarkerIDs.Contains(myMarkerID)) {
-                    myMarkerConfirmed = true; //So we can auto-save
-                    myConfirmedMarker = new clsMarkerPoint(myMarkerID);
-                    myConfirmedMarker.Confirmed = true;
-                    myConfirmedMarker.Origin = pt1.Copy();
-                    myConfirmedMarker.Vx = vx.Copy();
-                    myConfirmedMarker.Vy = vy.Copy();
-                    myConfirmedMarker.Vz = vz.Copy();
-                    myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
-                    myConfirmedMarker.SetEndPointBasedOnZVectors();
-                    myObstructMarkers.Add(myConfirmedMarker);
-                    ConfirmedMarkers.Add(myConfirmedMarker);
-
-                    string myMarkerName = "Obstruction";
-                    if (myMarkerID == myObstruct1MarkerID) {
-                        myMarkerName = "Obstruction 1";
-                    } else if (myMarkerID == myObstruct2MarkerID) {
-                        myMarkerName = "Obstruction 2";
-                    } else if (myMarkerID == myObstruct3MarkerID) {
-                        myMarkerName = "Obstruction 3";
-                    } else if (myMarkerID == myObstruct4MarkerID) {
-                        myMarkerName = "Obstruction 4";
-                    }
-                    //(mySurveyForm.ViewController).ShowHeightInput((HeightZ) => { double z; if (double.TryParse(HeightZ, out z) && z > myTol) myObstructMarkers.Last().BulkheadHeight = ConvertLengthUnitsToMM(z); }, 0.0, "Obstruction", "Enter Height of " + myMarkerName + " above riser");
-
-                } else if (myWallMarkerIDs.Contains(myMarkerID)) {
-                    myMarkerConfirmed = true; //So we can auto-save
-                    myConfirmedMarker = new clsMarkerPoint(myMarkerID);
-                    myConfirmedMarker.Confirmed = true;
-                    myConfirmedMarker.Origin = pt1.Copy();
-                    myConfirmedMarker.Vx = vx.Copy();
-                    myConfirmedMarker.Vy = vy.Copy();
-                    myConfirmedMarker.Vz = vz.Copy();
-                    myConfirmedMarker.ConfirmedImageNumber = measurementNumber;
-                    myConfirmedMarker.SetEndPointBasedOnZVectors();
-                    myWallMarkers.Add(myConfirmedMarker);
-                    ConfirmedMarkers.Add(myConfirmedMarker);
-
                 } else {
                     myMarkerConfirmed = true; //So we can auto-save
                     myConfirmedMarker = new clsMarkerPoint(myMarkerID);
@@ -933,49 +856,11 @@ namespace BatchProcess
                     ConfirmedMarkers.Add(myConfirmedMarker);
                 }
 
-                //var lastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.Stitched);
-                //if (lastStepMarkerIndex > -1 && lastStepMarkerIndex < ConfirmedMarkers.Count) {
-                //    var m = ConfirmedMarkers[lastStepMarkerIndex];
-                //    var p1 = myConfirmedMarker.Point;
-                //    myConfirmedMarker.Point = m.Point + m.Vx * p1.X + m.Vy * p1.Y + m.Vz * p1.Z;
-                //}
-
                 myConfirmedMarker.GTSAMMatrixes.AddRange(mySuspectedMarkers[n].GTSAMMatrixes);
                 mySuspectedMarkers.RemoveAt(n);
             }
 
             if (myMarkerConfirmed) ConfirmedMarkersUpdated?.Invoke();
-        }
-
-        private static bool SuspectedMarkerIsConfirmedObstruction(int myMarkerID) {
-            int i;
-
-            for (i = 0; i < myBulkheadMarkers.Count(); i++) {
-                if (myBulkheadMarkers[i].MarkerID == myMarkerID && myBulkheadMarkers[i].Confirmed) return true;
-            }
-
-            for (i = 0; i < myDoorMarkers.Count(); i++) {
-                if (myDoorMarkers[i].MarkerID == myMarkerID && myDoorMarkers[i].Confirmed) return true;
-            }
-
-            for (i = 0; i < myWallMarkers.Count(); i++) {
-                if (myWallMarkers[i].MarkerID == myMarkerID && myWallMarkers[i].Confirmed) return true;
-            }
-
-            for (i = 0; i < myObstructMarkers.Count(); i++) {
-                if (myObstructMarkers[i].MarkerID == myMarkerID && myObstructMarkers[i].Confirmed) return true;
-            }
-
-            return false;
-        }
-
-        private static List<int> ConfirmedMarkerIDs() {
-            List<int> myMarkerList = new List<int>();
-            int i;
-            for (i = 0; i < ConfirmedMarkers.Count; i++) {
-                myMarkerList.Add(ConfirmedMarkers[i].MarkerID);
-            }
-            return myMarkerList;
         }
 
         public static void UpdateStepMarkerIDs() {
@@ -1035,26 +920,12 @@ namespace BatchProcess
                     for (var i = 0; i <= myMeasurements.Count - 1; i++) {
                         myMeasurements[i].Save(sw);
                     }
+
                     sw.WriteLine(ConfirmedMarkers.Count);
                     for (var i = 0; i <= ConfirmedMarkers.Count - 1; i++) {
                         ConfirmedMarkers[i].Save(sw);
                     }
-                    sw.WriteLine(myBulkheadMarkers.Count);
-                    for (var i = 0; i <= myBulkheadMarkers.Count - 1; i++) {
-                        myBulkheadMarkers[i].Save(sw);
-                    }
-                    sw.WriteLine(myDoorMarkers.Count);
-                    for (var i = 0; i <= myDoorMarkers.Count - 1; i++) {
-                        myDoorMarkers[i].Save(sw);
-                    }
-                    sw.WriteLine(myObstructMarkers.Count);
-                    for (var i = 0; i <= myObstructMarkers.Count - 1; i++) {
-                        myObstructMarkers[i].Save(sw);
-                    }
-                    sw.WriteLine(myWallMarkers.Count);
-                    for (var i = 0; i <= myWallMarkers.Count - 1; i++) {
-                        myWallMarkers[i].Save(sw);
-                    }
+
                     if (includeSuspectedMarkers) {
                         sw.WriteLine(mySuspectedMarkers.Count);
                         for (var i = 0; i <= mySuspectedMarkers.Count - 1; i++) {
@@ -1148,10 +1019,6 @@ namespace BatchProcess
             myMeasurements.Clear();
             measurementNumber = 0;
             ConfirmedMarkers.Clear();
-            myBulkheadMarkers.Clear();
-            myDoorMarkers.Clear();
-            myObstructMarkers.Clear();
-            myWallMarkers.Clear();
             mySuspectedMarkers.Clear();
 
             if (sr.Peek() == -1) return;
@@ -1178,42 +1045,6 @@ namespace BatchProcess
                     stitchingVectors.Add(c.VerticalVect);
                 }
             });
-
-            if (sr.Peek() == -1) return;
-            myLine = sr.ReadLine();
-            n = Convert.ToInt32(myLine);
-            for (var i = 1; i <= n; i++) {
-                myMarkerPoint = new clsMarkerPoint();
-                myMarkerPoint.Load(sr);
-                myBulkheadMarkers.Add(myMarkerPoint);
-            }
-
-            if (sr.Peek() == -1) return;
-            myLine = sr.ReadLine();
-            n = Convert.ToInt32(myLine);
-            for (var i = 1; i <= n; i++) {
-                myMarkerPoint = new clsMarkerPoint();
-                myMarkerPoint.Load(sr);
-                myDoorMarkers.Add(myMarkerPoint);
-            }
-
-            if (sr.Peek() == -1) return;
-            myLine = sr.ReadLine();
-            n = Convert.ToInt32(myLine);
-            for (var i = 1; i <= n; i++) {
-                myMarkerPoint = new clsMarkerPoint();
-                myMarkerPoint.Load(sr);
-                myObstructMarkers.Add(myMarkerPoint);
-            }
-
-            if (sr.Peek() == -1) return;
-            myLine = sr.ReadLine();
-            n = Convert.ToInt32(myLine);
-            for (var i = 1; i <= n; i++) {
-                myMarkerPoint = new clsMarkerPoint();
-                myMarkerPoint.Load(sr);
-                myWallMarkers.Add(myMarkerPoint);
-            }
 
             if (sr.Peek() == -1) return;
             myLine = sr.ReadLine();
@@ -1380,10 +1211,6 @@ namespace BatchProcess
             measurementNumber = 0;
             mySuspectedMarkers.Clear();
             ConfirmedMarkers.Clear();
-            myBulkheadMarkers.Clear();
-            myDoorMarkers.Clear();
-            myObstructMarkers.Clear();
-            myWallMarkers.Clear();
             myVerticalVector = null;
             StepMarker.Confirmed = false;
             StepMarker.Levelled = false;
@@ -1396,10 +1223,6 @@ namespace BatchProcess
             measurementNumber = 0;
             mySuspectedMarkers.Clear();
             ConfirmedMarkers.Clear();
-            myBulkheadMarkers.Clear();
-            myDoorMarkers.Clear();
-            myObstructMarkers.Clear();
-            myWallMarkers.Clear();
             StepMarker.Confirmed = false;
             StepMarker.Levelled = false;
             StepMarker.Stitched = false;
@@ -1883,8 +1706,10 @@ namespace BatchProcess
             }
             DetectMarkerVisible(myStepMarkerID);
             DetectMarkerVisible(myGFMarkerID);
-            DetectMarkerVisible(myLeftBulkheadMarkerID);
-            DetectMarkerVisible(myRightBulkheadMarkerID);
+            DetectMarkerVisible(myLeftBulkheadMarker1ID);
+            DetectMarkerVisible(myRightBulkheadMarker1ID);
+            DetectMarkerVisible(myLeftBulkheadMarker2ID);
+            DetectMarkerVisible(myRightBulkheadMarker2ID);
             DetectMarkerVisible(myDoorHingeRightMarkerID);
             DetectMarkerVisible(myDoorFrameRightMarkerID);
             DetectMarkerVisible(myDoorHingeLeftMarkerID);
@@ -1897,6 +1722,8 @@ namespace BatchProcess
             DetectMarkerVisible(myWall2MarkerID);
             DetectMarkerVisible(myWall3MarkerID);
             DetectMarkerVisible(myWall4MarkerID);
+            DetectMarkerVisible(myRailStartMarkerID);
+            DetectMarkerVisible(myRailEndMarkerID);
 
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -1981,8 +1808,10 @@ namespace BatchProcess
             }
             DetectMarkerVisible(myStepMarkerID);
             DetectMarkerVisible(myGFMarkerID);
-            DetectMarkerVisible(myLeftBulkheadMarkerID);
-            DetectMarkerVisible(myRightBulkheadMarkerID);
+            DetectMarkerVisible(myLeftBulkheadMarker1ID);
+            DetectMarkerVisible(myRightBulkheadMarker1ID);
+            DetectMarkerVisible(myLeftBulkheadMarker2ID);
+            DetectMarkerVisible(myRightBulkheadMarker2ID);
             DetectMarkerVisible(myDoorHingeRightMarkerID);
             DetectMarkerVisible(myDoorFrameRightMarkerID);
             DetectMarkerVisible(myDoorHingeLeftMarkerID);
@@ -1995,6 +1824,8 @@ namespace BatchProcess
             DetectMarkerVisible(myWall2MarkerID);
             DetectMarkerVisible(myWall3MarkerID);
             DetectMarkerVisible(myWall4MarkerID);
+            DetectMarkerVisible(myRailStartMarkerID);
+            DetectMarkerVisible(myRailEndMarkerID);
 
             var measurement = new clsMeasurement();
             measurement.MeasurementNumber = myMeasurements.Count;
