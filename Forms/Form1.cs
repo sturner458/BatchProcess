@@ -389,7 +389,6 @@ namespace BatchProcess {
             myImageFile = myDlg.FileName;
 
             mdlEmguDetection.DetectMarkers_RevA(myImageFile);
-            mdlEmguDetection.DetectMarkers_RevC1(myImageFile);
         }
 
         private void btnDetectDatums_Click(object sender, EventArgs e) {
@@ -403,7 +402,7 @@ namespace BatchProcess {
             if (ret != DialogResult.OK) return;
             myImageFile = myDlg.FileName;
 
-            mdlEmguDetection.DetectMarkers_RevC1(myImageFile);
+            //mdlEmguDetection.DetectMarkers_RevC1(myImageFile);
             //mdlEmguDetection.DetectMarkers_RevC7(myImageFile);
         }
 

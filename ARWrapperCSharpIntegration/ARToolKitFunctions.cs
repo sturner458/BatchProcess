@@ -744,8 +744,8 @@ public class ARToolKitFunctions
     //    return false;
     //}
 
-    public bool arwQueryMarkerTransformation(int markerID, double[] matrix, double[] corners, out int numCorners, double[] datums, out int numDatums) {
-        return ARNativePlugin.arwQueryTrackableVisibilityAndTransformation(markerID, matrix, corners, out numCorners, datums, out numDatums);
+    public bool arwQueryMarkerTransformation(int markerID, double[] matrix, double[] corners, out int numCorners) {
+        return ARNativePlugin.arwQueryTrackableVisibilityAndTransformation(markerID, matrix, corners, out numCorners);
     }
 
     public bool arwQueryTrackableMapperTransformation(int gMapUID, int trackableUID, double[] matrix) {
@@ -761,7 +761,7 @@ public class ARToolKitFunctions
         return ARNativePlugin.arwResetMapperTrackable(gMapUID, cfg);
     }
 
-    public void arwSetMappedMarkersVisible(int nMarkers, double[] markerTrans, int[] uids, double[] corners, double[] circles, int numCircles) {
+    public void arwSetMappedMarkersVisible(int nMarkers, double[] markerTrans, int[] uids, double[] corners) {
 
         GCHandle handle1 = GCHandle.Alloc(markerTrans, GCHandleType.Pinned);
         IntPtr address1 = handle1.AddrOfPinnedObject();
@@ -772,17 +772,13 @@ public class ARToolKitFunctions
         GCHandle handle3 = GCHandle.Alloc(corners, GCHandleType.Pinned);
         IntPtr address3 = handle3.AddrOfPinnedObject();
 
-        GCHandle handle4 = GCHandle.Alloc(circles, GCHandleType.Pinned);
-        IntPtr address4 = handle4.AddrOfPinnedObject();
-
-        ARNativePlugin.arwSetMappedMarkersVisible(nMarkers, address1, address2, address3, address4, numCircles);
+        ARNativePlugin.arwSetMappedMarkersVisible(nMarkers, address1, address2, address3);
         handle1.Free();
         handle2.Free();
         handle3.Free();
-        handle4.Free();
     }
 
-    public bool arwAddMappedMarkers(int gMapUID, int GFMarkerID, int nMarkers, double[] markerTrans, int[] uids, double[] corners, double[] circles, int numCircles) {
+    public bool arwAddMappedMarkers(int gMapUID, int GFMarkerID, int nMarkers, double[] markerTrans, int[] uids, double[] corners) {
 
         GCHandle handle1 = GCHandle.Alloc(markerTrans, GCHandleType.Pinned);
         IntPtr address1 = handle1.AddrOfPinnedObject();
@@ -793,18 +789,14 @@ public class ARToolKitFunctions
         GCHandle handle3 = GCHandle.Alloc(corners, GCHandleType.Pinned);
         IntPtr address3 = handle3.AddrOfPinnedObject();
 
-        GCHandle handle4 = GCHandle.Alloc(circles, GCHandleType.Pinned);
-        IntPtr address4 = handle4.AddrOfPinnedObject();
-
-        var res = ARNativePlugin.arwAddMappedMarkers(gMapUID, GFMarkerID, nMarkers, address1, address2, address3, address4, numCircles);
+        var res = ARNativePlugin.arwAddMappedMarkers(gMapUID, GFMarkerID, nMarkers, address1, address2, address3);
         handle1.Free();
         handle2.Free();
         handle3.Free();
-        handle4.Free();
         return res;
     }
 
-    public int arwUpdateMultiMarker(int gMapUID, int GFMarkerID, int nMarkers, double[] markerTrans, int[] uids, double[] corners, double[] circles, int numCircles, bool initialiseMultiMarker) {
+    public int arwUpdateMultiMarker(int gMapUID, int GFMarkerID, int nMarkers, double[] markerTrans, int[] uids, double[] corners, bool initialiseMultiMarker) {
 
         GCHandle handle1 = GCHandle.Alloc(markerTrans, GCHandleType.Pinned);
         IntPtr address1 = handle1.AddrOfPinnedObject();
@@ -815,14 +807,10 @@ public class ARToolKitFunctions
         GCHandle handle3 = GCHandle.Alloc(corners, GCHandleType.Pinned);
         IntPtr address3 = handle3.AddrOfPinnedObject();
 
-        GCHandle handle4 = GCHandle.Alloc(circles, GCHandleType.Pinned);
-        IntPtr address4 = handle4.AddrOfPinnedObject();
-
-        var res = ARNativePlugin.arwUpdateMultiMarker(gMapUID, GFMarkerID, nMarkers, address1, address2, address3, address4, numCircles, initialiseMultiMarker);
+        var res = ARNativePlugin.arwUpdateMultiMarker(gMapUID, GFMarkerID, nMarkers, address1, address2, address3, initialiseMultiMarker);
         handle1.Free();
         handle2.Free();
         handle3.Free();
-        handle4.Free();
         return res;
     }
 
@@ -922,11 +910,11 @@ public class ARToolKitFunctions
         ARNativePlugin.arwCleanupChessboardCorners();
     }
 
-    public bool arwUpdateARToolKit(byte[] imageBytes, bool doDatums, int markerType, int numberOfDatums) {
+    public bool arwUpdateARToolKit(byte[] imageBytes, int markerType) {
         bool ok = false;
         GCHandle handle = GCHandle.Alloc(imageBytes, GCHandleType.Pinned);
         IntPtr address = handle.AddrOfPinnedObject();
-        ok = ARNativePlugin.arwUpdateARToolKit(address, doDatums, markerType, numberOfDatums);
+        ok = ARNativePlugin.arwUpdateARToolKit(address, markerType);
         handle.Free();
         return ok;
     }

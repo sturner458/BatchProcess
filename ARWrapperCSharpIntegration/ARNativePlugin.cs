@@ -285,7 +285,7 @@ public class ARNativePlugin
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwQueryTrackableVisibilityAndTransformation(int markerID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] double[] matrix, [MarshalAs(UnmanagedType.LPArray, SizeConst = 32)] double[] corners, out int numCorners, [MarshalAs(UnmanagedType.LPArray, SizeConst = 12)] double[] datums, out int numDatums);
+    internal static extern bool arwQueryTrackableVisibilityAndTransformation(int markerID, [MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] double[] matrix, [MarshalAs(UnmanagedType.LPArray, SizeConst = 32)] double[] corners, out int numCorners);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
@@ -295,14 +295,14 @@ public class ARNativePlugin
     internal static extern int arwResetMapperTrackable(int gMapUID, string cfg);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern void arwSetMappedMarkersVisible(int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners, IntPtr circles, int numCircles);
+    internal static extern void arwSetMappedMarkersVisible(int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwAddMappedMarkers(int gMapUID, int GFMarkerID, int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners, IntPtr circles, int numCircles);
+    internal static extern bool arwAddMappedMarkers(int gMapUID, int GFMarkerID, int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern int arwUpdateMultiMarker(int gMapUID, int GFMarkerID, int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners, IntPtr circles, int numCircles, bool initialiseMultiMarker);
+    internal static extern int arwUpdateMultiMarker(int gMapUID, int GFMarkerID, int nMarkers, IntPtr markerTrans, IntPtr uids, IntPtr corners, bool initialiseMultiMarker);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     internal static extern void arwListTrackables(int gMapUID);
@@ -324,7 +324,7 @@ public class ARNativePlugin
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool arwUpdateARToolKit(IntPtr imageBytes, bool doDatums, int markerType, int numberOfDatums);
+    internal static extern bool arwUpdateARToolKit(IntPtr imageBytes, int markerType);
 
     [DllImport(LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     internal static extern bool arwInitChessboardCorners(int nHorizontal, int nVertical, float patternSpacing, int calibImageNum, int xsize, int ysize);

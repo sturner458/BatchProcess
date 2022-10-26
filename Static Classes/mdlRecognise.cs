@@ -550,13 +550,12 @@ namespace BatchProcess
         private static bool MapperMarkerVisible() {
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            return (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners, datums, out int numDatums));
+            return (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners));
         }
 
         public static async void RecogniseMarkers(byte[] grayscaleBytes) {
 
-            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayscaleBytes, false, -1, -1);
+            var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayscaleBytes, -1);
 
             Data.Clear();
 
@@ -625,9 +624,8 @@ namespace BatchProcess
             //Update positions of confirmed markers by bundle adjustment
             double[] modelMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] cornerCoords = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             SaveHiResSurveyPhoto = false;
-            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners,datums, out int numDatums)) {
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners)) {
                 SaveHiResSurveyPhoto = true;
                 AddNewSuspectedMarkers(usingRevAMarkerType: true);
                 ConvertSuspectedToConfirmed();
@@ -671,8 +669,7 @@ namespace BatchProcess
         private static void DetectMarkerVisible(int myMarkerID) {
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMarkerID, mv, corners, out int numCorners, datums, out int numDatums)) {
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMarkerID, mv, corners, out int numCorners)) {
                 var pt = new clsPoint3d(mv[12], mv[13], mv[14]);
                 if (pt.Length < 2000) {
                     var myCameraPoint = PointFromInvMatrix(mv);
@@ -1374,7 +1371,7 @@ namespace BatchProcess
                 int numCircles = 0;
                 if (UseDatumMarkers && arToolkitMarkerType == 0) numCircles = circlesToUse;
 
-                ARToolKitFunctions.Instance.arwSetMappedMarkersVisible(measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), numCircles);
+                ARToolKitFunctions.Instance.arwSetMappedMarkersVisible(measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.x, p.y }).ToArray());
 
                 RecogniseMarkersFromMeasurements(measurement, UseDatumMarkers, arToolkitMarkerType, circlesToUse);
 
@@ -1488,7 +1485,6 @@ namespace BatchProcess
             var cornersErr2 = new Emgu.CV.Util.VectorOfPointF();
 
             var arToolkitMarkerType = (int)TargetTypeE.x4Double;
-            var numberOfDatumCircles = 6;
 
             //DEBUG
             //stitchingMeasurements.Add(139);
@@ -1502,7 +1498,7 @@ namespace BatchProcess
                 byte[] grayImageBytes = new byte[grayImage.Data.Length];
                 Buffer.BlockCopy(grayImage.Data, 0, grayImageBytes, 0, grayImage.Data.Length);
 
-                var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayImageBytes, (numberOfDatumCircles > 0), arToolkitMarkerType, numberOfDatumCircles);
+                var retB = ARToolKitFunctions.Instance.arwUpdateARToolKit(grayImageBytes, arToolkitMarkerType);
 
                 RecogniseMarkersFromImage(arToolkitMarkerType);
 
@@ -1725,9 +1721,10 @@ namespace BatchProcess
             DetectMarkerVisible(myRailStartMarkerID);
             DetectMarkerVisible(myRailEndMarkerID);
 
+            Console.WriteLine("Markers Seen: " + string.Join(",", Data.MarkersSeenID.Select(i => (i + 1).ToString()).ToArray()));
+
             double[] mv = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] corners = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            double[] circles = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
             int numCircles = 0;
             if (useDatums && arToolkitMarkerType == 0) numCircles = circlesToUse;
@@ -1736,11 +1733,11 @@ namespace BatchProcess
             //Start passing the marker info across to the multi-marker
             //Do this in 2 phases so that we can check if a marker has been accidentally moved
             //The first phase sets the visibility of the multi-marker
-            var initialiseMultiMarker = ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myLastDatumId, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), numCircles);
+            var initialiseMultiMarker = ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myLastDatumId, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray());
 
             //Is the multi-marker visible?
             //If not, we don't need to do any checks, and we don't need to update it
-            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners, circles, out numCircles)) {
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, mv, corners, out int numCorners)) {
 
                 OpenTK.Matrix4d myModel = MatrixFromArray(mv);
                 myModel = OpenTK.Matrix4d.Invert(myModel);
@@ -1772,7 +1769,7 @@ namespace BatchProcess
                 }
 
                 //Now update the multi-marker
-                var res = ARToolKitFunctions.Instance.arwUpdateMultiMarker(myMapperMarkerID, myLastDatumId, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), numCircles, initialiseMultiMarker);
+                var res = ARToolKitFunctions.Instance.arwUpdateMultiMarker(myMapperMarkerID, myLastDatumId, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), initialiseMultiMarker);
 
                 if (res == -1 || !checksOK) { //res = -1 indicates that gtsam has thrown an exception
                                               // Show an alert
@@ -1873,14 +1870,13 @@ namespace BatchProcess
 
             // Just use RevA and 0 circles.
             int numCircles = 0;
-            ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myOriginMarkerID, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), measurement.Circles.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray(), numCircles);
+            ARToolKitFunctions.Instance.arwAddMappedMarkers(myMapperMarkerID, myOriginMarkerID, measurement.MarkerUIDs.Count, measurement.Trans(), measurement.MarkerUIDs.ToArray(), measurement.Corners.SelectMany(c => c).SelectMany(p => new double[] { p.X, p.Y }).ToArray());
 
             //Update positions of confirmed markers by bundle adjustment
             double[] modelMatrix = new double[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             double[] cornerCoords = new double[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            double[] datums = new double[12] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             SaveHiResSurveyPhoto = false;
-            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners, datums, out int numDatums)) {
+            if (ARToolKitFunctions.Instance.arwQueryMarkerTransformation(myMapperMarkerID, modelMatrix, cornerCoords, out int numCorners)) {
                 SaveHiResSurveyPhoto = true;
                 AddNewSuspectedMarkers(usingRevAMarkerType: true);
                 ConvertSuspectedToConfirmed();
