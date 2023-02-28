@@ -676,7 +676,7 @@ namespace BatchProcess
                     if (IsSameDbl(myCameraPoint.Length, 0) == false) {
                         myCameraPoint.Normalise();
                         double a1 = Abs(myCameraPoint.AngleToHorizontal) * 180 / PI;
-                        if ((a1 > 22 && a1 < 80) || myWallMarkerIDs.Contains(myMarkerID)) {
+                        if ((a1 > 22 && a1 < 90) || myWallMarkerIDs.Contains(myMarkerID)) {
                             Data.MarkersSeenID.Add(myMarkerID);
                             Data.ModelViewMatrix.Add(mv);
                             var c = new List<clsPoint>();
@@ -712,15 +712,15 @@ namespace BatchProcess
                         mySuspectedMarkers.Add(new clsMarkerPoint(myMarkerID));
                         k = mySuspectedMarkers.Count - 1;
                     } else {
-                        mySuspectedMarkers[k].OKToConfirm(out myErrorString, out clsPoint3d v1, out clsPoint3d v2, out clsPoint3d v3, out clsPoint3d v4,
-                            out bool b1, out bool b2, out bool b3, out bool b4, out double a1, out double a2);
-                        var myStr = myMarkerIDs.IndexOf(myMarkerID) + 1 + " / " + mySuspectedMarkers[k].GTSAMMatrixes.Count + " - MaxD=" + Round(mySuspectedMarkers[k].MaxDistance(out v1, out v2)) + " - MaxA2=" + Round(mySuspectedMarkers[k].MaxAnglePerpendicular(out v1, out v2) * 180 / PI, 1);
-                        if (myStr != mySuspectedMarkers[k].Label) {
-                            mySuspectedMarkers[k].Label = myStr;
-                            mySuspectedMarkers[k].MarkerName = Convert.ToString(myMarkerIDs.IndexOf(myMarkerID) + 1);
-                            mySuspectedMarkers[k].MaximumAngleA = Convert.ToString(Round(mySuspectedMarkers[k].MaxDistance(out v1, out v2)));
-                            mySuspectedMarkers[k].MaximumAngleXY = Convert.ToString(Round(mySuspectedMarkers[k].MaxAnglePerpendicular(out v1, out v2) * 180 / PI, 1));
-                        }
+                        //mySuspectedMarkers[k].OKToConfirm(out myErrorString, out clsPoint3d v1, out clsPoint3d v2, out clsPoint3d v3, out clsPoint3d v4,
+                        //    out bool b1, out bool b2, out bool b3, out bool b4, out double a1, out double a2);
+                        //var myStr = myMarkerIDs.IndexOf(myMarkerID) + 1 + " / " + mySuspectedMarkers[k].GTSAMMatrixes.Count + " - MaxD=" + Round(mySuspectedMarkers[k].MaxDistance(out v1, out v2)) + " - MaxA2=" + Round(mySuspectedMarkers[k].MaxAnglePerpendicular(out v1, out v2) * 180 / PI, 1);
+                        //if (myStr != mySuspectedMarkers[k].Label) {
+                        //    mySuspectedMarkers[k].Label = myStr;
+                        //    mySuspectedMarkers[k].MarkerName = Convert.ToString(myMarkerIDs.IndexOf(myMarkerID) + 1);
+                        //    mySuspectedMarkers[k].MaximumAngleA = Convert.ToString(Round(mySuspectedMarkers[k].MaxDistance(out v1, out v2)));
+                        //    mySuspectedMarkers[k].MaximumAngleXY = Convert.ToString(Round(mySuspectedMarkers[k].MaxAnglePerpendicular(out v1, out v2) * 180 / PI, 1));
+                        //}
                     }
 
                     mySuspectedMarkers[k].PhotoNumbers.Add(numImagesProcessed + 1);
@@ -883,6 +883,10 @@ namespace BatchProcess
             if (myUncorrectedVerticalVector == null) myUncorrectedVerticalVector = myVerticalVector.Copy();
 
             using (var ms = new MemoryStream()) {
+                // Set decimal places to use dot instead of comma:
+                var currentCultureInfo = System.Threading.Thread.CurrentThread.CurrentCulture;
+                System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+
                 using (var sw = new StreamWriter(ms) { AutoFlush = true }) {
                     var appVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
                     var engageAppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
@@ -892,10 +896,14 @@ namespace BatchProcess
                     sw.WriteLine("SETTINGS");
                     sw.WriteLine("AppVersion," + myAppVersion);
                     sw.WriteLine("CalibrationFile,Calib.dat");
-                    sw.WriteLine("CalibrationScore,0.5");
+                    sw.WriteLine("CalibrationScore," + 0.5);
                     sw.WriteLine("AutoFocus,false");
                     sw.WriteLine("FocalDistance,0.9");
                     sw.WriteLine("ThresholdMode,Manual");
+                    sw.WriteLine("MinimumNumberOfImages," + GTSAMMinimumPhotos);
+                    sw.WriteLine("MinimumAngle1," + GTSAMAngleTolerance1);
+                    sw.WriteLine("MinimumAngle2," + GTSAMAngleTolerance2);
+                    sw.WriteLine("GTSAMTolerance," + GTSAMTolerance);
                     sw.WriteLine("UncorrectedVerticalVectorX," + myUncorrectedVerticalVector.X);
                     sw.WriteLine("UncorrectedVerticalVectorY," + myUncorrectedVerticalVector.Y);
                     sw.WriteLine("UncorrectedVerticalVectorZ," + myUncorrectedVerticalVector.Z);
@@ -905,19 +913,26 @@ namespace BatchProcess
                     sw.WriteLine("VerticalVectorX," + myVerticalVector.X);
                     sw.WriteLine("VerticalVectorY," + myVerticalVector.Y);
                     sw.WriteLine("VerticalVectorZ," + myVerticalVector.Z);
-                    //if (AppPreferences.UseNewStyleMarkers) sw.WriteLine("UseNewStyleMarkers,1");
-                    sw.WriteLine("UseNewStyleMarkers,1");
+                    sw.WriteLine("UseDatumMarkers,0");
+                    sw.WriteLine("MarkerType," + arToolkitMarkerType);
+                    sw.WriteLine("NumCircles," + circlesToUse);
                     sw.WriteLine("GFMarkerID," + myGFMarkerID);
                     sw.WriteLine("StepMarkerID," + myStepMarkerID);
                     sw.WriteLine("LastDatumID," + myLastDatumId);
+                    sw.WriteLine("StepMarkerLevelled," + (StepMarker.Levelled ? "1" : "0"));
+                    sw.WriteLine("StepMarkerStitched," + (StepMarker.Stitched ? "1" : "0"));
+                    sw.WriteLine("StepMarkerConfirmed," + (StepMarker.Confirmed ? "1" : "0"));
                     foreach (var id in stitchingMeasurements) sw.WriteLine("StitchingMeasurement," + id);
+                    sw.WriteLine("NumImagesProcessed," + numImagesProcessed);
+                    for (var i = 0; i <= ConfirmedMarkers.Count - 1; i++) {
+                        sw.WriteLine("Marker " + ConfirmedMarkers[i].MarkerID + "," + ConfirmedMarkers[i].GTSAMMatrixes.Count);
+                    }
                     sw.WriteLine("END_SETTINGS");
 
                     sw.WriteLine(myMeasurements.Count);
                     for (var i = 0; i <= myMeasurements.Count - 1; i++) {
                         myMeasurements[i].Save(sw);
                     }
-
                     sw.WriteLine(ConfirmedMarkers.Count);
                     for (var i = 0; i <= ConfirmedMarkers.Count - 1; i++) {
                         ConfirmedMarkers[i].Save(sw);
@@ -928,11 +943,10 @@ namespace BatchProcess
                         for (var i = 0; i <= mySuspectedMarkers.Count - 1; i++) {
                             mySuspectedMarkers[i].Save(sw);
                         }
-                    } else {
-                        sw.WriteLine("0");
                     }
 
                     ms.Position = 0;
+                    System.Threading.Thread.CurrentThread.CurrentCulture = currentCultureInfo;
                     using (var sr = new StreamReader(ms)) {
                         return sr.ReadToEnd();
                     }
@@ -1399,6 +1413,11 @@ namespace BatchProcess
             //ConvertSuspectedToConfirmed(true);
             StopTracking();
 
+            var result = SaveToString(false);
+            using (var sw = new System.IO.StreamWriter(myFile.Replace(".txt", "-process.txt"))) {
+                sw.Write(result);
+            }
+
             // If we have a step marker, do something with it:
             var lastStepMarkerIndex = ConfirmedMarkers.FindLastIndex(m => m.Levelled && (m.ActualMarkerID == myGFMarkerID || m.ActualMarkerID == myStepMarkerID));
             if (lastStepMarkerIndex != -1) {
@@ -1422,32 +1441,31 @@ namespace BatchProcess
             var sortedMarkers = ConfirmedMarkers.Select(m => m.Copy()).ToList();
             sortedMarkers.Sort(new MarkerPointComparer()); //Order by Z value and then by ID
 
-            var sw = new System.IO.StreamWriter(myFile.Replace(".txt", ".3dm"));
-            sortedMarkers.ForEach(pt => {
-
-                if (myBulkheadMarkerIDs.Contains(pt.ActualMarkerID)) {
-                    sw.WriteLine(pt.Origin.X.ToString() + '\t' + pt.Origin.Y.ToString() + '\t' + pt.Origin.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + pt.BulkheadHeight.ToString());
-                } else if (myDoorMarkerIDs.Contains(pt.ActualMarkerID)) {
-                    var a = (pt.Point.Point2D() - pt.Origin.Point2D()).Angle();
-                    sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + a.ToString());
-                } else if (myObstructMarkerIDs.Contains(pt.ActualMarkerID)) {
-                    sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + pt.BulkheadHeight.ToString());
-                } else if (myWallMarkerIDs.Contains(pt.ActualMarkerID)) {
-                    var a = (pt.Vz.Point2D().Angle());
-                    sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + a.ToString());
-                } else if (pt.ActualMarkerID == -1) { // Camera Captured Obstructions
-                    sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString());
-                } else {
-                    if ((pt.ActualMarkerID != myStepMarkerID && pt.ActualMarkerID != myGFMarkerID) || pt.VerticalVect == null) {
+            using (var sw = new System.IO.StreamWriter(myFile.Replace(".txt", ".3dm"))) {
+                sortedMarkers.ForEach(pt => {
+                    if (myBulkheadMarkerIDs.Contains(pt.ActualMarkerID)) {
+                        sw.WriteLine(pt.Origin.X.ToString() + '\t' + pt.Origin.Y.ToString() + '\t' + pt.Origin.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + pt.BulkheadHeight.ToString());
+                    } else if (myDoorMarkerIDs.Contains(pt.ActualMarkerID)) {
+                        var a = (pt.Point.Point2D() - pt.Origin.Point2D()).Angle();
+                        sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + a.ToString());
+                    } else if (myObstructMarkerIDs.Contains(pt.ActualMarkerID)) {
+                        sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + pt.BulkheadHeight.ToString());
+                    } else if (myWallMarkerIDs.Contains(pt.ActualMarkerID)) {
+                        var a = (pt.Vz.Point2D().Angle());
+                        sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + a.ToString());
+                    } else if (pt.ActualMarkerID == -1) { // Camera Captured Obstructions
                         sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString());
                     } else {
-                        sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + pt.CorrectionAngle.ToString() + '\t' + pt.ConfirmedImageNumber.ToString());
+                        if ((pt.ActualMarkerID != myStepMarkerID && pt.ActualMarkerID != myGFMarkerID) || pt.VerticalVect == null) {
+                            sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString());
+                        } else {
+                            sw.WriteLine(pt.Point.X.ToString() + '\t' + pt.Point.Y.ToString() + '\t' + pt.Point.Z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + '\t' + pt.CorrectionAngle.ToString() + '\t' + pt.ConfirmedImageNumber.ToString());
+                        }
                     }
-                }
 
-                //sw.WriteLine(pt.Point.x.ToString() + '\t' + pt.Point.y.ToString() + '\t' + pt.Point.z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + ((pt.ActualMarkerID == myGFMarkerID || p.ActualMarkerID == myStepMarkerID) ? '\t' + pt.CorrectionAngle.ToString() + '\t' + pt.ConfirmedImageNumber.ToString() : string.Empty));
-            });
-            sw.Close();
+                    //sw.WriteLine(pt.Point.x.ToString() + '\t' + pt.Point.y.ToString() + '\t' + pt.Point.z.ToString() + '\t' + (pt.ActualMarkerID + 1).ToString() + ((pt.ActualMarkerID == myGFMarkerID || p.ActualMarkerID == myStepMarkerID) ? '\t' + pt.CorrectionAngle.ToString() + '\t' + pt.ConfirmedImageNumber.ToString() : string.Empty));
+                });
+            }
 
         }
 
